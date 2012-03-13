@@ -27,6 +27,12 @@ redis with exponential backoff until it can pop another element"
   [conn key]
   (lazy-seq (cons (blocking-pop conn key) (redis-seq conn key))))
 
+(defn zunionstore
+  "TODO: push this upstream"
+  [dest-key source-keys & options]
+  (apply redis/query "zunionstore" dest-key
+         (count source-keys) (concat source-keys options)))
+
 (comment
   (def d (redis/lpop db "resque:queue:network"))
 

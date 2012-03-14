@@ -1,9 +1,8 @@
 (ns risingtide.key
   "encapsulate key naming conventions for risingtide"
+  (:use [risingtide.core :only [env]])
   (:require [clojure.string :as s])
   (:refer-clojure :exclude [format] ))
-
-(defn env [] (keyword (or (System/getenv "RISINGTIDE_ENV") "development")))
 
 (defn prefix
   []
@@ -14,21 +13,37 @@
   (s/join  ":" (map str (cons (prefix) parts))))
 
 (defn interest
-  [& parts]
-  (apply format "i:u" parts))
-
-(defn feed
-  [& parts]
-  (apply format "f" parts))
+  [user-id type]
+  (format "i:u" user-id type))
 
 (defn card-story
   [& parts]
   (apply format "c" parts))
 
+(defn actor-card-story
+  [actor-id]
+  (card-story "a" actor-id))
+
+(defn listing-card-story
+  [listing-id]
+  (card-story "l" listing-id))
+
+(defn tag-card-story
+  [tag-id]
+  (card-story "t" tag-id))
+
 (defn network-story
   [& parts]
   (apply format "n" parts))
 
+(defn feed
+  [& parts]
+  (apply format "f" parts))
+
+(defn user-feed
+  [id]
+  (feed "u" id))
+
 (defn everything-feed
   []
-  (key/feed "c"))
+  (feed "c"))

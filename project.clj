@@ -4,6 +4,6 @@
                  [org.clojure/data.json "0.1.1"]
                  [org.clojure/tools.logging "0.2.3"]
 
-                 [accession "0.1.1"]
+                 [accession "0.1.1" :exclusions [org.clojure/clojure]]
                  [robert/bruce "0.7.1"]])
 

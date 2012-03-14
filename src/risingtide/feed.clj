@@ -4,30 +4,6 @@
   (:require [accession.core :as redis]
             [risingtide.key :as key]))
 
-(defn user-feed-keys
-  "get all user feed keys"
-  [conn]
-  (rexec conn
-    (redis/keys (key/feed "u:*"))))
-
-(defn card-story-keys
-  "get all card story keys"
-  [conn]
-  (rexec conn
-    (redis/keys (key/card-story "*"))))
-
-(defn network-story-keys
-  "get all network story keys"
-  [conn]
-  (rexec conn
-    (redis/keys (key/network-story "*"))))
-
-(defn interest-keys
-  "get all interest keys"
-  [conn]
-  (rexec conn
-    (redis/keys (key/interest "*"))))
-
 (defn feed-source-interest-keys
   "given a feed type and a user id, get the keys of sets that will serve
 as sources for that feed
@@ -38,9 +14,9 @@ interest keys for card feeds"
   (map #(key/interest user-id %)
        (cons "a" (when (= :card feed-type) ["l" "t"]))))
 
-(defn feed-type-prefix [feed-type]
-  "given a feed type keywork return the prefix to use in key names"
-  (first (name feed-type)))
+(defn feed-type-key [feed-type]
+  "given a feed type keyword return the prefix to use in key names"
+  (first-char feed-type))
 
 (defn interesting-keys
   "return the keys of sets that should be included in the a user's feed of the given type"

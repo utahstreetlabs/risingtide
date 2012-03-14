@@ -6,8 +6,8 @@
             [risingtide.key :as key]))
 
 (def interests-for-feed-type
-  {:card ["a" "l" "t"]
-   :network ["a"]})
+  {:card (map first-char [:actor :listing :tag])
+   :network (map first-char [:actor])})
 
 (defn- feed-source-interest-keys
   "given a feed type and a user id, get the keys of sets that will serve
@@ -26,8 +26,8 @@ interest keys for card feeds"
 (defn interesting-keys
   "return the keys of sets that should be included in the a user's feed of the given type"
   [conn feed-type user-id]
-  (let [feed-type-key (feed-type-key feed-type)]
-    (map #(key/format feed-type-key %)
+  (let [f (feed-type-key feed-type)]
+    (map #(key/format f %)
          (redis/with-connection conn
            (apply redis/sunion (feed-source-interest-keys feed-type user-id))))))
 

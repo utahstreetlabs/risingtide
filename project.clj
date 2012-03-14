@@ -6,5 +6,7 @@
 
                  [accession "0.1.1" :exclusions [org.clojure/clojure]]
                  [robert/bruce "0.7.1"]]
+  :dev-dependencies [[midje "1.3.1"]
+                     [lein-midje "1.0.8"]]
   :main risingtide)
 

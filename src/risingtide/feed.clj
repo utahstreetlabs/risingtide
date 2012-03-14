@@ -6,8 +6,8 @@
             [risingtide.key :as key]))
 
 (def interests-for-feed-type
-  {:cards ["a"]
-   :notifications ["a" "l" "t"]})
+  {:card ["a" "l" "t"]
+   :network ["a"]})
 
 (defn- feed-source-interest-keys
   "given a feed type and a user id, get the keys of sets that will serve

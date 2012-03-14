@@ -12,8 +12,8 @@
   [conn type [user-id object-id]]
   (redis/with-connection conn
     (interests/add-interest user-id (first-char type) object-id)
-    (feed/build-feed :cards user-id (feed/interesting-keys conn :cards user-id))
-    (feed/build-feed :notifications user-id (feed/interesting-keys conn :notifications user-id))))
+    (feed/build-feed :card user-id (feed/interesting-keys conn :card user-id))
+    (feed/build-feed :network user-id (feed/interesting-keys conn :network user-id))))
 
 (defn- remove-interest!
   [conn type [user-id object-id]]

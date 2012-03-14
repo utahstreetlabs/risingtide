@@ -4,6 +4,10 @@ Rising Tide processes stories into feeds.
 
 ## Usage
 
+To run the job processor from the command line, do:
+
+bin/lein run
+
 
 ## License
 

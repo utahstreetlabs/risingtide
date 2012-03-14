@@ -41,8 +41,8 @@
   (apply format "f" parts))
 
 (defn user-feed
-  [id]
-  (feed "u" id))
+  [id type]
+  (feed "u" id type))
 
 (defn everything-feed
   []

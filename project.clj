@@ -5,6 +5,7 @@
                  [org.clojure/tools.logging "0.2.3"]
 
                  [accession "0.1.1" :exclusions [org.clojure/clojure]]
+                 [clj-time "0.3.4"]
                  [robert/bruce "0.7.1"]]
   :dev-dependencies [[midje "1.3.1"]
                      [lein-midje "1.0.8"]]

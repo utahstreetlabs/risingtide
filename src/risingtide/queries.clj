@@ -6,8 +6,9 @@
 
 (defn user-feed-keys
   "get all user feed keys"
-  []
-  (redis/keys (key/user-feed "*" "*")))
+  ([id type]
+     (redis/keys (key/user-feed id type)))
+  ([] (user-feed-keys "*" "*")))
 
 (defn card-story-keys
   "get all card story keys"
@@ -26,5 +27,7 @@
 
 (comment
   (redis/with-connection (redis/connection-map {}) (user-feed-keys))
-  (redis/with-connection (redis/connection-map {}) (redis/zrevrange "magd:f:u:47:n" 0 100))
+  (redis/with-connection (redis/connection-map {})
+   (redis/zscore "magd:f:u:47:n"
+                  (first (redis/with-connection (redis/connection-map {}) (redis/zrevrange "magd:f:u:47:n" 0 100)))))
   )

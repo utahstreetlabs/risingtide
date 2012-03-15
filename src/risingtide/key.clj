@@ -19,15 +19,15 @@
   [& parts]
   (apply format-key "c" parts))
 
-(defn actor-card-story
+(defn card-actor-story
   [actor-id]
   (card-story "a" actor-id))
 
-(defn listing-card-story
+(defn card-listing-story
   [listing-id]
   (card-story "l" listing-id))
 
-(defn tag-card-story
+(defn card-tag-story
   [tag-id]
   (card-story "t" tag-id))
 
@@ -35,15 +35,19 @@
   [& parts]
   (apply format-key "n" parts))
 
-(defn actor-network-story
+(defn network-actor-story
   [actor-id]
   (network-story "a" actor-id))
 
-(defn listing-network-story
+(defn network-user-story
+  [actor-id]
+  (network-story "u" actor-id))
+
+(defn network-listing-story
   [listing-id]
   (network-story "l" listing-id))
 
-(defn tag-network-story
+(defn network-tag-story
   [tag-id]
   (network-story "t" tag-id))
 

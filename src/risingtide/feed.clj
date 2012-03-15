@@ -27,7 +27,7 @@ interest keys for card feeds"
   "return the keys of sets that should be included in the a user's feed of the given type"
   [conn feed-type user-id]
   (let [f (feed-type-key feed-type)]
-    (map #(key/format f %)
+    (map #(key/format-key f %)
          (redis/with-connection conn
            (apply redis/sunion (feed-source-interest-keys feed-type user-id))))))
 

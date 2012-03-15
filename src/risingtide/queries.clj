@@ -25,13 +25,6 @@
   (redis/keys (key/interest "*")))
 
 (comment
-  (def c (redis/connection-map {}))
-  (first
-   (redis/with-connection c
-      (redis/zrevrange
-       (first (redis/with-connection c (user-feed-keys)))
-       0 100)))
-
   (redis/with-connection (redis/connection-map {}) (user-feed-keys))
   (redis/with-connection (redis/connection-map {}) (redis/zrevrange "magd:f:u:47:n" 0 100))
   )

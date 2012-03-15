@@ -17,24 +17,6 @@
          (count source-keys) (concat source-keys options)))
 
 (comment
-
-  (def d (redis/lpop db "resque:queue:network"))
-
-  (take 1 (redis-seq db "resque:queue:network"))
-
-  (redis/lpop db "resque:queue:stories")
-
   (redis/with-connection (redis/connection-map {}) (redis/lpush "resque:queue:stories" "{\"class\":\"Stories::AddInterestInActor\",\"args\":[47,634],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-aef04660348f5f018d1f\"}}"))
   (redis/with-connection (redis/connection-map {}) (redis/lpush "resque:queue:stories" "{\"class\":\"Stories::RemoveInterestInActor\",\"args\":[47,634],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-aef04660348f5f018d1f\"}}"))
-  (redis/with-connection c
-    (redis/lpop "resque:queue:stories")
-    (redis/lpop "resque:queue:stories")
-    )
-
-  (def d (redis-seq c "resque:queue:stories"))
-  (take 3 d)
-  (redis/keys db)
-
-  (for [key (redis/keys db)]
-   (redis/rename db key (.replaceFirst key "mags" "magd")))
  )

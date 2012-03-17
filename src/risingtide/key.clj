@@ -62,3 +62,9 @@
 (defn everything-feed
   []
   (feed "c"))
+
+(def feed-type {"c" :card "n" :network})
+
+(defn feed-type-user-id-from-key
+  [key]
+  (let [parts (.split key ":")] [(feed-type (aget parts 4)) (aget parts 3)]))

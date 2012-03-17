@@ -37,7 +37,9 @@
 
 (def short-key
   {:type :t
+   :types :ts
    :actor_id :aid
+   :actor_ids :aids
    :listing_id :lid
    :tag_id :tid
    :buyer_id :bid
@@ -136,18 +138,21 @@ go through some contortions to take advantage of redis pipelining"
    (listing-story-sets story)
    (followee-story-sets story)))
 
-(defn destination-feeds
+(defn destination-user-feeds
   [conn story]
-  (let [type-key (feed-type (group story))]
-    (concat
-     (destination-story-sets story)
-     (when (= :c type-key) [(key/everything-feed)])
-     (interested-feeds conn (redis/with-connection conn (queries/user-feed-keys "*" (name type-key))) story))))
+  (interested-feeds conn (redis/with-connection conn
+                           (queries/user-feed-keys "*" (name (feed-type (group story))))) story))
+
+(defn destination-sets
+  [conn story]
+  (concat
+   (destination-story-sets story)
+   (when (= :c (feed-type (group story))) [(key/everything-feed)])
+   (destination-user-feeds conn story)))
 
 (defn encode
   "given a story, encode it into a short-key json format suitable for memory efficient storage in redis"
   [story]
   (json/json-str
-   (reduce (fn [h [key val]]
-             (let [s (short-key key)] (if s (assoc h s val) h)))
+   (reduce (fn [h [key val]] (let [s (short-key key)] (if s (assoc h s val) h)))
            {} story)))

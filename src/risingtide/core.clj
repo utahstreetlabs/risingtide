@@ -1,8 +1,10 @@
 (ns risingtide.core
-  (:use [robert.bruce :only [try-try-again]])
   (:require [accession.core :as redis]
             [clojure.data.json :as json]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log]
+            [clj-time.core :as t]))
+
+(defn now [] (.getMillis (t/now)))
 
 (defn env [] (keyword (or (System/getenv "RISINGTIDE_ENV") "development")))
 
@@ -15,6 +17,8 @@
   [dest-key source-keys & options]
   (apply redis/query "zunionstore" dest-key
          (count source-keys) (concat source-keys options)))
+
+
 
 (comment
   (redis/with-connection (redis/connection-map {}) (redis/lpush "resque:queue:stories" "{\"class\":\"Stories::AddInterestInActor\",\"args\":[47,634],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-aef04660348f5f018d1f\"}}"))

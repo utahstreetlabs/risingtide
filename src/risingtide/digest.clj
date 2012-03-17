@@ -1,20 +1,17 @@
-(ns risingtide.digest)
+(ns risingtide.digest
+  (:use risingtide.core))
 
 (defn multi-action-digest-story
   [listing-id actor-id actions]
-  {:type "listing_multi_action" :actor_id actor-id :listing_id listing-id :actions actions})
+  {:type "listing_multi_action" :actor_id actor-id :listing_id listing-id :types actions :score (now)})
 
 (defn multi-actor-digest-story
   [listing-id action actor-ids]
-  {:type "listing_multi_actor" :listing_id listing-id :action action :actor_ids actor-ids})
+  {:type "listing_multi_actor" :listing_id listing-id :action action :actor_ids actor-ids :score (now)})
 
 (defn multi-actor-multi-action-digest-story
-  [listing-id & [actions]]
-  {:type "listing_multi_actor_multi_action" :listing_id listing-id :actions actions})
-
-(defn multi-listing-digest-story
-  [actor-id action & listing-ids]
-  {:type "actor_multi_listing" :actor_id actor-id :action action :listing_ids listing-ids})
+  [listing-id actions]
+  {:type "listing_multi_actor_multi_action" :listing_id listing-id :types actions :score (now)})
 
 (defn digest-story
   [digested story]

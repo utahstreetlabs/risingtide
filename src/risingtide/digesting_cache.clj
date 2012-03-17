@@ -1,21 +1,30 @@
 (ns risingtide.digesting-cache
+  (:use risingtide.core)
   (:require [clojure.set :as set]
             [risingtide.stories :as stories]))
 
-(def story-cache (atom {}))
+(defn- empty-cache
+  ;; take arbitrary args to work with swap
+  [& args]
+  {:low-score (now)
+   :high-score (now)})
 
-(defn reset-cache! [] (swap! story-cache (constantly {})))
+(def story-cache (atom (empty-cache)))
+
+(defn reset-cache! [] (swap! story-cache empty-cache))
 
 (defn stories-for-interests
   "like zunionstore but without the store"
-  [interest-keys]
-  (apply set/union (map story-cache interest-keys)))
+  [cache interesting-keys]
+  (apply set/union (map cache interesting-keys)))
 
 (defn add-story
-  [cache story]
-  (reduce (fn [c key] (assoc c key (conj (or (c key) #{}) story))) cache
-          (stories/destination-story-sets story)))
+  [cache story score]
+  (let [scored-story (assoc story :score score)]
+    (assoc (reduce (fn [c key] (assoc c key (conj (or (c key) #{}) scored-story))) cache
+                   (stories/destination-story-sets story))
+      :high-score score)))
 
 (defn cache-story
-  [story]
-  (swap! story-cache add-story story))
+  [story score]
+  (swap! story-cache add-story story score))

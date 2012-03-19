@@ -40,10 +40,10 @@ interest keys for card feeds"
 
 (defn build-feed
   "returns a query that will build and store a feed of the given type for a user"
-  [feed-type user-id interest-keys]
+  [feed-type user-id interesting-story-keys]
   (let [feed-key (key/user-feed user-id (feed-type-key feed-type))]
     (log/info "Generating feed" feed-key)
-    (zunionstore feed-key interest-keys "AGGREGATE" "MIN")))
+    (zunionstore feed-key interesting-story-keys "AGGREGATE" "MIN")))
 
 (defn interesting-keys-for-feeds
   [conn feeds]

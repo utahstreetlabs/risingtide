@@ -156,3 +156,19 @@ go through some contortions to take advantage of redis pipelining"
   (json/json-str
    (reduce (fn [h [key val]] (let [s (short-key key)] (if s (assoc h s val) h)))
            {} story)))
+
+
+;; stories
+
+(defn multi-action-digest
+  [listing-id actor-id actions]
+  {:type "listing_multi_action" :actor_id actor-id :listing_id listing-id :types actions :score (now)})
+
+(defn multi-actor-digest
+  [listing-id action actor-ids]
+  {:type "listing_multi_actor" :listing_id listing-id :action action :actor_ids actor-ids :score (now)})
+
+(defn multi-actor-multi-action-digest
+  [listing-id actions]
+  {:type "listing_multi_actor_multi_action" :listing_id listing-id :types actions :score (now)})
+

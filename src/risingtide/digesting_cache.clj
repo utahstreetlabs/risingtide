@@ -21,7 +21,8 @@
 (defn add-story
   [cache story score]
   (let [scored-story (assoc story :score score)]
-    (assoc (reduce (fn [c key] (assoc c key (conj (or (c key) #{}) scored-story))) cache
+    (assoc (reduce (fn [c key] (assoc c key (conj (or (c key) #{}) scored-story)))
+                   cache
                    (stories/destination-story-sets story))
       :high-score score)))
 

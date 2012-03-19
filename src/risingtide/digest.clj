@@ -1,17 +1,6 @@
 (ns risingtide.digest
-  (:use risingtide.core))
-
-(defn multi-action-digest-story
-  [listing-id actor-id actions]
-  {:type "listing_multi_action" :actor_id actor-id :listing_id listing-id :types actions :score (now)})
-
-(defn multi-actor-digest-story
-  [listing-id action actor-ids]
-  {:type "listing_multi_actor" :listing_id listing-id :action action :actor_ids actor-ids :score (now)})
-
-(defn multi-actor-multi-action-digest-story
-  [listing-id actions]
-  {:type "listing_multi_actor_multi_action" :listing_id listing-id :types actions :score (now)})
+  (:use risingtide.core)
+  (:require [risingtide.stories :as story]))
 
 (defn digest-story
   [digested story]
@@ -23,11 +12,11 @@
     (let [[action actors] (first actions)]
       (if (= 1 (count actors))
         (second (first actors))
-        (multi-actor-digest-story listing-id action (keys actors))))
+        (story/multi-actor-digest listing-id action (keys actors))))
     (let [actors (distinct (flatten (map keys (vals actions))))]
       (if (= 1 (count actors))
-        (multi-action-digest-story listing-id (first actors) (keys actions))
-        (multi-actor-multi-action-digest-story
+        (story/multi-action-digest listing-id (first actors) (keys actions))
+        (story/multi-actor-multi-action-digest
          listing-id
          (reduce (fn [m [action actors]] (assoc m action (keys actors))) {} actions))))))
 

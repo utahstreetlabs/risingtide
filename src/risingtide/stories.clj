@@ -35,6 +35,8 @@
 (def id-key
   {:a :actor_id :l :listing_id :t :tag_id})
 
+(def listing-tag-story-types #{:listing_activated :listing_sold})
+
 (def short-key
   {:type :t
    :types :ts
@@ -48,73 +50,52 @@
    :text :tx
    :network :n})
 
-(def listing-tag-story-types #{:listing_activated :listing_sold})
+(defn encode
+  "given a story, encode it into a short-key json format suitable for memory efficient storage in redis"
+  [story]
+  (json/json-str
+   (reduce (fn [h [key val]] (let [s (short-key key)] (if s (assoc h s val) h)))
+           {} story)))
 
 (defn group
   [story]
   (:group (type-info (keyword (:type story)))))
 
-(defn interest-tokens
-  "returns tuples of keys and interest tokens"
-  [story]
-  (for [key (group-interest-keys (group story))]
-    [key (str (name key) ":" (get story (id-key key)))]))
-
-(defn interest-queries
-  "returns a list of interest queries based on user ids an interest tokens
-
-result is ordered by user id and then interest token key like:
-
-user1interestAquery
-user1interestBquery
-user2interestAquery
-user2interestBquery
-"
-  [user-ids interest-tokens]
-  (flatten
-   (for [user-id user-ids]
-     (for [[key token] interest-tokens]
-       (redis/sismember (key/interest user-id (name key)) token)))))
-
-(defn compile-interested-feed-keys
-  "given a set of interest booleans in groups of size interest-token-count,
-return a list of booleans indicating whether each group contains a true value
-
-so given an interest-token-count of 2, a set of feed keys like
-
- [\"feed1\" \"feed2\" \"feed3\" \"feed4\"]
-
-and a list of interests like
-
- [true true, true false, false true, false false]
-
-returns
-
- [\"feed1\" \"feed2\" \"feed3\"]
-"
-  [feed-keys interests interest-token-count]
-  (let [interested-bools (map #(some identity %) (partition interest-token-count interests))]
-    (for [[feed-key interested] (map vector feed-keys interested-bools)
-          :when interested]
-      feed-key)))
-
-(defn interests
-  [conn user-ids interest-tokens]
-  (apply redis/with-connection conn (interest-queries user-ids interest-tokens)))
-
-(defn interested-feeds
-  "filter the list of feed keys to find those interested in the given story
-
-go through some contortions to take advantage of redis pipelining"
-  [conn feed-keys story]
-  (let [tokens (interest-tokens story)
-        user-ids (map #(get (.split % ":") 3) feed-keys)]
-    (compile-interested-feed-keys
-     feed-keys (interests conn user-ids tokens) (count tokens))))
-
 (defn listing-tag-story?
   [story]
   (listing-tag-story-types (keyword (:type story))))
+
+(defn actor-watcher-sets
+  [story]
+  [(key/actor-watchers (:actor_id story))])
+
+(defn listing-watcher-sets
+  [story]
+  (when (= :listing (group story))
+     (cons (key/listing-watchers (:listing_id story))
+           (when (and (listing-tag-story? story) (:tag_ids story))
+             (map key/tag-watchers (:tag_ids story))))))
+
+(defn followee-watcher-sets
+  [story]
+  (when (:followee_id story) [(key/actor-watchers (:followee_id story))]))
+
+(defn watcher-sets
+  [story]
+  (concat
+   (actor-watcher-sets story)
+   (listing-watcher-sets story)
+   (followee-watcher-sets story)))
+
+(defn interested-users
+  [conn story]
+  (redis/with-connection conn (apply redis/sunion (watcher-sets story))))
+
+(defn interested-feeds
+  ""
+  [conn story]
+  (map #(key/user-feed % (feed-type (group story)))
+       (interested-users conn story)))
 
 (defn actor-story-sets
   [story]
@@ -138,37 +119,27 @@ go through some contortions to take advantage of redis pipelining"
    (listing-story-sets story)
    (followee-story-sets story)))
 
-(defn destination-user-feeds
-  [conn story]
-  (interested-feeds conn (redis/with-connection conn
-                           (queries/user-feed-keys "*" (name (feed-type (group story))))) story))
-
 (defn destination-sets
   [conn story]
   (concat
    (destination-story-sets story)
    (when (= :c (feed-type (group story))) [(key/everything-feed)])
-   (destination-user-feeds conn story)))
-
-(defn encode
-  "given a story, encode it into a short-key json format suitable for memory efficient storage in redis"
-  [story]
-  (json/json-str
-   (reduce (fn [h [key val]] (let [s (short-key key)] (if s (assoc h s val) h)))
-           {} story)))
-
+   (interested-feeds conn story)))
 
 ;; stories
 
 (defn multi-action-digest
-  [listing-id actor-id actions]
-  {:type "listing_multi_action" :actor_id actor-id :listing_id listing-id :types actions :score (now)})
+  ([listing-id actor-id actions score]
+     {:type "listing_multi_action" :actor_id actor-id :listing_id listing-id :types actions :score score})
+  ([listing-id actor-id actions] (multi-action-digest listing-id actor-id actions nil)))
 
 (defn multi-actor-digest
-  [listing-id action actor-ids]
-  {:type "listing_multi_actor" :listing_id listing-id :action action :actor_ids actor-ids :score (now)})
+  ([listing-id action actor-ids score]
+     {:type "listing_multi_actor" :listing_id listing-id :action action :actor_ids actor-ids :score score})
+  ([listing-id action actor-ids] (multi-actor-digest listing-id action actor-ids nil)))
 
 (defn multi-actor-multi-action-digest
-  [listing-id actions]
-  {:type "listing_multi_actor_multi_action" :listing_id listing-id :types actions :score (now)})
+  ([listing-id actions score]
+     {:type "listing_multi_actor_multi_action" :listing_id listing-id :types actions :score score})
+  ([listing-id actions] (multi-actor-multi-action-digest listing-id actions nil)))
 

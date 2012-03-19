@@ -57,7 +57,7 @@ interest keys for card feeds"
   [stories]
   (flatten (map scored-encoded-story stories)))
 
-(defn redigest-queries
+(defn redigest
   [conn destination-feeds]
   ;; don't feel awesome about how I'm getting high/low scores to
   ;; pass to zremrangebyscore - should perhaps actually look through

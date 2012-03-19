@@ -12,30 +12,31 @@
              [key :as key]
              [digesting-cache :as dc]]))
 
-(defn- add-interest!
+(defn add-interest!
   [conn type [user-id object-id]]
   (log/info "adding interest in" type object-id "to" user-id)
   (apply redis/with-connection conn
-    (interests/add-interest user-id (first-char type) object-id)
-    (feed/redigest-queries conn [(key/user-feed user-id "c") (key/user-feed user-id "n")])))
+         (concat
+          (interests/add-interest user-id (first-char type) object-id)
+          (feed/redigest conn [(key/user-feed user-id "c") (key/user-feed user-id "n")]))))
 
-(defn- remove-interest!
+(defn remove-interest!
   [conn type [user-id object-id]]
   (log/info "removing interest in" type object-id "to" user-id)
-  (redis/with-connection conn
-    (interests/remove-interest user-id (first-char type) object-id)))
+  (apply redis/with-connection conn
+         (interests/remove-interest user-id (first-char type) object-id)))
 
-(defn- add-story!
+(defn add-story!
   [conn story]
   (let [time (.getMillis (t/now))
-        encoded-story (stories/encode story)
-        user-feeds (stories/destination-user-feeds conn story)]
+        user-feeds (stories/interested-feeds conn story)
+        encoded-story (stories/encode story)]
     (log/info "adding" encoded-story)
     (dc/cache-story story time)
     (apply redis/with-connection conn
            (concat
             (map #(redis/zadd % time encoded-story) (stories/destination-story-sets story))
-            (feed/redigest-queries conn user-feeds))
+            (feed/redigest conn user-feeds))
            ;; TODO: update everything feed
            )))
 

@@ -20,10 +20,10 @@
   []
   (redis/keys (key/network-story "*")))
 
-(defn interest-keys
-  "get all interest keys"
+(defn watchers-keys
+  "get all watcher set keys"
   []
-  (redis/keys (key/interest "*")))
+  (redis/keys (key/watchers "*")))
 
 (comment
   (redis/with-connection (redis/connection-map {}) (user-feed-keys))

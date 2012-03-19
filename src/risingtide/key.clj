@@ -51,6 +51,26 @@
   [tag-id]
   (network-story "t" tag-id))
 
+;; watchers - lists of interested users by object:id keys
+
+(defn watchers
+  [type id]
+  (format-key type id))
+
+(defn actor-watchers
+  [actor-id]
+  (watchers "a" actor-id))
+
+(defn listing-watchers
+  [listing-id]
+  (watchers "l" listing-id))
+
+(defn tag-watchers
+  [tag-id]
+  (watchers "t" tag-id))
+
+;; feeds
+
 (defn feed
   [& parts]
   (apply format-key "f" parts))

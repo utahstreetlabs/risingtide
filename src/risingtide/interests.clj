@@ -7,12 +7,10 @@
 
 (defn add-interest
   [interested-id type object-id]
-  (log/info "adding interest in" type object-id "to" interested-id)
   (redis/sadd (key/interest interested-id type) (str type ":" object-id)))
 
 (defn remove-interest
   [interested-id type object-id]
-  (log/info "removing interest in" type object-id "to" interested-id)
   (redis/srem (key/interest interested-id type) (str type ":" object-id)))
 
 (defmacro definterest-helpers

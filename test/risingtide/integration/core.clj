@@ -1,5 +1,6 @@
 (ns risingtide.integration.core
-  (:use risingtide.integration.support)
+  (:use risingtide.integration.support
+        risingtide.test)
   (:use [midje.sweet])
   (:require [risingtide.stories :as story]))
 
@@ -59,9 +60,9 @@
    (bcm likes bacon))
 
   (feed-for-rob :card) => (encoded-feed
-                           (listing-liked ham jim)
+                           (listing-liked jim ham)
                            (story/multi-actor-digest bacon "listing_liked" [jim jon])
-                           (listing-liked eggs jon))
+                           (listing-liked jon eggs))
   (feed-for-jim :card) => empty-feed)
 
 (fact "the everything feed contains (allthethings)"
@@ -76,11 +77,11 @@
    (dave shares muffins)) ;; NOTE THAT THIS HAS NEVER HAPPENED >:o
 
   (everything-feed) => (encoded-feed
-                        (listing-liked ham jim)
-                        (listing-liked eggs jon)
+                        (listing-liked jim ham)
+                        (listing-liked jon eggs)
                         (story/multi-actor-digest bacon "listing_liked" [jim jon bcm])
-                        (listing-shared muffins dave))
+                        (listing-shared dave muffins))
   (feed-for-rob :card) => (encoded-feed
-                           (listing-liked ham jim)
+                           (listing-liked jim ham)
                            (story/multi-actor-digest bacon "listing_liked" [jim jon])
-                           (listing-liked eggs jon)))
+                           (listing-liked jon eggs)))

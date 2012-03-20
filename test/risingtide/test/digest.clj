@@ -1,24 +1,8 @@
 (ns risingtide.test.stories
-  (:use [risingtide.digest]
+  (:use risingtide.digest
+        risingtide.test
         [risingtide.core :only [env]])
   (:use [midje.sweet]))
-
-(defn listing-story
-  [type actor-id listing-id]
-  {:type type :actor_id actor-id :listing_id listing-id})
-
-(defmacro story-helper
-  [name]
-  `(defn ~name
-     [actor-id# listing-id#]
-     (listing-story ~(.replace (str name) "-" "_") actor-id# listing-id#)))
-
-(story-helper listing-activated)
-(story-helper listing-liked)
-(story-helper listing-shared)
-(story-helper listing-sold)
-(story-helper listing-commented)
-
 
 (let [;; user ids
       jim 1 jon 2

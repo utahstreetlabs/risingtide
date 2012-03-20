@@ -1,12 +1,33 @@
 (ns risingtide.test.digesting-cache
-  (:use [risingtide.digesting-cache]
+  (:use risingtide.test
+        [risingtide.digesting-cache]
         [risingtide.core :only [env]])
   (:use [midje.sweet]))
 
-(fact
-  (against-background
-   (before :facts (reset-cache!))
-   (env) => :test)
-  (cached-stories (cache-story {:actor_id 1 :listing_id 3 :type "listing_liked"} 1234)) =>
-  {"magt:c:l:3" #{{:actor_id 1, :listing_id 3, :type "listing_liked" :score 1234}},
-   "magt:c:a:1" #{{:actor_id 1, :listing_id 3, :type "listing_liked" :score 1234}}})
+(against-background
+  [(before :facts (reset-cache!))]
+
+  (fact
+    (against-background (env) => :test)
+
+    (cached-stories (cache-story (listing-liked 1 3) 1234)) =>
+    {"magt:c:l:3" #{(listing-liked 1 3 1234)},
+     "magt:c:a:1" #{(listing-liked 1 3 1234)}})
+
+  (fact
+    (against-background (expiration-time) => 20)
+
+    (cache-story (listing-liked 1 11) 30)
+    (cache-story (listing-liked 2 12) 10)
+
+    (cached-stories @story-cache) => {"magd:c:l:11" #{(listing-liked 1 11 30)},
+                                      "magd:c:a:1" #{(listing-liked 1 11 30)},
+                                      "magd:c:l:12" #{(listing-liked 2 12 10)},
+                                      "magd:c:a:2" #{(listing-liked 2 12 10)}}
+
+    (expire-cached-stories)
+
+    (cached-stories @story-cache) => {"magd:c:l:11" #{(listing-liked 1 11 30)},
+                                      "magd:c:a:1" #{(listing-liked 1 11 30)}}
+    )
+  )

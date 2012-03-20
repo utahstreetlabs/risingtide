@@ -1,7 +1,8 @@
 (ns risingtide.digesting-cache
   (:use risingtide.core)
   (:require [clojure.set :as set]
-            [risingtide.stories :as stories]))
+            [risingtide.stories :as stories])
+  (:import java.util.Date))
 
 (defn- empty-cache
   ;; take arbitrary args to work with swap
@@ -15,6 +16,27 @@
 (defn cached-stories
   [cache]
   (dissoc cache :low-score :high-score))
+
+(defn expiration-time
+  []
+  (- (.getTime (Date.)) (* 24 60 60 1000)))
+
+(defn expire-cached-story
+  [set story]
+  (if (> (:score story) (expiration-time))
+    (conj set story)
+    set))
+
+(defn expire-cached-story-set
+  [cache [key story-set]]
+  (let [new-story-set (reduce expire-cached-story #{} story-set)]
+    (if (empty? new-story-set)
+      (dissoc cache key)
+      (assoc cache key new-story-set))))
+
+(defn expire-cached-stories
+  []
+  (swap! story-cache #(reduce expire-cached-story-set % (cached-stories %))))
 
 (defn reset-cache! [] (swap! story-cache empty-cache))
 
@@ -38,3 +60,6 @@
 (defn cache-story
   [story score]
   (swap! story-cache add-story story score))
+
+
+

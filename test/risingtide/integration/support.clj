@@ -1,5 +1,6 @@
 (ns risingtide.integration.support
-  (:use [risingtide.core])
+  (:use risingtide.core
+        risingtide.test)
   (:require [clojure.data.json :as json]
             [accession.core :as redis]
             [risingtide.key :as key]
@@ -36,32 +37,6 @@
 (def eggs 12)
 (def muffins 13)
 
-;; stories
-
-(defn listing-story
-  [listing-id actor-id type]
-  {:listing_id listing-id :actor_id actor-id :type type})
-
-(defn listing-activated
-  [listing-id actor-id]
-  (listing-story listing-id actor-id "listing_activated"))
-
-(defn listing-liked
-  [listing-id actor-id]
-  (listing-story listing-id actor-id "listing_liked"))
-
-(defn listing-shared
-  [listing-id actor-id]
-  (listing-story listing-id actor-id "listing_shared"))
-
-(defn listing-sold
-  [listing-id actor-id]
-  (listing-story listing-id actor-id "listing_sold"))
-
-(defn listing-commented
-  [listing-id actor-id]
-  (listing-story listing-id actor-id "listing_commented"))
-
 ;; feeds
 
 (defn encoded-feed
@@ -84,23 +59,23 @@
 
 (defn activates
   [actor-id listing-id]
-  (jobs/add-story! conn (listing-activated listing-id actor-id)))
+  (jobs/add-story! conn (listing-activated actor-id listing-id)))
 
 (defn likes
   [actor-id listing-id]
-  (jobs/add-story! conn (listing-liked listing-id actor-id)))
+  (jobs/add-story! conn (listing-liked actor-id listing-id)))
 
 (defn shares
   [actor-id listing-id]
-  (jobs/add-story! conn (listing-shared listing-id actor-id)))
+  (jobs/add-story! conn (listing-shared actor-id listing-id)))
 
 (defn sells
   [actor-id listing-id]
-  (jobs/add-story! conn (listing-sold listing-id actor-id)))
+  (jobs/add-story! conn (listing-sold actor-id listing-id)))
 
 (defn comments-on
   [actor-id listing-id]
-  (jobs/add-story! conn (listing-commented listing-id actor-id)))
+  (jobs/add-story! conn (listing-commented actor-id listing-id)))
 
 ;; reset
 

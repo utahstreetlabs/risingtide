@@ -13,17 +13,6 @@
 (def cls key/card-listing-story)
 
 (facts
-  (compile-interested-feed-keys
-   ["feed1" "feed2" "feed3" "feed4" "feed5"]
-   [true true, true false, false true, false false, true true] 2) => ["feed1" "feed2" "feed3" "feed5"]
-
-   (let [conn {}
-         story {:type :listing_activated :actor_id 1 :listing_id 3}
-         tokens (interest-tokens story)]
-     (interested-feeds conn ["magt:f:u:1:c" "magt:f:u:2:c" "magt:f:u:3:c"] story) => ["magt:f:u:1:c" "magt:f:u:2:c"]
-     (provided
-       (interests {} ["1" "2" "3"] tokens) => [true true, true false, false false]))
-
    (actor-story-sets {:type "listing_activated" :actor_id 1}) => [(cas 1)]
    (actor-story-sets {:type "user_joined" :actor_id 1}) => [(nas 1)]
 

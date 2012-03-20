@@ -18,7 +18,7 @@
   (apply redis/with-connection conn
          (concat
           (interests/add-interest user-id (first-char type) object-id)
-          (feed/redigest conn [(key/user-feed user-id "c") (key/user-feed user-id "n")]))))
+          (feed/redigest-user-feeds conn [(key/user-feed user-id "c") (key/user-feed user-id "n")]))))
 
 (defn remove-interest!
   [conn type [user-id object-id]]
@@ -36,9 +36,9 @@
     (apply redis/with-connection conn
            (concat
             (map #(redis/zadd % time encoded-story) (stories/destination-story-sets story))
-            (feed/redigest conn user-feeds))
-           ;; TODO: update everything feed
-           )))
+            (feed/redigest-user-feeds conn user-feeds)
+            (feed/redigest-everything-feed)
+            ))))
 
 (defn- process-story-job!
   [conn json-message]

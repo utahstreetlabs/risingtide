@@ -68,6 +68,12 @@
   [& stories]
   (map json/read-json (map story/encode stories)))
 
+(defn everything-feed
+  []
+  (map json/read-json
+       (redis/with-connection conn
+         (redis/zrange (key/everything-feed) 0 1000000000))))
+
 (def empty-feed [])
 
 ;; actions

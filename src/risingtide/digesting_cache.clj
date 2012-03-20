@@ -9,7 +9,12 @@
   {:low-score (now)
    :high-score (now)})
 
+;; TODO: need a cache expiration thread
 (def story-cache (atom (empty-cache)))
+
+(defn cached-stories
+  [cache]
+  (dissoc cache :low-score :high-score))
 
 (defn reset-cache! [] (swap! story-cache empty-cache))
 
@@ -17,6 +22,10 @@
   "like zunionstore but without the store"
   [cache interesting-keys]
   (apply set/union (map cache interesting-keys)))
+
+(defn all-stories
+  [cache]
+  (apply set/union (vals (cached-stories cache))))
 
 (defn add-story
   [cache story score]

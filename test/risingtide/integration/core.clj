@@ -1,5 +1,5 @@
 (ns risingtide.integration.core
-  (:use [risingtide.integration.support])
+  (:use risingtide.integration.support)
   (:use [midje.sweet])
   (:require [risingtide.stories :as story]))
 
@@ -64,3 +64,23 @@
                            (listing-liked eggs jon))
   (feed-for-jim :card) => empty-feed)
 
+(fact "the everything feed contains (allthethings)"
+  (on-copious
+   (jim likes ham)
+   (rob interested-in-user jim)
+   (rob interested-in-user jon)
+   (jim likes bacon)
+   (jon likes bacon)
+   (jon likes eggs)
+   (bcm likes bacon)
+   (dave shares muffins)) ;; NOTE THAT THIS HAS NEVER HAPPENED >:o
+
+  (everything-feed) => (encoded-feed
+                        (listing-liked ham jim)
+                        (listing-liked eggs jon)
+                        (story/multi-actor-digest bacon "listing_liked" [jim jon bcm])
+                        (listing-shared muffins dave))
+  (feed-for-rob :card) => (encoded-feed
+                           (listing-liked ham jim)
+                           (story/multi-actor-digest bacon "listing_liked" [jim jon])
+                           (listing-liked eggs jon)))

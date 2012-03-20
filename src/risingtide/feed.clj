@@ -57,7 +57,16 @@ interest keys for card feeds"
   [stories]
   (flatten (map scored-encoded-story stories)))
 
-(defn redigest
+(defn replace-feed-head
+  [feed stories low-score high-score]
+  (if (empty? stories)
+    []
+    [(redis/multi)
+     (redis/zremrangebyscore feed low-score high-score)
+     (apply redis/zadd feed (scored-encoded-stories stories))
+     (redis/exec)]))
+
+(defn redigest-user-feeds
   [conn destination-feeds]
   ;; don't feel awesome about how I'm getting high/low scores to
   ;; pass to zremrangebyscore - should perhaps actually look through
@@ -69,12 +78,12 @@ interest keys for card feeds"
                               (map #(dc/stories-for-interests cache %)
                                    (interesting-keys-for-feeds conn destination-feeds)))]
     (flatten
-     (map
-      (fn [feed stories]
-        (if (> (count stories) 0)
-          [(redis/multi)
-           (redis/zremrangebyscore feed low-score high-score)
-           (apply redis/zadd feed (scored-encoded-stories stories))
-           (redis/exec)]
-          []))
-      destination-feeds digested-stories))))
+     (map replace-feed-head destination-feeds digested-stories (repeat low-score) (repeat high-score)))))
+
+(defn redigest-everything-feed
+  []
+  (let [cache @dc/story-cache
+        low-score (:low-score cache)
+        high-score (:high-score cache)]
+    (replace-feed-head (key/everything-feed) (digest/digest (dc/all-stories cache))
+                       low-score high-score)))

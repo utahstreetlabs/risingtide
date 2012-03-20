@@ -130,16 +130,16 @@
 
 (defn multi-action-digest
   ([listing-id actor-id actions score]
-     {:type "listing_multi_action" :actor_id actor-id :listing_id listing-id :types actions :score score})
+     {:type :listing_multi_action :actor_id actor-id :listing_id listing-id :types actions :score score})
   ([listing-id actor-id actions] (multi-action-digest listing-id actor-id actions nil)))
 
 (defn multi-actor-digest
   ([listing-id action actor-ids score]
-     {:type "listing_multi_actor" :listing_id listing-id :action action :actor_ids actor-ids :score score})
+     {:type :listing_multi_actor :listing_id listing-id :action action :actor_ids actor-ids :score score})
   ([listing-id action actor-ids] (multi-actor-digest listing-id action actor-ids nil)))
 
 (defn multi-actor-multi-action-digest
   ([listing-id actions score]
-     {:type "listing_multi_actor_multi_action" :listing_id listing-id :types actions :score score})
+     {:type :listing_multi_actor_multi_action :listing_id listing-id :types actions :score score})
   ([listing-id actions] (multi-actor-multi-action-digest listing-id actions nil)))
 

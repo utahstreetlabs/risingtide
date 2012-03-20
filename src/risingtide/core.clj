@@ -18,7 +18,11 @@
   (apply redis/query "zunionstore" dest-key
          (count source-keys) (concat source-keys options)))
 
-
+(defn safe-print-stack-trace
+  [throwable ns]
+  (try
+    (.printStackTrace throwable (log/log-stream :error ns))
+    (catch Throwable t (log/error "failed to print stack trace with error" t))))
 
 (comment
   (redis/with-connection (redis/connection-map {}) (redis/lpush "resque:queue:stories" "{\"class\":\"Stories::AddInterestInActor\",\"args\":[47,634],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-aef04660348f5f018d1f\"}}"))
@@ -31,7 +35,7 @@
 (redis/with-connection (redis/connection-map {}) (redis/lpush "resque:queue:stories" "{\"class\":\"Stories::RemoveInterestInActor\",\"args\":[47,634],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-aef04660348f5f018d1f\"}}"))
   (redis/with-connection (redis/connection-map {}) (redis/lpop "resque:queue:stories"))
 
-  (redis/with-connection (redis/connection-map {}) (redis/lpush "resque:queue:stories" "{\"class\":\"Stories::Create\",\"args\":[{\"listing_id\":799,\"tag_ids\":[1],\"type\":\"listing_activated\",\"actor_id\":47}],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}"))
+(dotimes [n 10000]  (redis/with-connection (redis/connection-map {}) (redis/lpush "resque:queue:stories" "{\"class\":\"Stories::Create\",\"args\":[{\"listing_id\":799,\"tag_ids\":[1],\"type\":\"listing_activated\",\"actor_id\":47}],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}")))
 
 
   "{\"class\":\"Stories::AddInterestsInListing\",\"args\":[799],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}"
@@ -40,3 +44,5 @@
 nil
 
  )
+
+

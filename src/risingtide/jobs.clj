@@ -18,13 +18,15 @@
   (apply redis/with-connection conn
          (concat
           (interests/add-interest user-id (first-char type) object-id)
-          (feed/redigest-user-feeds conn [(key/user-feed user-id "c") (key/user-feed user-id "n")]))))
+          (feed/redigest-user-feeds conn [(key/user-feed user-id "c") (key/user-feed user-id "n")])))
+  (log/info "added interest in" type object-id "to" user-id))
 
 (defn remove-interest!
   [conn type [user-id object-id]]
   (log/info "removing interest in" type object-id "to" user-id)
   (apply redis/with-connection conn
-         (interests/remove-interest user-id (first-char type) object-id)))
+         (interests/remove-interest user-id (first-char type) object-id))
+  (log/info "removed interest in" type object-id "to" user-id))
 
 (defn add-story!
   [conn story]
@@ -37,8 +39,8 @@
            (concat
             (map #(redis/zadd % time encoded-story) (stories/destination-story-sets story))
             (feed/redigest-user-feeds conn user-feeds)
-            (feed/redigest-everything-feed)
-            ))))
+            (feed/redigest-everything-feed)))
+    (log/info "added" encoded-story)))
 
 (defn- process-story-job!
   [conn json-message]
@@ -54,11 +56,12 @@
       "Stories::Create" (add-story! conn (first args)))))
 
 (defn process-story-jobs-from-queue!
-  [conn queue-key]
+  [run? conn queue-key]
   ;; doseq is not lazy, and does not retain the head of the seq: perfect!
-  (doseq [json-message (resque/jobs conn queue-key)]
+  (doseq [json-message (resque/jobs run? conn queue-key)]
     (try
       (process-story-job! conn json-message)
       (catch Exception e
         (log/error "failed to process job:" json-message "with" e)
-        (.printStackTrace e)))))
+        (safe-print-stack-trace e "jobs")))))
+

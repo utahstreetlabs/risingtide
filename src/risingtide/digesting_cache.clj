@@ -69,9 +69,11 @@
                              :low-score low-score))))
 
 (defn cache-expiration-thread
-  [cache-to-expire expire-every-ms ttl]
+  [run? cache-to-expire expire-every-ms ttl]
   (future
-    (while true
-      (let [expiration-time (-  (.getTime (Date.)) ttl)]
-       (expire-cached-stories cache-to-expire expiration-time))
-      (Thread/sleep expire-every-ms))))
+    (loop [last-run (now)]
+      (let [run-next (+ last-run expire-every-ms)
+            expiration-time (-  (.getTime (Date.)) ttl)]
+        (expire-cached-stories cache-to-expire expiration-time)
+        (while (and @run? (< (now) run-next)) (Thread/sleep 500))
+        (when @run? (recur run-next))))))

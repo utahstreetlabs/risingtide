@@ -8,15 +8,16 @@
              [interests :as interests]
              [feed :as feed]
              [resque :as resque]
-             [stories :as stories]]))
+             [stories :as stories]
+             [key :as key]
+             [digesting-cache :as dc]]))
 
 (defn- add-interest!
   [conn type [user-id object-id]]
   (log/info "adding interest in" type object-id "to" user-id)
-  (redis/with-connection conn
+  (apply redis/with-connection conn
     (interests/add-interest user-id (first-char type) object-id)
-    (feed/build-feed :card user-id (feed/interesting-keys conn :card user-id))
-    (feed/build-feed :network user-id (feed/interesting-keys conn :network user-id))))
+    (feed/redigest-queries conn [(key/user-feed user-id "c") (key/user-feed user-id "n")])))
 
 (defn- remove-interest!
   [conn type [user-id object-id]]
@@ -27,11 +28,16 @@
 (defn- add-story!
   [conn story]
   (let [time (.getMillis (t/now))
-        encoded-story (stories/encode story)]
+        encoded-story (stories/encode story)
+        user-feeds (stories/destination-user-feeds conn story)]
     (log/info "adding" encoded-story)
+    (dc/cache-story story time)
     (apply redis/with-connection conn
-           (map #(redis/zadd % time encoded-story)
-                (stories/destination-feeds conn story)))))
+           (concat
+            (map #(redis/zadd % time encoded-story) (stories/destination-story-sets story))
+            (feed/redigest-queries conn user-feeds))
+           ;; TODO: update everything feed
+           )))
 
 (defn- process-story-job!
   [conn json-message]

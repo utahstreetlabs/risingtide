@@ -3,7 +3,10 @@
   (:use risingtide.core)
   (:require [clojure.tools.logging :as log]
             [accession.core :as redis]
-            [risingtide.key :as key]))
+            [risingtide.key :as key]
+            [risingtide.digest :as digest]
+            [risingtide.digesting-cache :as dc]
+            [risingtide.stories :as stories]))
 
 (def interests-for-feed-type
   {:card (map first-char [:actor :listing :tag])
@@ -23,17 +26,55 @@ interest keys for card feeds"
   "given a feed type keyword return the single character name to use when constructing keys"
   (first-char feed-type))
 
+(defn interesting-key-query
+  [feed-type user-id]
+  (apply redis/sunion (feed-source-interest-keys feed-type user-id)))
+
 (defn interesting-keys
   "return the keys of sets that should be included in the a user's feed of the given type"
   [conn feed-type user-id]
   (let [f (feed-type-key feed-type)]
     (map #(key/format-key f %)
          (redis/with-connection conn
-           (apply redis/sunion (feed-source-interest-keys feed-type user-id))))))
+           (interesting-key-query feed-type user-id)))))
 
 (defn build-feed
   "returns a query that will build and store a feed of the given type for a user"
-  [feed-type user-id interest-keys]
+  [feed-type user-id interesting-story-keys]
   (let [feed-key (key/user-feed user-id (feed-type-key feed-type))]
     (log/info "Generating feed" feed-key)
-    (zunionstore feed-key interest-keys "AGGREGATE" "MIN")))
+    (zunionstore feed-key interesting-story-keys "AGGREGATE" "MIN")))
+
+(defn interesting-keys-for-feeds
+  [conn feeds]
+  (map #(apply interesting-keys conn (key/feed-type-user-id-from-key %)) feeds))
+
+(defn scored-encoded-story
+  [story]
+  [(:score story) (stories/encode story)])
+
+(defn scored-encoded-stories
+  [stories]
+  (flatten (map scored-encoded-story stories)))
+
+(defn redigest-queries
+  [conn destination-feeds]
+  ;; don't feel awesome about how I'm getting high/low scores to
+  ;; pass to zremrangebyscore - should perhaps actually look through
+  ;; digested stories for high/low scores?
+  (let [cache @dc/story-cache
+        low-score (:low-score cache)
+        high-score (:high-score cache)
+        digested-stories (map digest/digest
+                              (map #(dc/stories-for-interests cache %)
+                                   (interesting-keys-for-feeds conn destination-feeds)))]
+    (flatten
+     (map
+      (fn [feed stories]
+        (if (> (count stories) 0)
+          [(redis/multi)
+           (redis/zremrangebyscore feed low-score high-score)
+           (apply redis/zadd feed (scored-encoded-stories stories))
+           (redis/exec)]
+          []))
+      destination-feeds digested-stories))))

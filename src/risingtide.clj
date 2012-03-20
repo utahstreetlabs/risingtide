@@ -9,4 +9,4 @@
     (log/info "Starting Rising Tide: processing story jobs from" queue-key "on Redis instance at" con)
     (jobs/process-story-jobs-from-queue! con queue-key)))
 
-;(-main)
+;;(-main)

@@ -1,6 +1,6 @@
 (ns risingtide.key
   "encapsulate key naming conventions for risingtide"
-  (:use [risingtide.core :only [env]])
+  (:use [risingtide.core :only [env first-char]])
   (:require [clojure.string :as s]))
 
 (defn env-prefix
@@ -57,8 +57,14 @@
 
 (defn user-feed
   [id type]
-  (feed "u" id type))
+  (feed "u" id (first-char type)))
 
 (defn everything-feed
   []
   (feed "c"))
+
+(def feed-type {"c" :card "n" :network})
+
+(defn feed-type-user-id-from-key
+  [key]
+  (let [parts (.split key ":")] [(feed-type (aget parts 4)) (aget parts 3)]))

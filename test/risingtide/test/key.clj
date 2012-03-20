@@ -24,5 +24,8 @@
 
   (everything-feed) => "magt:f:c"
 
+  (feed-type-user-id-from-key "magt:f:u:47:c") => [:card "47"]
+  (feed-type-user-id-from-key "magt:f:u:47:n") => [:network "47"]
+
   (against-background
     (env) => :test))

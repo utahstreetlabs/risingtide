@@ -11,7 +11,7 @@
    (let [v (redis/with-connection conn (redis/lpop queue-name))]
      (if v
        (do (log/info "Processing " v) v)
-       (do (log/info "didn't find anything in" queue-name "on" conn)
+       (do (log/debug "didn't find anything in" queue-name "on" conn)
            (throw (Exception. (str "no value in " queue-name))))))))
 
 (defn- blocking-pop

@@ -73,6 +73,7 @@
       (try (stop)
            (catch Throwable t (log/error "error stopping:" t) (safe-print-stack-trace t "shutdown")))
       (log/info "stopped")
+      (shutdown-agents)
       (.exit (Runtime/getRuntime) 0))))
 
 (defn install-signal-handlers

@@ -12,12 +12,6 @@
   [string-or-keyword]
   (first (name string-or-keyword)))
 
-(defn zunionstore
-  "TODO: push this upstream"
-  [dest-key source-keys & options]
-  (apply redis/query "zunionstore" dest-key
-         (count source-keys) (concat source-keys options)))
-
 (defn safe-print-stack-trace
   [throwable ns]
   (try
@@ -25,17 +19,15 @@
     (catch Throwable t (log/error "failed to print stack trace with error" t))))
 
 (comment
-  (redis/with-connection (redis/connection-map {}) (redis/lpush "resque:queue:stories" "{\"class\":\"Stories::AddInterestInActor\",\"args\":[47,634],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-aef04660348f5f018d1f\"}}"))
+  (redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:stories" "{\"class\":\"Stories::AddInterestInActor\",\"args\":[47,634],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-aef04660348f5f018d1f\"}}"))
 
-(redis/lpush "resque:queue:stories" "hi") =>
-"*3\r\n$5\r\nLPUSH\r\n$20\r\nresque:queue:stories\r\n$2\r\nhi\r\n"
-
-
-
-(redis/with-connection (redis/connection-map {}) (redis/lpush "resque:queue:stories" "{\"class\":\"Stories::RemoveInterestInActor\",\"args\":[47,634],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-aef04660348f5f018d1f\"}}"))
+(redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:stories" "{\"class\":\"Stories::RemoveInterestInActor\",\"args\":[47,634],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-aef04660348f5f018d1f\"}}"))
   (redis/with-connection (redis/connection-map {}) (redis/lpop "resque:queue:stories"))
 
-(dotimes [n 10000]  (redis/with-connection (redis/connection-map {}) (redis/lpush "resque:queue:stories" "{\"class\":\"Stories::Create\",\"args\":[{\"listing_id\":799,\"tag_ids\":[1],\"type\":\"listing_activated\",\"actor_id\":47}],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}")))
+(dotimes [n 10000]  (redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:stories" (str "{\"class\":\"Stories::Create\",\"args\":[{\"listing_id\":799,\"tag_ids\":[1],\"type\":\"listing_activated\",\"actor_id\":" n "}],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}"))))
+
+(redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:stories" (str "{\"class\":\"Stories::Create\",\"args\":[{\"listing_id\":799,\"tag_ids\":[1],\"type\":\"listing_activated\",\"actor_id\":" 1 "}],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}")))
+(redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:stories" (str "{\"class\":\"Stories::Create\",\"args\":[{\"listing_id\":799,\"tag_ids\":[1],\"type\":\"listing_activated\",\"actor_id\":" 2 "}],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}")))
 
 
   "{\"class\":\"Stories::AddInterestsInListing\",\"args\":[799],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}"
@@ -44,5 +36,3 @@
 nil
 
  )
-
-

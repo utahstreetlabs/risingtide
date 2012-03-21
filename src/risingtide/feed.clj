@@ -43,7 +43,7 @@ interest keys for card feeds"
   [feed-type user-id interesting-story-keys]
   (let [feed-key (key/user-feed user-id (feed-type-key feed-type))]
     (log/info "Generating feed" feed-key)
-    (zunionstore feed-key interesting-story-keys "AGGREGATE" "MIN")))
+    (redis/zunionstore feed-key interesting-story-keys "AGGREGATE" "MIN")))
 
 (defn interesting-keys-for-feeds
   [conn feeds]

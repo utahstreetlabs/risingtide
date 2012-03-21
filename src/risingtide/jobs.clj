@@ -58,7 +58,7 @@
 (defn process-story-jobs-from-queue!
   [run? conn queue-key]
   ;; doseq is not lazy, and does not retain the head of the seq: perfect!
-  (doseq [json-message (resque/jobs run? conn queue-key)]
+  (doseq [json-message (take-while identity (resque/jobs run? conn queue-key))]
     (try
       (process-story-job! conn json-message)
       (catch Exception e

@@ -1,4 +1,5 @@
 (ns risingtide
+  (:use risingtide.core)
   (:require [clojure.tools.logging :as log]
             [accession.core :as redis]
             [risingtide.jobs :as jobs]

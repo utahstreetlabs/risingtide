@@ -1,8 +1,10 @@
 (ns risingtide
+  (:use risingtide.core)
   (:require [clojure.tools.logging :as log]
             [accession.core :as redis]
             [risingtide.jobs :as jobs]
             [risingtide.digesting-cache :as dc]
+            [risingtide.config :as config]
             [clj-logging-config.log4j :as log-config])
   (:import [sun.misc Signal SignalHandler]))
 
@@ -84,7 +86,7 @@
 (defn -main []
   (setup-logger)
   (let [config
-        {:connection (redis/connection-map {})
+        {:connection (redis/connection-map (config/redis (env)))
          :story-queue "resque:queue:stories"
          :cache-expiration-frequency 60000
          :cache-ttl (* 1000 60 60 24)}]

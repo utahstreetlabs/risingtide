@@ -11,13 +11,18 @@
    (let [v (redis/with-connection conn (redis/lpop queue-name))]
      (if v
        (do (log/info "Processing " v) v)
-       (do (log/info "didn't find anything in" queue-name "on" conn)
+       (do (log/debug "didn't find anything in" queue-name "on" conn)
            (throw (Exception. (str "no value in " queue-name))))))))
 
 (defn- blocking-pop
   [run? conn queue-name]
   (try-try-again {:sleep 10 :decay #(min 2000 (* Math/E %)) :tries :unlimited}
                  pop-or-throw run? conn queue-name))
+
+(defn jobs-seq
+  [run? conn queue-name]
+  (lazy-seq (cons (blocking-pop run? conn queue-name)
+                  (jobs-seq run? conn queue-name))))
 
 (defn jobs
   "a lazy seq that will read from a redis list
@@ -27,7 +32,5 @@ redis with exponential backoff until it can pop another element
 
 will stop realizing new elements when the underlying polling seq returns nil"
   [run? conn queue-name]
-  (take-while identity
-              (lazy-seq (cons (blocking-pop run? conn queue-name)
-                              (jobs run? conn queue-name)))))
+  (take-while identity (jobs-seq run? conn queue-name)))
 

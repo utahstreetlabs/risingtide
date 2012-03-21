@@ -29,7 +29,7 @@
    (merge config
           {:processor (future (jobs/process-story-jobs-from-queue!
                                run-processor
-                               (:connection config)
+                               (:connections config)
                                (:story-queue config)))
            :run-processor run-processor
            :expiration-thread (dc/cache-expiration-thread
@@ -54,15 +54,11 @@
 
 ;; Logging ;;
 
-(defn setup-logger []
-  ;; capture all stdout/err to logs
-  (log/log-capture! "std")
+(defn setup-loggers [loggers]
   ;; configure the logger
-  (log-config/set-logger! :level :debug
-                          :out (org.apache.log4j.DailyRollingFileAppender.
-                                (org.apache.log4j.EnhancedPatternLayout. org.apache.log4j.EnhancedPatternLayout/TTCC_CONVERSION_PATTERN)
-                                "logs/risingtide.log"
-                                ".yyyy-MM-dd")))
+  (apply log-config/set-loggers! loggers)
+  ;; capture all stdout/err to logs
+  (log/log-capture! "std"))
 
 ;; Signal Handling ;;
 
@@ -85,9 +81,9 @@
 ;; This is where the magic happens ;;
 
 (defn -main []
-  (setup-logger)
+  (setup-loggers (config/loggers (env)))
   (let [config
-        {:connection (redis/connection-map (config/redis (env)))
+        {:connection (config/redis (env))
          :story-queue "resque:queue:stories"
          :cache-expiration-frequency 60000
          :cache-ttl (* 1000 60 60 24)}]

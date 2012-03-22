@@ -5,18 +5,22 @@
             [risingtide.key :as key]
             [clojure.tools.logging :as log]))
 
+(defn interest-token
+  [type object-id]
+  (str type ":" object-id))
+
 (defn add-interest
   [interested-id type object-id]
   [(redis/multi)
    (redis/sadd (key/watchers type object-id) interested-id)
-   (redis/sadd (key/interest interested-id type) (str type ":" object-id))
+   (redis/sadd (key/interest interested-id type) (interest-token type object-id))
    (redis/exec)])
 
 (defn remove-interest
   [interested-id type object-id]
   [(redis/multi)
    (redis/srem (key/watchers type object-id) interested-id)
-   (redis/srem (key/interest interested-id type) (str type ":" object-id))
+   (redis/srem (key/interest interested-id type) (interest-token type object-id))
    (redis/exec)])
 
 (defmacro definterest-helpers

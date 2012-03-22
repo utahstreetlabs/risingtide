@@ -10,5 +10,8 @@
                  [clj-logging-config "1.9.6"]]
   :dev-dependencies [[midje "1.3.1"]
                      [lein-midje "1.0.8"]]
-  :main risingtide)
-
+  :main risingtide
+  :run-aliases {:convert-redis-keys-from-staging-to-dev! risingtide.utils/run-convert-redis-keys-from-staging-to-dev!
+                :build-watcher-indexes risingtide.utils/run-build-watcher-indexes!
+                :check-interest-indexes risingtide.utils/run-check-interest-indexes
+                :check-watcher-indexes risingtide.utils/run-check-watcher-indexes})

@@ -54,8 +54,10 @@
 ;; watchers - lists of interested users by object:id keys
 
 (defn watchers
-  [type id]
-  (format-key type id))
+  ([type id]
+     (format-key "w" type id))
+  ([interest-token]
+     (format-key "w" interest-token)))
 
 (defn actor-watchers
   [actor-id]
@@ -85,6 +87,16 @@
 
 (def feed-type {"c" :card "n" :network})
 
-(defn feed-type-user-id-from-key
+(defn type-user-id-from-feed-key
   [key]
   (let [parts (.split key ":")] [(feed-type (aget parts 4)) (aget parts 3)]))
+
+(defn user-id-type-from-interest-key
+  [key]
+  (let [parts (.split key ":")]
+    [(aget parts 3) (aget parts 4)]))
+
+(defn type-object-id-from-watcher-key
+  [key]
+  (let [parts (.split key ":")]
+    [(aget parts 2) (aget parts 3)]))

@@ -2,6 +2,7 @@
   (:use risingtide.core)
   (:require [clojure.tools.logging :as log]
             [accession.core :as redis]
+            [risingtide.feed :as feed]
             [risingtide.jobs :as jobs]
             [risingtide.digesting-cache :as dc]
             [risingtide.config :as config]
@@ -26,18 +27,20 @@
   [config]
   (let [run-processor (atom true)
         run-expiration-thread (atom true)]
-   (merge config
-          {:processor (future (jobs/process-story-jobs-from-queue!
-                               run-processor
-                               (:connections config)
-                               (:story-queue config)))
-           :run-processor run-processor
-           :expiration-thread (dc/cache-expiration-thread
-                               run-expiration-thread
-                               dc/story-cache
-                               (:cache-expiration-frequency config)
-                               (:cache-ttl config))
-           :run-expiration-thread run-expiration-thread})))
+    (feed/preload-digest-cache! (redis/connection-map (:feeds (:connections config)))
+                                (:cache-ttl config))
+    (merge config
+           {:processor (future (jobs/process-story-jobs-from-queue!
+                                run-processor
+                                (:connections config)
+                                (:story-queue config)))
+            :run-processor run-processor
+            :expiration-thread (dc/cache-expiration-thread
+                                run-expiration-thread
+                                dc/story-cache
+                                (:cache-expiration-frequency config)
+                                (:cache-ttl config))
+            :run-expiration-thread run-expiration-thread})))
 
 (defn stop
   "gracefully shut down the processor"

@@ -4,7 +4,7 @@
                  [org.clojure/data.json "0.1.1"]
                  [org.clojure/tools.logging "0.2.3"]
 
-                 [accession "0.1.1" :exclusions [org.clojure/clojure]]
+                 [utahstreetlabs/accession "0.1.2-usl0" :exclusions [org.clojure/clojure]]
                  [clj-time "0.3.4"]
                  [robert/bruce "0.7.1"]
                  [clj-logging-config "1.9.6"]]

@@ -3,9 +3,10 @@
   (:use risingtide.core)
   (:require [clojure.tools.logging :as log]
             [accession.core :as redis]
-            [risingtide.key :as key]
+            [risingtide.config :as config]
             [risingtide.digest :as digest]
             [risingtide.digesting-cache :as dc]
+            [risingtide.key :as key]
             [risingtide.stories :as stories]))
 
 (def interests-for-feed-type
@@ -43,7 +44,7 @@ interest keys for card feeds"
   [feed-type user-id interesting-story-keys]
   (let [feed-key (key/user-feed user-id (feed-type-key feed-type))]
     (log/info "Generating feed" feed-key)
-    (zunionstore feed-key interesting-story-keys "AGGREGATE" "MIN")))
+    (redis/zunionstore feed-key interesting-story-keys "AGGREGATE" "MIN")))
 
 (defn interesting-keys-for-feeds
   [conn feeds]
@@ -74,7 +75,7 @@ interest keys for card feeds"
   (let [cache @dc/story-cache
         low-score (:low-score cache)
         high-score (:high-score cache)
-        digested-stories (map digest/digest
+        digested-stories (map (if (get config/digest (env) true) digest/digest identity)
                               (map #(dc/stories-for-interests cache %)
                                    (interesting-keys-for-feeds conn destination-feeds)))]
     (flatten

@@ -10,5 +10,7 @@
                  [clj-logging-config "1.9.6"]]
   :dev-dependencies [[midje "1.3.1"]
                      [lein-midje "1.0.8"]]
+  :repositories {"usl-releases" "s3p://utahstreetlabs-maven/releases/"
+                 "usl-snapshots" "s3p://utahstreetlabs-maven/snapshots/"}
   :main risingtide)
 

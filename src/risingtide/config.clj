@@ -24,3 +24,8 @@
   {:development local-log
    :staging syslog
    :production syslog})
+
+(def digest
+  {:development true
+   :staging false
+   :production false})

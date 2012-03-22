@@ -6,6 +6,7 @@
             [risingtide.jobs :as jobs]
             [risingtide.digesting-cache :as dc]
             [risingtide.config :as config]
+            [risingtide.web :as web]
             [clj-logging-config.log4j :as log-config])
   (:import [sun.misc Signal SignalHandler]))
 
@@ -24,7 +25,7 @@
   (stop-thread :run-expiration-thread))
 
 (defn start-processor
-  [config]
+  [config cache]
   (let [run-processor (atom true)
         run-expiration-thread (atom true)]
     (feed/preload-digest-cache! (redis/connection-map (:feeds (:connections config)))
@@ -37,10 +38,11 @@
             :run-processor run-processor
             :expiration-thread (dc/cache-expiration-thread
                                 run-expiration-thread
-                                dc/story-cache
+                                cache
                                 (:cache-expiration-frequency config)
                                 (:cache-ttl config))
-            :run-expiration-thread run-expiration-thread})))
+            :run-expiration-thread run-expiration-thread
+            :cache cache})))
 
 (defn stop
   "gracefully shut down the processor"
@@ -59,9 +61,7 @@
 
 (defn setup-loggers [loggers]
   ;; configure the logger
-  (apply log-config/set-loggers! loggers)
-  ;; capture all stdout/err to logs
-  (log/log-capture! "std"))
+  (apply log-config/set-loggers! loggers))
 
 ;; Signal Handling ;;
 
@@ -85,14 +85,16 @@
 
 (defn -main []
   (setup-loggers (config/loggers (env)))
+  (install-signal-handlers)
+  (web/run! processor)
   (let [config
-        {:connection (config/redis (env))
+        {:connections (config/redis (env))
          :story-queue "resque:queue:stories"
          :cache-expiration-frequency 60000
          :cache-ttl (* 1000 60 60 24)}]
     (log/info "Starting Rising Tide: processing story jobs with config" config)
-    (swap! processor (fn [_] (start-processor config)))
-    (install-signal-handlers)))
+    (swap! processor (fn [_] (start-processor config dc/story-cache)))
+    "Started Rising Tide: The Feeds Must Flow"))
 
 ;;(-main)
 ;;(stop)

@@ -15,6 +15,11 @@
   [user-id type]
   (format-key "i:u" user-id type))
 
+(defn story-pattern
+  "return a pattern matching card and network stories"
+  [& parts]
+  (apply format-key "[cn]" parts))
+
 (defn card-story
   [& parts]
   (apply format-key "c" parts))

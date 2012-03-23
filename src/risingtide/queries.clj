@@ -10,6 +10,11 @@
      (redis/keys (key/user-feed id type)))
   ([] (user-feed-keys "*" "*")))
 
+(defn story-keys
+  "get all network and card story keys"
+  []
+  (redis/keys (key/story-pattern "*")))
+
 (defn card-story-keys
   "get all card story keys"
   []

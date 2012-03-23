@@ -1,0 +1,17 @@
+source 'https://gems.gemfury.com/pQkVXTcjthG3Ap1iMtTR'
+source :rubygems
+
+gemspec
+
+# use these when you need to work with a development version of a dependency. make sure they match the
+# dependencies listed in the gemspec. this complete manual override is necessary since bundler doesn't yet know how
+# to override a single gemspec entry.
+
+#gem 'ladon', :path => '../../ladon'
+
+#group :development, :test do
+#  gem 'rake'
+#  gem 'mocha'
+#  gem 'rspec'
+#  gem 'gemfury'
+#end

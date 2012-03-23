@@ -50,12 +50,21 @@
    :text :tx
    :network :n})
 
+(def long-key (reduce (fn [hash [key val]] (assoc hash val key)) {} short-key))
+
+(defn translate-keys
+  [hash translator]
+  (reduce (fn [h [key val]] (let [s (translator key)] (if s (assoc h s val) h))) {} hash))
+
 (defn encode
   "given a story, encode it into a short-key json format suitable for memory efficient storage in redis"
   [story]
-  (json/json-str
-   (reduce (fn [h [key val]] (let [s (short-key key)] (if s (assoc h s val) h)))
-           {} story)))
+  (json/json-str (translate-keys story short-key)))
+
+(defn decode
+  "given a short-key json encoded story, decode into a long keyed hash"
+  [story]
+  (translate-keys (json/read-json story) long-key))
 
 (defn group
   [story]

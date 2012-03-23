@@ -7,7 +7,8 @@
             [risingtide.digest :as digest]
             [risingtide.digesting-cache :as dc]
             [risingtide.key :as key]
-            [risingtide.stories :as stories]))
+            [risingtide.stories :as stories]
+            [risingtide.queries :as queries]))
 
 (def interests-for-feed-type
   {:card (map first-char [:actor :listing :tag])
@@ -88,3 +89,16 @@ interest keys for card feeds"
         high-score (:high-score cache)]
     (replace-feed-head (key/everything-feed) (digest/digest (dc/all-stories cache))
                        low-score high-score)))
+
+(defn- stories-and-scores
+  [conn start-score end-score]
+  (partition 2
+   (apply concat
+    (apply redis/with-connection conn
+     (map #(redis/zrangebyscore % start-score end-score "WITHSCORES")
+          (redis/with-connection conn (queries/story-keys)))))))
+
+(defn preload-digest-cache!
+  [conn ttl]
+  (doseq [[story score] (stories-and-scores conn (- (now) ttl) (now))]
+    (dc/cache-story (stories/decode story) (Long. score))))

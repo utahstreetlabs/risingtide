@@ -7,6 +7,5 @@
 /checkouts
 /.lein-deps-sum
 logs
-*.swp
-*.gem
-/client/Gemfile.lock
+dump.rdb
+

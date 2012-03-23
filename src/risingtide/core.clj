@@ -1,10 +1,9 @@
 (ns risingtide.core
   (:require [accession.core :as redis]
             [clojure.data.json :as json]
-            [clojure.tools.logging :as log]
-            [clj-time.core :as t]))
+            [clojure.tools.logging :as log]))
 
-(defn now [] (.getMillis (t/now)))
+(defn now [] (long (/ (.getTime (java.util.Date.)) 1000)))
 
 (defn env [] (keyword (or (System/getenv "RISINGTIDE_ENV") "development")))
 

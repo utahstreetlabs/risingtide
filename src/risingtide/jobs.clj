@@ -3,7 +3,6 @@
   (:require [clojure.tools.logging :as log]
             [clojure.data.json :as json]
             [accession.core :as redis]
-            [clj-time.core :as t]
             [risingtide
              [interests :as interests]
              [feed :as feed]
@@ -30,7 +29,7 @@
 
 (defn add-story!
   [conn story]
-  (let [time (.getMillis (t/now))
+  (let [time (now)
         user-feeds (stories/interested-feeds conn story)
         encoded-story (stories/encode story)]
     (log/info "adding" encoded-story)

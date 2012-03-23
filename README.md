@@ -8,6 +8,12 @@ To run the job processor from the command line, do:
 
 bin/lein run
 
+## Development
+
+## Testing
+
+We use [Midje](https://github.com/marick/Midje) to test Rising Tide
+
 ## Utilities
 
 # Build watcher indexes from interest indexes
@@ -29,6 +35,15 @@ get correct key prefixes
 
     lein run :convert-redis-keys-from-staging-to-dev
 
+<<<<<<< HEAD
+=======
+## Design
+
+Rising Tide is designed to be a fast, parallelizable story processor
+and feed digester. It pulls stories off a resque queue, stores them in
+a temporary cache, and then rebuilds and digests the last 24 hours of
+all interested feeds. It also processes new user interests
+>>>>>>> staging
 
 ## License
 

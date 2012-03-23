@@ -102,3 +102,4 @@ interest keys for card feeds"
   [conn ttl]
   (doseq [[story score] (stories-and-scores conn (- (now) ttl) (now))]
     (dc/cache-story (stories/decode story) (Long. score))))
+

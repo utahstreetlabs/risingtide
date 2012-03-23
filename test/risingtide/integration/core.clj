@@ -4,6 +4,10 @@
   (:use [midje.sweet])
   (:require [risingtide.stories :as story]))
 
+(defn wait-a-sec
+  []
+  (Thread/sleep 1000))
+
 (background
  (before :facts (clear-redis!))
  (before :facts (clear-digesting-cache!)))
@@ -51,10 +55,13 @@
 (fact "digest stories coexist peacefully with other stories"
   (on-copious
    (jim likes ham)
+   (wait-a-sec)
    (rob interested-in-user jim)
    (rob interested-in-user jon)
    (jim likes bacon)
+   (wait-a-sec)
    (jon likes bacon)
+   (wait-a-sec)
    (jon likes eggs)
    ;; stuff that shouldn't matter
    (bcm likes bacon))
@@ -68,11 +75,15 @@
 (fact "the everything feed contains (allthethings)"
   (on-copious
    (jim likes ham)
+   (wait-a-sec)
    (rob interested-in-user jim)
    (rob interested-in-user jon)
    (jim likes bacon)
+   (wait-a-sec)
    (jon likes bacon)
+   (wait-a-sec)
    (jon likes eggs)
+   (wait-a-sec)
    (bcm likes bacon)
    (dave shares muffins)) ;; NOTE THAT THIS HAS NEVER HAPPENED >:o
 

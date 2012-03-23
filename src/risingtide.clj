@@ -28,8 +28,10 @@
   [config cache]
   (let [run-processor (atom true)
         run-expiration-thread (atom true)]
+    (log/info "preloading cache")
     (feed/preload-digest-cache! (redis/connection-map (:feeds (:connections config)))
                                 (:cache-ttl config))
+    (log/info "cache preloaded with" (count @cache) "keys, starting processor")
     (merge config
            {:processor (future (jobs/process-story-jobs-from-queue!
                                 run-processor
@@ -91,7 +93,7 @@
         {:connections (config/redis (env))
          :story-queue "resque:queue:stories"
          :cache-expiration-frequency 60000
-         :cache-ttl (* 1000 60 60 24)}]
+         :cache-ttl (* 24 60 60)}]
     (log/info "Starting Rising Tide: processing story jobs with config" config)
     (swap! processor (fn [_] (start-processor config dc/story-cache)))
     "Started Rising Tide: The Feeds Must Flow"))
@@ -100,3 +102,4 @@
 ;;(stop)
 ;;(stop-processor)
 ;;(stop-expiration-thread)
+

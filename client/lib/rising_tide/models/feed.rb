@@ -13,13 +13,14 @@ module RisingTide
         if user_id = options[:interested_user_id]
           parts = parts + [:u, user_id]
         end
-        parts << self.feed_token
+        parts << (options[:feed] || self.feed_token).to_s[0]
         format_key(parts)
       end
 
       # Returns an ordered list of stories from a feed within the limits provide, both in terms of time and counts.
       #
       # @param [Hash] options
+      # @option options [Integer] :interested_user_id the id of the user whose feed we should return
       # @option options [Integer] :offset the number of stories to skip
       # @option options [Integer] :limit the maximum number of documents to return
       # @option options [Time] :before only stories created before this time are considered
@@ -40,8 +41,8 @@ module RisingTide
 
         values = with_redis do |redis|
           fkey = self.key(options)
-          count = benchmark("Get Cardinality") { timeslice ? redis.zcount(fkey, after, before) : redis.zcard(fkey) }
-          benchmark("Fetch values") do
+          count = benchmark("Get Cardinality for #{fkey} #{after} #{before}") { timeslice ? redis.zcount(fkey, after, before) : redis.zcard(fkey) }
+          benchmark("Fetch values for #{fkey} #{after} #{before} #{offset} #{limit}") do
             if timeslice
               redis.zrevrangebyscore(fkey, before, after, withscores: true, limit: [offset, limit])
             else

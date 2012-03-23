@@ -31,8 +31,12 @@ module RisingTide
         Yajl::Parser.new.parse(encoded).each do |key,value|
           story.send("#{REVERSE_ATTRIBUTE_MAP[key.to_sym]}=", (key == 't') ? value.to_sym : value)
         end
-        story.created_at = Time.at(timestamp)
+        story.created_at = Time.at(timestamp.to_i)
         story
+      end
+
+      def find_most_recent(options={})
+        RisingTide::Feed.find_slice(options)
       end
 
       # Returns the most recent stories for each identified listing.

@@ -13,11 +13,11 @@ module RisingTide
     end
 
     def with_redis(&block)
-      self.class.with_redis(&block)
+      RedisModel.with_redis(&block)
     end
 
     def format_key(*parts)
-      self.class.format_key(*parts)
+      RedisModel.format_key(*parts)
     end
 
     def self.format_key(*parts)
@@ -47,7 +47,7 @@ module RisingTide
     def self.with_redis(&block)
       # use long-lived connections to redis, but reconnect if the connection has been lost
       # XXX: this approach is not threadsafe, designed specifically for use within unicorn
-      RedisModel.redis = Redis.new(config) unless RedisModel.redis && RedisModel.redis.client.connected?
+      RedisModel.redis = Redis.new(RedisModel.config) unless RedisModel.redis && RedisModel.redis.client.connected?
       block.call(RedisModel.redis)
     end
 

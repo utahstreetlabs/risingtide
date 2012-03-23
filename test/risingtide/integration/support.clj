@@ -95,8 +95,10 @@
 
 (defn- swap-subject-action
   [statement]
-  (let [[subject action & args] statement]
-    (cons action (cons subject args))))
+  (if (= 3 (count statement))
+   (let [[subject action & args] statement]
+     (cons action (cons subject args)))
+   statement))
 
 (defmacro on-copious
   "convenience macro for specifying user-action-subject actions like:

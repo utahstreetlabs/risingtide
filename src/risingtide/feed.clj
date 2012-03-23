@@ -49,7 +49,7 @@ interest keys for card feeds"
 
 (defn interesting-keys-for-feeds
   [conn feeds]
-  (map #(apply interesting-keys conn (key/feed-type-user-id-from-key %)) feeds))
+  (map #(apply interesting-keys conn (key/type-user-id-from-feed-key %)) feeds))
 
 (defn scored-encoded-story
   [story]

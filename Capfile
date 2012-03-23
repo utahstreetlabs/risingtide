@@ -19,7 +19,6 @@ role :app do
   fetch(:domain)
 end
 
-set(:rails_env) { stage }
 set :deploy_via, :remote_cache
 set :scm, 'git'
 set :scm_verbose, true

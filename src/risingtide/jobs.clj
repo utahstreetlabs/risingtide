@@ -56,8 +56,8 @@
 
 (defn process-story-jobs-from-queue!
   [run? connection-specs queue-key]
-  (let [resque-conn (redis/connection-map (:resque connection-specs))
-        feed-conn (redis/connection-map (:feeds connection-specs))]
+  (let [resque-conn (:resque connection-specs)
+        feed-conn (:feeds connection-specs)]
    ;; doseq is not lazy, and does not retain the head of the seq: perfect!
    (doseq [json-message (take-while identity (resque/jobs run? resque-conn queue-key))]
      (try

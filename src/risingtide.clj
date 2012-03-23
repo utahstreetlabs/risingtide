@@ -83,6 +83,11 @@
     (Signal/handle (Signal. "INT") graceful-stop-handler)
     (Signal/handle (Signal. "TERM") graceful-stop-handler)))
 
+(defn- connections
+  []
+  (reduce (fn [m [key val]] (assoc m key (redis/connection-map val))) {}
+          (config/redis (env))))
+
 ;; This is where the magic happens ;;
 
 (defn -main []
@@ -90,7 +95,7 @@
   (install-signal-handlers)
   (web/run! processor)
   (let [config
-        {:connections (config/redis (env))
+        {:connections (connections)
          :story-queue "resque:queue:stories"
          :cache-expiration-frequency 60000
          :cache-ttl (* 24 60 60)}]

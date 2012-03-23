@@ -40,12 +40,17 @@ interest keys for card feeds"
          (redis/with-connection conn
            (interesting-key-query feed-type user-id)))))
 
-(defn build-feed
+(defn build-feed-query
   "returns a query that will build and store a feed of the given type for a user"
-  [feed-type user-id interesting-story-keys]
-  (let [feed-key (key/user-feed user-id (feed-type-key feed-type))]
+  [user-id feed-type interesting-story-keys]
+  (let [feed-key (key/user-feed user-id feed-type)]
     (log/info "Generating feed" feed-key)
     (redis/zunionstore feed-key interesting-story-keys "AGGREGATE" "MIN")))
+
+(defn build-feed
+  [conn user-id feed-type]
+  (redis/with-connection conn
+    (build-feed-query user-id feed-type (interesting-keys conn feed-type user-id))))
 
 (defn interesting-keys-for-feeds
   [conn feeds]
@@ -102,4 +107,18 @@ interest keys for card feeds"
   [conn ttl]
   (doseq [[story score] (stories-and-scores conn (- (now) ttl) (now))]
     (dc/cache-story (stories/decode story) (Long. score))))
+
+(comment
+  (build-feed (redis/connection-map) 47 :card)
+  (build-feed (redis/connection-map) 47 :network)
+
+  (redis/with-connection (redis/connection-map)
+    (redis/zrange (key/user-feed 47 :card) 0 100))
+
+  (redis/with-connection (redis/connection-map)
+    (queries/interest-keys 47 "a"))
+
+  (redis/with-connection (redis/connection-map)
+   (interesting-key-query :card 47))
+  )
 

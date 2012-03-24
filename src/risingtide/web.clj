@@ -3,6 +3,7 @@
         [ring.middleware.resource :only [wrap-resource]]
         [ring.middleware.file-info :only [wrap-file-info]])
   (:require [clojure.tools.logging :as log]
+            [risingtide.digesting-cache :as dc]
             [net.cgrand.enlive-html :as html]))
 
 (html/deftemplate layout "html/layout.html"
@@ -21,7 +22,7 @@
   [processor]
   (sorted-map
    "connections" (:connections processor)
-   "cache size" (count @(:cache processor))
+   "cache size" (count (dc/all-stories @(:cache processor)))
    "cache expiration running" @(:run-expiration-thread processor)
    "processor running" @(:run-processor processor)))
 

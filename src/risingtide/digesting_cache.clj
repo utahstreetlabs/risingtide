@@ -3,16 +3,15 @@
   (:require [clojure.set :as set]
             [risingtide
              [stories :as stories]
-             [key :as key]])
-  (:import java.util.Date))
+             [key :as key]]))
 
 ;;;; Das Cache ;;;;
 
 (defn- empty-cache
   ;; take arbitrary args to work with swap
   [& args]
-  {:low-score 0
-   :high-score 0})
+  {:low-score (now)
+   :high-score (now)})
 
 (def story-cache (atom (empty-cache)))
 
@@ -66,6 +65,10 @@
 
 ;;;; Cache Expiration ;;;;
 
+(defn update-low-score
+  [cache score]
+  (assoc cache :low-score (min score (:high-score cache))))
+
 (defn expire-cached-stories
   [cache-to-expire low-score]
   (letfn
@@ -81,15 +84,15 @@
              (dissoc cache key)
              (assoc cache key new-story-set))))]
 
-    (swap! cache-to-expire #(assoc (reduce expire-cached-story-set % (cached-stories %))
-                             :low-score low-score))))
+    (swap! cache-to-expire
+           #(update-low-score (reduce expire-cached-story-set % (cached-stories %)) low-score))))
 
 (defn cache-expiration-thread
   [run? cache-to-expire expire-every-ms ttl]
   (future
     (loop [last-run (now)]
       (let [run-next (+ last-run expire-every-ms)
-            expiration-time (-  (.getTime (Date.)) ttl)]
+            expiration-time (- (now) ttl)]
         (expire-cached-stories cache-to-expire expiration-time)
         (while (and @run? (< (now) run-next)) (Thread/sleep 500))
         (when @run? (recur run-next))))))

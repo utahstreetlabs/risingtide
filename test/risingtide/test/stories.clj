@@ -23,6 +23,4 @@
    (listing-story-sets {:type "user_joined" :actor_id 1} ) => nil
 
    (followee-story-sets {:type "user_joined" :followee_id 1}) => [(nus 1)]
-   (followee-story-sets {:type "listing_activated"}) => nil
-
-   (against-background (env) => :test))
+   (followee-story-sets {:type "listing_activated"}) => nil)

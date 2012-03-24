@@ -97,7 +97,7 @@ interest keys for card feeds"
   (let [cache @dc/story-cache
         low-score (:low-score cache)
         high-score (:high-score cache)]
-    (replace-feed-head (key/everything-feed) (digest/digest (dc/all-stories cache))
+    (replace-feed-head (key/everything-feed) (digest/digest (dc/all-card-stories cache))
                        low-score high-score)))
 
 (defn- stories-and-scores
@@ -114,6 +114,9 @@ interest keys for card feeds"
     (dc/cache-story (stories/decode story) (Long. score))))
 
 (comment
+  (preload-digest-cache! (redis/connection-map) (* 24 60 60 5))
+  (redis/with-connection
+    (redis/connection-map) (queries/story-keys))
   (build-feed (redis/connection-map) 47 :card)
   (build-feed (redis/connection-map) 47 :network)
 

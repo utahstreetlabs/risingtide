@@ -1,7 +1,9 @@
 (ns risingtide.digesting-cache
   (:use risingtide.core)
   (:require [clojure.set :as set]
-            [risingtide.stories :as stories])
+            [risingtide
+             [stories :as stories]
+             [key :as key]])
   (:import java.util.Date))
 
 ;;;; Das Cache ;;;;
@@ -32,6 +34,20 @@
   [cache]
   (apply set/union (vals (cached-stories cache))))
 
+(defn all-stories-with-key-prefix
+  [cache prefix]
+  (let [card-prefix (key/format-key prefix)]
+   (apply set/union
+          (for [[key val] (cached-stories cache)]
+            (when (.startsWith key card-prefix) val)))))
+
+(defn all-card-stories
+  [cache]
+  (all-stories-with-key-prefix cache "c"))
+
+(defn all-network-stories
+  [cache]
+  (all-stories-with-key-prefix cache "n"))
 
 ;;;; Adding Stories ;;;;
 

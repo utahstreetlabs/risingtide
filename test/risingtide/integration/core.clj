@@ -1,16 +1,64 @@
 (ns risingtide.integration.core
-  (:use risingtide.integration.support
+  (:use risingtide.core
+        risingtide.integration.support
         risingtide.test)
   (:use [midje.sweet])
   (:require [risingtide.stories :as story]))
 
-(defn wait-a-sec
-  []
-  (Thread/sleep 1000))
-
 (background
  (before :facts (clear-redis!))
  (before :facts (clear-digesting-cache!)))
+
+(fact "card feeds are generated correctly"
+  (on-copious
+   (rob interested-in-user jim)
+   (jim activates bacon)
+   (jim likes ham)
+   (dave likes scones)
+   (jim shares eggs)
+   (bcm activates toast)
+   (jim sells muffins)
+   (jim comments-on breakfast-tacos)
+   (jim likes-tag breakfast))
+
+  (feed-for-rob :card) => (encoded-feed
+                           (listing-activated jim bacon)
+                           (listing-liked jim ham)
+                           (listing-shared jim eggs)
+                           (listing-sold jim muffins)
+                           (listing-commented jim breakfast-tacos)
+                           (tag-liked jim breakfast))
+
+  (feed-for-rob :network) => []
+
+  (everything-feed) => (encoded-feed
+                        (listing-activated jim bacon)
+                        (listing-liked jim ham)
+                        (listing-liked dave scones)
+                        (listing-shared jim eggs)
+                        (listing-activated bcm toast)
+                        (listing-sold jim muffins)
+                        (listing-commented jim breakfast-tacos)
+                        (tag-liked jim breakfast)))
+
+(fact "network feeds are generated correctly"
+    (on-copious
+     (rob interested-in-user jim)
+     (rob interested-in-user jon)
+     (jim joins)
+     (jim follows jon)
+     (jim invites mark-z)
+     (jon piles-on mark-z))
+
+    (feed-for-rob :network) => (encoded-feed
+                                (user-joined jim)
+                                (user-followed jim jon)
+                                (user-invited jim mark-z)
+                                (user-piled-on jon mark-z))
+
+    (feed-for-rob :card) => []
+
+    (everything-feed) => [])
 
 (fact "multiple actions by an interesting user are digested"
   (on-copious
@@ -55,13 +103,10 @@
 (fact "digest stories coexist peacefully with other stories"
   (on-copious
    (jim likes ham)
-   (wait-a-sec)
    (rob interested-in-user jim)
    (rob interested-in-user jon)
    (jim likes bacon)
-   (wait-a-sec)
    (jon likes bacon)
-   (wait-a-sec)
    (jon likes eggs)
    ;; stuff that shouldn't matter
    (bcm likes bacon))
@@ -75,15 +120,11 @@
 (fact "the everything feed contains (allthethings)"
   (on-copious
    (jim likes ham)
-   (wait-a-sec)
    (rob interested-in-user jim)
    (rob interested-in-user jon)
    (jim likes bacon)
-   (wait-a-sec)
    (jon likes bacon)
-   (wait-a-sec)
    (jon likes eggs)
-   (wait-a-sec)
    (bcm likes bacon)
    (dave shares muffins)) ;; NOTE THAT THIS HAS NEVER HAPPENED >:o
 

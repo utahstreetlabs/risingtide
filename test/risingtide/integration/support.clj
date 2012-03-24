@@ -12,7 +12,6 @@
 (def conn (redis/connection-map {}))
 
 ;; users
-(json/read-json "[\"b\", \"a\"]")
 (defmacro defuser
   [name id]
   `(do
@@ -30,12 +29,23 @@
 (defuser dave 4)
 (defuser rob 5)
 
+;; profiles
+
+(def mark-z :markz)
+
 ;; listings
 
-(def bacon 10)
-(def ham 11)
-(def eggs 12)
-(def muffins 13)
+(def bacon :bacon)
+(def ham :ham)
+(def eggs :eggs)
+(def muffins :muffins)
+(def breakfast-tacos :breakfast-tacos)
+(def toast :toast)
+(def scones :scones)
+
+;; tags
+
+(def breakfast :breakfast)
 
 ;; feeds
 
@@ -77,14 +87,37 @@
   [actor-id listing-id]
   (jobs/add-story! conn (listing-commented actor-id listing-id)))
 
+(defn likes-tag
+  [actor-id tag-id]
+  (jobs/add-story! conn (tag-liked actor-id tag-id)))
+
+(defn joins
+  [actor-id]
+  (jobs/add-story! conn (user-joined actor-id)))
+
+(defn follows
+  [actor-id followee-id]
+  (jobs/add-story! conn (user-followed actor-id followee-id)))
+
+(defn invites
+  [actor-id invitee-profile-id]
+  (jobs/add-story! conn (user-invited actor-id invitee-profile-id)))
+
+(defn piles-on
+  [actor-id invitee-profile-id]
+  (jobs/add-story! conn (user-piled-on actor-id invitee-profile-id)))
+
+
 ;; reset
 
 (defn clear-redis!
   []
-  (let [keys (redis/with-connection conn (redis/keys "*"))]
-    (when (not (empty? keys))
-      (redis/with-connection conn
-        (apply redis/del keys)))))
+  (if (= (env) :test)
+   (let [keys (redis/with-connection conn (redis/keys "*"))]
+     (when (not (empty? keys))
+       (redis/with-connection conn
+         (apply redis/del keys))))
+   (prn "clearing redis in" (env) "is a super bad idea. let's not.")))
 
 (defn clear-digesting-cache!
   []
@@ -93,12 +126,29 @@
 
 ;; effing macros, how do they work
 
+(defmacro with-increasing-seconds-timeline
+  "In which we control time.
+
+Within the body of this macro, risingtide.core/now will return an ever-increasing value.
+
+Theoretically we can use midje's =streams=> for this, but it doesn't appear to be
+usable in backgrounds yet.
+"
+  [& forms]
+  `(let [current-time# (atom 1000000)
+         current-time-and-advance#
+         (fn []
+           (let [n# @current-time#]
+             (swap! current-time# inc)
+             n#))]
+     (with-redefs
+       [risingtide.core/now current-time-and-advance#]
+       ~@forms)))
+
 (defn- swap-subject-action
   [statement]
-  (if (= 3 (count statement))
-   (let [[subject action & args] statement]
-     (cons action (cons subject args)))
-   statement))
+  (let [[subject action & args] statement]
+    (cons action (cons subject args))))
 
 (defmacro on-copious
   "convenience macro for specifying user-action-subject actions like:
@@ -110,6 +160,5 @@
    (jon likes bacon))
 "
   [& statements]
-  `(do
-     ~@(map swap-subject-action statements)))
-
+  `(with-increasing-seconds-timeline
+    ~@(map swap-subject-action statements)))

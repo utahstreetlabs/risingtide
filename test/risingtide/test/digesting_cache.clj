@@ -18,18 +18,16 @@
     (cache-story (listing-liked 2 12) 10)
     (cache-story (listing-liked 1 11) 30)
 
-    @story-cache => {"magd:c:l:11" #{(listing-liked 1 11 30)},
-                     "magd:c:a:1" #{(listing-liked 1 11 30)},
-                     "magd:c:l:12" #{(listing-liked 2 12 10)},
-                     "magd:c:a:2" #{(listing-liked 2 12 10)}
+    @story-cache => {"magt:c:l:11" #{(listing-liked 1 11 30)},
+                     "magt:c:a:1" #{(listing-liked 1 11 30)},
+                     "magt:c:l:12" #{(listing-liked 2 12 10)},
+                     "magt:c:a:2" #{(listing-liked 2 12 10)}
                      :low-score 0
                      :high-score 30}
 
     (expire-cached-stories story-cache 20)
 
-    @story-cache => {"magd:c:l:11" #{(listing-liked 1 11 30)},
-                     "magd:c:a:1" #{(listing-liked 1 11 30)}
+    @story-cache => {"magt:c:l:11" #{(listing-liked 1 11 30)},
+                     "magt:c:a:1" #{(listing-liked 1 11 30)}
                      :low-score 20
-                     :high-score 30}
-    )
-  )
+                     :high-score 30}))

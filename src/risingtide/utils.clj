@@ -3,6 +3,7 @@
   (:require [accession.core :as redis]
             [risingtide
              [config :as config]
+             [feed :as feed]
              [interests :as interests]
              [key :as key]
              [queries :as queries]]))
@@ -71,6 +72,24 @@
                      (redis/sismember (key/interest user-id type) (interests/interest-token type object-id)))))]))))
   ([] (check-watcher-coherence (env-connection-config))))
 
+;;;; build and truncate a set of feeds
+
+(defn build-feeds!
+  ([conn user-ids]
+     (apply redis/with-connection conn
+      (flatten
+       (for [user-id user-ids]
+         (concat
+          (feed/build-and-truncate-feed conn user-id :card)
+          (feed/build-and-truncate-feed conn user-id :network))))))
+  ([user-ids-string] (build-feeds! (env-connection-config) (read-string (str "[" user-ids-string "]")))))
+
+
+;;;; define "runnable jobs" suitable for using with lein run ;;;;
+;;
+;; right now, this just creates a function name prefixed with run- and
+;; ensures agents are shut down after the given forms are executed
+
 (defmacro defrun
   [name & forms]
   `(defn ~(symbol (str "run-" name))
@@ -90,11 +109,6 @@
 
 (defrun check-watcher-coherence
   (doall (check-watcher-coherence)))
-
-
-
-
-
 
 (comment
   (convert-redis-keys-from-staging-to-dev!)

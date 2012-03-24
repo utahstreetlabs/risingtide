@@ -4,7 +4,6 @@
         [midje.sweet]))
 
 (facts
-  (env-prefix) => "magt"
   (format-key "1" "2") => "magt:1:2"
 
   (interest 24 "a") => "magt:i:u:24:a"
@@ -25,7 +24,4 @@
   (everything-feed) => "magt:f:c"
 
   (type-user-id-from-feed-key "magt:f:u:47:c") => [:card "47"]
-  (type-user-id-from-feed-key "magt:f:u:47:n") => [:network "47"]
-
-  (against-background
-    (env) => :test))
+  (type-user-id-from-feed-key "magt:f:u:47:n") => [:network "47"])

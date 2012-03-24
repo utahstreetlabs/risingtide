@@ -40,12 +40,22 @@ interest keys for card feeds"
          (redis/with-connection conn
            (interesting-key-query feed-type user-id)))))
 
-(defn build-feed
+(defn build-feed-query
   "returns a query that will build and store a feed of the given type for a user"
-  [feed-type user-id interesting-story-keys]
-  (let [feed-key (key/user-feed user-id (feed-type-key feed-type))]
+  [user-id feed-type interesting-story-keys]
+  (let [feed-key (key/user-feed user-id feed-type)]
     (log/info "Generating feed" feed-key)
     (redis/zunionstore feed-key interesting-story-keys "AGGREGATE" "MIN")))
+
+(defn build-feed
+  [conn user-id feed-type]
+  (redis/with-connection conn
+    (build-feed-query user-id feed-type (interesting-keys conn feed-type user-id))))
+
+(defn build-and-truncate-feed
+  [conn user-id feed-type]
+  [(build-feed-query user-id feed-type (interesting-keys conn feed-type user-id))
+   (redis/zremrangebyrank (key/user-feed user-id feed-type) 0 -1001)])
 
 (defn interesting-keys-for-feeds
   [conn feeds]
@@ -87,19 +97,38 @@ interest keys for card feeds"
   (let [cache @dc/story-cache
         low-score (:low-score cache)
         high-score (:high-score cache)]
-    (replace-feed-head (key/everything-feed) (digest/digest (dc/all-stories cache))
+    (replace-feed-head (key/everything-feed) (digest/digest (dc/all-card-stories cache))
                        low-score high-score)))
 
 (defn- stories-and-scores
   [conn start-score end-score]
-  (partition 2
-   (apply concat
-    (apply redis/with-connection conn
-     (map #(redis/zrangebyscore % start-score end-score "WITHSCORES")
-          (redis/with-connection conn (queries/story-keys)))))))
+  (let [stories-and-scores-queries
+        (map #(redis/zrangebyscore % start-score end-score "WITHSCORES")
+             (redis/with-connection conn (queries/story-keys)))]
+    (if (empty? stories-and-scores-queries)
+      []
+      (partition 2 (apply concat
+                          (apply redis/with-connection conn stories-and-scores-queries))))))
 
 (defn preload-digest-cache!
   [conn ttl]
   (doseq [[story score] (stories-and-scores conn (- (now) ttl) (now))]
     (dc/cache-story (stories/decode story) (Long. score))))
+
+(comment
+  (preload-digest-cache! (redis/connection-map) (* 24 60 60 5))
+  (redis/with-connection
+    (redis/connection-map) (queries/story-keys))
+  (build-feed (redis/connection-map) 47 :card)
+  (build-feed (redis/connection-map) 47 :network)
+
+  (redis/with-connection (redis/connection-map)
+    (redis/zrange (key/user-feed 47 :card) 0 100))
+
+  (redis/with-connection (redis/connection-map)
+    (queries/interest-keys 47 "a"))
+
+  (redis/with-connection (redis/connection-map)
+   (interesting-key-query :card 47))
+  )
 

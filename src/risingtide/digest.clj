@@ -9,7 +9,9 @@ when used to reduce a list of stories, produces a nested map with listing ids
 on the outside, types underneath that, and actor ids inside that
 "
   [digested story]
-  (assoc-in digested [:listings (story :listing_id) (story :type) (story :actor_id)] story))
+  (if (:listing_id story)
+    (assoc-in digested [:listings (story :listing_id) (story :type) (story :actor_id)] story)
+    (assoc digested :nodigest (cons story (:nodigest digested)))))
 
 (defn actor-scores
   [actors]
@@ -56,4 +58,4 @@ in order of the score of the first story for that actor"
     (let [single-listing-stories (map single-listing-digest-story (:listings digested))
           ;;TODO single-actor-stories (map single-actor-digest-story (:actors digested))
           ]
-      single-listing-stories)))
+      (concat single-listing-stories (:nodigest digested)))))

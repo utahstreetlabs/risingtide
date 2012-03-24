@@ -52,6 +52,11 @@ interest keys for card feeds"
   (redis/with-connection conn
     (build-feed-query user-id feed-type (interesting-keys conn feed-type user-id))))
 
+(defn build-and-truncate-feed
+  [conn user-id feed-type]
+  [(build-feed-query user-id feed-type (interesting-keys conn feed-type user-id))
+   (redis/zremrangebyrank (key/user-feed user-id feed-type) 0 -1001)])
+
 (defn interesting-keys-for-feeds
   [conn feeds]
   (map #(apply interesting-keys conn (key/type-user-id-from-feed-key %)) feeds))

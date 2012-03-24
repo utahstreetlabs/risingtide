@@ -28,9 +28,15 @@
 (defn handler
   [processor-atom]
   (fn [request]
-    {:status 200
-     :headers {"Content-Type" "text/html"}
-     :body (layout (key-val-table (admin-info @processor-atom)))}))
+    (let [processor (deref processor-atom)]
+      {:status 200
+       :headers {"Content-Type" "text/html"}
+       :body (layout
+              (if processor
+                (if (= "/cache" (:uri request))
+                  (str @(:cache processor))
+                  (key-val-table (admin-info processor)))
+                "server not yet started"))})))
 
 (defn run!
   [processor-atom]

@@ -102,11 +102,13 @@ interest keys for card feeds"
 
 (defn- stories-and-scores
   [conn start-score end-score]
-  (partition 2
-   (apply concat
-    (apply redis/with-connection conn
-     (map #(redis/zrangebyscore % start-score end-score "WITHSCORES")
-          (redis/with-connection conn (queries/story-keys)))))))
+  (let [stories-and-scores-queries
+        (map #(redis/zrangebyscore % start-score end-score "WITHSCORES")
+             (redis/with-connection conn (queries/story-keys)))]
+    (if (empty? stories-and-scores-queries)
+      []
+      (partition 2 (apply concat
+                          (apply redis/with-connection conn stories-and-scores-queries))))))
 
 (defn preload-digest-cache!
   [conn ttl]

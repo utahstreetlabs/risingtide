@@ -18,6 +18,6 @@
   :main risingtide
   :run-aliases {:convert-redis-keys-from-staging-to-dev! risingtide.utils/run-convert-redis-keys-from-staging-to-dev!
                 :build-watcher-indexes! risingtide.utils/run-build-watcher-indexes!
-                :check-interest-indexes risingtide.utils/run-check-interest-indexes
-                :check-watcher-indexes risingtide.utils/run-check-watcher-indexes
+                :check-interest-coherence risingtide.utils/run-check-interest-coherence
+                :check-watcher-coherence risingtide.utils/run-check-watcher-coherence
                 :build-feeds! risingtide.utils/build-feeds!})

@@ -96,7 +96,7 @@
   (web/run! processor)
   (let [config
         {:connections (connections)
-         :story-queue "resque:queue:stories"
+         :story-queue "resque:queue:rising_tide_stories"
          :cache-expiration-frequency 60000
          :cache-ttl (* 24 60 60)}]
     (log/info "Starting Rising Tide: processing story jobs with config" config)

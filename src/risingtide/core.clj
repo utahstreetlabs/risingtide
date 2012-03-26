@@ -19,6 +19,14 @@
     (.printStackTrace throwable (log/log-stream :error ns))
     (catch Throwable t (log/error "failed to print stack trace with error" t))))
 
+(defmacro bench
+  [msg & forms]
+  `(let [start# (.getTime (java.util.Date.))
+         _# (log/debug "executing" ~msg)
+         result# (do ~@forms)]
+     (log/info ~msg "in" (- (.getTime (java.util.Date.)) start#))
+     result#))
+
 (comment
   (redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:stories" "{\"class\":\"Stories::AddInterestInActor\",\"args\":[47,634],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-aef04660348f5f018d1f\"}}"))
 

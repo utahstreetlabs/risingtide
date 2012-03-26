@@ -34,11 +34,13 @@
         encoded-story (stories/encode story)]
     (log/info "adding" encoded-story)
     (dc/cache-story story time)
-    (apply redis/with-connection conn
-           (concat
-            (map #(redis/zadd % time encoded-story) (stories/destination-story-sets story))
-            (feed/redigest-user-feeds conn user-feeds)
-            (feed/redigest-everything-feed)))
+    (log/debug "cached" encoded-story)
+    (bench "redigesting"
+           (apply redis/with-connection conn
+                  (concat
+                   (bench "add story queries" (map #(redis/zadd % time encoded-story) (stories/destination-story-sets story)))
+                   (bench "user feed queries" (feed/redigest-user-feeds conn user-feeds))
+                   (bench "everything feed queries" (feed/redigest-everything-feed)))))
     (log/info "added" encoded-story)))
 
 (defn- process-story-job!

@@ -7,8 +7,9 @@
    :demo {:resque {:host "demo1.copious.com"}
           :feeds {:host "demo1.copious.com"}}
 
-   :production {:resque {:host "resque-redis-master.copious.com"}
-                :feeds {:host "mag-redis-master.copious.com"}}})
+   ;; :production {:resque {:host "resque-redis-master.copious.com"}
+   ;;              :feeds {:host "mag-redis-master.copious.com"}}
+   :production {:resque {} :feeds {}}})
 
 (def digest
   {:development true

@@ -85,6 +85,7 @@
 ;; This is where the magic happens ;;
 
 (defn -main []
+  (log-config/set-logger! :level :debug :out :console)
   (install-signal-handlers)
   (web/run! processor)
   (let [config
@@ -100,4 +101,3 @@
 ;;(stop)
 ;;(stop-processor)
 ;;(stop-expiration-thread)
-

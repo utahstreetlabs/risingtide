@@ -1,7 +1,9 @@
 (ns risingtide.test
-  (:use risingtide.core))
+  (:use risingtide.core)
+  (:require [clj-logging-config.log4j :as log-config]))
 
 (swap! env-atom (constantly :test))
+(log-config/set-logger! :level :debug :out :console)
 
 (defn listing-story
   ([type actor-id listing-id score]

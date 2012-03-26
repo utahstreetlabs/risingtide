@@ -59,12 +59,6 @@
   (log/info "stopped" processor)
   @processor)
 
-;; Logging ;;
-
-(defn setup-loggers [loggers]
-  ;; configure the logger
-  (apply log-config/set-loggers! loggers))
-
 ;; Signal Handling ;;
 
 (def graceful-stop-handler
@@ -91,7 +85,7 @@
 ;; This is where the magic happens ;;
 
 (defn -main []
-  (setup-loggers (config/loggers (env)))
+  (log-config/set-logger! :level :debug :out :console)
   (install-signal-handlers)
   (web/run! processor)
   (let [config
@@ -107,4 +101,3 @@
 ;;(stop)
 ;;(stop-processor)
 ;;(stop-expiration-thread)
-

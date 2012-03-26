@@ -1,7 +1,8 @@
 (ns risingtide.web
   (:use [ring.adapter.jetty :only [run-jetty]]
         [ring.middleware.resource :only [wrap-resource]]
-        [ring.middleware.file-info :only [wrap-file-info]])
+        [ring.middleware.file-info :only [wrap-file-info]]
+        risingtide.core)
   (:require [clojure.tools.logging :as log]
             [risingtide.digesting-cache :as dc]
             [net.cgrand.enlive-html :as html]))
@@ -21,6 +22,7 @@
 (defn admin-info
   [processor]
   (sorted-map
+   "environment" (env)
    "connections" (:connections processor)
    "cache size" (count (dc/all-stories @(:cache processor)))
    "cache expiration running" @(:run-expiration-thread processor)

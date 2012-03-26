@@ -42,7 +42,7 @@ namespace :deploy do
   end
 
   task :stop, :roles => :app, :except => { :no_release => true } do
-    run "#{sudo} stop risingtide"
+    run "#{sudo} stop risingtide ; true"
   end
 
   task :restart, :roles => :app, :except => { :no_release => true } do

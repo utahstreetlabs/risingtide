@@ -85,7 +85,7 @@
 ;; This is where the magic happens ;;
 
 (defn -main []
-  (log-config/set-logger! :level :debug :out :console)
+  (log-config/set-logger! :level :info :out :console)
   (install-signal-handlers)
   (web/run! processor)
   (let [config

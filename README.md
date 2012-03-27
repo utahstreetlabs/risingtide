@@ -2,11 +2,16 @@
 
 Rising Tide processes stories into feeds.
 
+## Setup
+
+    bin/lein plugin install s3-wagon-private 1.0.0
+    bin/setup-lein-auth
+
 ## Usage
 
 To run the job processor from the command line, do:
 
-bin/lein run
+    bin/lein run
 
 ## Development
 
@@ -18,7 +23,7 @@ We use [Midje](https://github.com/marick/Midje) to test Rising Tide
 
 # Build watcher indexes from interest indexes
 
-    lein run :build-watcher-indexes
+    lein run :build-watcher-indexes!
 
 # Verify all interests exist in watcher indexes
 

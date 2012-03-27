@@ -19,6 +19,11 @@
     (isc/add-interest-to-feeds! isc/interesting-story-cache
                                 (interests/interest-token (first-char type) object-id)
                                 feeds-to-update)
+    (doseq [feed feeds-to-update]
+      (when (= 0 (redis/with-connection conn (redis/zcard feed)))
+        (log/info "bootstrapping" feed)
+        (let [[feed-type user-id] (key/type-user-id-from-feed-key feed)]
+         (apply redis/with-connection conn (feed/build-and-truncate-feed conn user-id feed-type)))))
     (apply redis/with-connection conn
            (concat
             (interests/add-interest user-id (first-char type) object-id)

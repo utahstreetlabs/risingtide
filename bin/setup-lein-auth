@@ -1,0 +1,17 @@
+#!/bin/bash
+
+cat <<EOT >> ~/.lein/init.clj
+(def leiningen-auth {"s3p://utahstreetlabs-maven/releases/"
+                     {:username "AKIAJ3OCK6SO4VXWTMLA"
+                      :passphrase "JNm9fEVzghCNLuo0nlZYOq6u6e03yz0isjsfBBgH"}
+                     "s3p://utahstreetlabs-maven/snapshots/"
+                     {:username "AKIAJ3OCK6SO4VXWTMLA"
+                      :passphrase "JNm9fEVzghCNLuo0nlZYOq6u6e03yz0isjsfBBgH"}
+                     "s3p://utahstreetlabs-maven/standalone-releases/"
+                     {:username "AKIAJ3OCK6SO4VXWTMLA"
+                      :passphrase "JNm9fEVzghCNLuo0nlZYOq6u6e03yz0isjsfBBgH"}
+                     "s3p://utahstreetlabs-maven/standalone-snapshots/"
+                     {:username "AKIAJ3OCK6SO4VXWTMLA"
+                      :passphrase "JNm9fEVzghCNLuo0nlZYOq6u6e03yz0isjsfBBgH"}
+                     })
+EOT

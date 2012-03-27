@@ -30,6 +30,11 @@
             (feed/redigest-user-feeds conn feeds-to-update))))
   (log/info "added interest in" type object-id "to" user-id))
 
+(defn add-interests!
+  [conn type [user-ids object-id]]
+  (doseq [user-id user-ids]
+    (add-interest! conn type [user-id object-id])))
+
 (defn remove-interest!
   [conn type [user-id object-id]]
   (log/info "removing interest in" type object-id "to" user-id)
@@ -62,6 +67,7 @@
         args (:args msg)]
     (case (:class msg)
       "Stories::AddInterestInListing" (add-interest! conn :listing args)
+      "Stories::AddBatchInterestsInListing" (add-interests! conn :listing args)
       "Stories::AddInterestInActor" (add-interest! conn :actor args)
       "Stories::AddInterestInTag" (add-interest! conn :tag args)
       "Stories::RemoveInterestInListing" (remove-interest! conn :listing args)

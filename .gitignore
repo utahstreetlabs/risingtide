@@ -8,4 +8,4 @@
 /.lein-deps-sum
 logs
 dump.rdb
-
+*.swp

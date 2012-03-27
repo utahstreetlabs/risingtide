@@ -1,38 +1,7 @@
 require 'spec_helper'
 require 'rising_tide/models/feed'
-require 'rising_tide/models/story'
 
 describe RisingTide::Feed do
-  describe '#feed_type' do
-    it "should return feed types for classes" do
-      RisingTide::CardFeed.feed_type.should == :c
-      RisingTide::NetworkFeed.feed_type.should == :n
-    end
-
-    it "should return feed types from options" do
-      RisingTide::Feed.feed_type(feed: :card).should == :c
-      RisingTide::Feed.feed_type(feed: :network).should == :n
-    end
-  end
-
-  describe '#build' do
-    let(:redis) { stub_redis }
-
-    it 'should sunion and zunionstore' do
-      redis.expects(:sunion).returns(['a:2'])
-      redis.expects(:zunionstore).with('magt:f:u:1:c', ['magt:c:a:2'], aggregate: :MIN)
-      redis.expects(:zremrangebyrank).with('magt:f:u:1:c', 0, -1001)
-      RisingTide::Feed.build(1, feed: :card)
-    end
-
-    it 'should sunion and zunionstore' do
-      redis.expects(:sunion).returns(['a:2'])
-      redis.expects(:zunionstore).with('magt:f:u:1:n', ['magt:n:a:2', 'magt:n:u:1', 'magt:n:a:1'], aggregate: :MIN)
-      redis.expects(:zremrangebyrank).with('magt:f:u:1:n', 0, -1001)
-      RisingTide::Feed.build(1, feed: :network)
-    end
-  end
-
   describe '#find_slice' do
     let(:story_hashes) do
       [{t: :listing_activated, lid: 1, aid: 2}, {t: :listing_liked, lid: 3, aid: 4},

@@ -16,7 +16,7 @@
 (defn safe-print-stack-trace
   [throwable ns]
   (try
-    (.printStackTrace throwable (log/log-stream :error ns))
+    (.printStackTrace throwable)
     (catch Throwable t (log/error "failed to print stack trace with error" t))))
 
 (defmacro bench

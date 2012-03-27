@@ -37,7 +37,8 @@
 (dotimes [n 10000]  (redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:stories" (str "{\"class\":\"Stories::Create\",\"args\":[{\"listing_id\":799,\"tag_ids\":[1],\"type\":\"listing_activated\",\"actor_id\":" n "}],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}"))))
 
 (redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:stories" (str "{\"class\":\"Stories::Create\",\"args\":[{\"listing_id\":799,\"tag_ids\":[1],\"type\":\"listing_activated\",\"actor_id\":" 1 "}],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}")))
-(redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:stories" (str "{\"class\":\"Stories::Create\",\"args\":[{\"listing_id\":799,\"tag_ids\":[1],\"type\":\"listing_activated\",\"actor_id\":" 2 "}],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}")))
+
+(redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:rising_tide_stories" (str "{\"class\":\"Stories::Create\",\"args\":[{\"listing_id\":799,\"tag_ids\":[1],\"type\":\"listing_activated\",\"actor_id\":" 48215 "}],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}")))
 
 (redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:stories" (str "{\"class\":\"Stories::Create\",\"args\":[{\"type\":\"user_joined\",\"actor_id\":47}],\"context\":{\"log_weasel_id\":\"BROOKLYN-RESQUE-52023d69d3bda45328d5\"}}")))
 

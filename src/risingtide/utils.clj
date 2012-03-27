@@ -29,10 +29,13 @@
 (defn build-watcher-indexes!
   ([conn]
      (for [interest-key (redis/with-connection conn (queries/interest-keys))]
-       (let [[user-id type] (key/user-id-type-from-interest-key interest-key)]
-         (apply redis/with-connection conn
-                (for [interest-token (redis/with-connection conn (redis/smembers interest-key))]
-                  (redis/sadd (key/watchers interest-token) user-id))))))
+       (try
+         (let [[user-id type] (key/user-id-type-from-interest-key interest-key)]
+           (apply redis/with-connection conn
+                  (doall
+                   (for [interest-token (redis/with-connection conn (redis/smembers interest-key))]
+                     (redis/sadd (key/watchers interest-token) user-id)))))
+         (catch Exception e (prn e interest-key)))))
   ([] (build-watcher-indexes! (env-connection-config))))
 
 ;;;; interest list/watcher list coherence

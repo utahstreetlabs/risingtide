@@ -92,7 +92,7 @@
         {:connections (connections)
          :story-queue "resque:queue:rising_tide_stories"
          :cache-expiration-frequency 60000
-         :cache-ttl (* 24 60 60)}]
+         :cache-ttl (* 6 60 60)}]
     (log/info "Starting Rising Tide: processing story jobs with config" config)
     (swap! processor (fn [_] (start-processor config dc/story-cache)))
     "Started Rising Tide: The Feeds Must Flow"))

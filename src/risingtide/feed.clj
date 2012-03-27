@@ -66,22 +66,15 @@ interest keys for card feeds"
   [conn feeds]
   (map #(apply interesting-story-keys conn (key/type-user-id-from-feed-key %)) feeds))
 
-(defn scored-encoded-story
-  [story]
-  [(:score story) (stories/encode story)])
-
 (defn scored-encoded-stories
   [stories]
-  (flatten (map scored-encoded-story stories)))
+  (interleave (map :score stories) (map :encoded stories)))
 
 (defn replace-feed-head
   [feed stories low-score high-score]
-  (if (empty? stories)
-    []
-    [(redis/multi)
-     (redis/zremrangebyscore feed low-score high-score)
-     (apply redis/zadd feed (scored-encoded-stories stories))
-     (redis/exec)]))
+  (when (not (empty? stories))
+    [(redis/zremrangebyscore feed low-score high-score)
+     (apply redis/zadd feed (scored-encoded-stories stories))]))
 
 (defn redigest-user-feeds
   [conn destination-feeds]
@@ -91,11 +84,11 @@ interest keys for card feeds"
   (let [cache @dc/story-cache
         low-score (:low-score cache)
         high-score (:high-score cache)
-        digested-stories (map (if (get config/digest (env) true) digest/digest identity)
-                              (map #(dc/stories-for-interests cache %)
-                                   (interesting-keys-for-feeds conn destination-feeds)))]
+        digested-stories (bench "digest" (doall (map (if (get config/digest (env) true) digest/digest identity)
+                              (bench "stories" (doall (map #(dc/stories-for-interests cache %)
+                                   (bench "interesting" (doall (interesting-keys-for-feeds conn destination-feeds)))))))))]
     (flatten
-     (map replace-feed-head destination-feeds digested-stories (repeat low-score) (repeat high-score)))))
+     (bench "replace" (doall (pmap replace-feed-head destination-feeds digested-stories (repeat low-score) (repeat high-score)))))))
 
 (defn redigest-everything-feed
   []

@@ -8,7 +8,8 @@
             [risingtide.digesting-cache :as dc]
             [risingtide.key :as key]
             [risingtide.stories :as stories]
-            [risingtide.queries :as queries]))
+            [risingtide.queries :as queries]
+            [risingtide.interesting-story-cache :as isc]))
 
 (def interests-for-feed-type
   {:card (map first-char [:actor :listing :tag])
@@ -32,13 +33,17 @@ interest keys for card feeds"
   [feed-type user-id]
   (apply redis/sunion (feed-source-interest-keys feed-type user-id)))
 
-(defn interesting-keys
-  "return the keys of sets that should be included in the a user's feed of the given type"
+(defn interesting-story-keys
+  "return the story keys of sets that should be included in the a user's feed of the given type"
   [conn feed-type user-id]
   (let [f (feed-type-key feed-type)]
     (map #(key/format-key f %)
-         (redis/with-connection conn
-           (interesting-key-query feed-type user-id)))))
+         (or
+          (isc/get-interesting-stories-for-feed @isc/interesting-story-cache feed-type user-id)
+          (let [stories
+                (redis/with-connection conn (interesting-key-query feed-type user-id))]
+            (isc/cache-interesting-stories-for-feed! isc/interesting-story-cache stories feed-type user-id)
+            stories)))))
 
 (defn build-feed-query
   "returns a query that will build and store a feed of the given type for a user"
@@ -50,16 +55,16 @@ interest keys for card feeds"
 (defn build-feed
   [conn user-id feed-type]
   (redis/with-connection conn
-    (build-feed-query user-id feed-type (interesting-keys conn feed-type user-id))))
+    (build-feed-query user-id feed-type (interesting-story-keys conn feed-type user-id))))
 
 (defn build-and-truncate-feed
   [conn user-id feed-type]
-  [(build-feed-query user-id feed-type (interesting-keys conn feed-type user-id))
+  [(build-feed-query user-id feed-type (interesting-story-keys conn feed-type user-id))
    (redis/zremrangebyrank (key/user-feed user-id feed-type) 0 -1001)])
 
 (defn interesting-keys-for-feeds
   [conn feeds]
-  (map #(apply interesting-keys conn (key/type-user-id-from-feed-key %)) feeds))
+  (map #(apply interesting-story-keys conn (key/type-user-id-from-feed-key %)) feeds))
 
 (defn scored-encoded-story
   [story]

@@ -9,20 +9,28 @@
              [resque :as resque]
              [stories :as stories]
              [key :as key]
-             [digesting-cache :as dc]]))
+             [digesting-cache :as dc]
+             [interesting-story-cache :as isc]]))
 
 (defn add-interest!
   [conn type [user-id object-id]]
   (log/info "adding interest in" type object-id "to" user-id)
-  (apply redis/with-connection conn
-         (concat
-          (interests/add-interest user-id (first-char type) object-id)
-          (feed/redigest-user-feeds conn [(key/user-feed user-id "c") (key/user-feed user-id "n")])))
+  (let [feeds-to-update (isc/feeds-to-update type user-id)]
+    (isc/add-interest-to-feeds! isc/interesting-story-cache
+                                (interests/interest-token (first-char type) object-id)
+                                feeds-to-update)
+    (apply redis/with-connection conn
+           (concat
+            (interests/add-interest user-id (first-char type) object-id)
+            (feed/redigest-user-feeds conn feeds-to-update))))
   (log/info "added interest in" type object-id "to" user-id))
 
 (defn remove-interest!
   [conn type [user-id object-id]]
   (log/info "removing interest in" type object-id "to" user-id)
+  (isc/remove-interest-from-feeds! isc/interesting-story-cache
+                                   (interests/interest-token (first-char type) object-id)
+                                   (isc/feeds-to-update type user-id))
   (apply redis/with-connection conn
          (interests/remove-interest user-id (first-char type) object-id))
   (log/info "removed interest in" type object-id "to" user-id))

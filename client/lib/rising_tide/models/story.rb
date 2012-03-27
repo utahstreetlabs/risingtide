@@ -5,7 +5,9 @@ module RisingTide
     # map to uncompress keys from json storage
     REVERSE_ATTRIBUTE_MAP = {
       t: :type,
+      ts: :types,
       aid: :actor_id,
+      aids: :actor_ids,
       lid: :listing_id,
       tid: :tag_id,
       bid: :buyer_id,

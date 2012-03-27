@@ -27,7 +27,7 @@
 (defn stories-for-interests
   "like zunionstore but without the store"
   [cache interesting-keys]
-  (apply set/union (map cache interesting-keys)))
+  (distinct (apply concat (map cache interesting-keys))))
 
 (defn all-stories
   [cache]
@@ -52,7 +52,7 @@
 
 (defn add-story
   [cache story score]
-  (let [scored-story (assoc story :score score)]
+  (let [scored-story (assoc (assoc story :score score) :encoded (stories/encode story))]
     (assoc (reduce (fn [c key] (assoc c key (conj (or (c key) #{}) scored-story)))
                    cache (stories/destination-story-sets story))
       :high-score (max score (:high-score cache))

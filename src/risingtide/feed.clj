@@ -66,13 +66,18 @@ interest keys for card feeds"
   [conn feeds]
   (map #(apply interesting-story-keys conn (key/type-user-id-from-feed-key %)) feeds))
 
+(defn scored-encoded-story
+  [story]
+  [(:score story) (stories/encode story)])
+
 (defn scored-encoded-stories
   [stories]
-  (interleave (map :score stories) (map :encoded stories)))
+  (flatten (map scored-encoded-story stories)))
 
 (defn replace-feed-head
   [feed stories low-score high-score]
-  (when (not (empty? stories))
+  (if (empty? stories)
+    []
     [(redis/zremrangebyscore feed low-score high-score)
      (apply redis/zadd feed (scored-encoded-stories stories))]))
 

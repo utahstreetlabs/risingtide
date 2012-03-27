@@ -1,6 +1,7 @@
 (ns risingtide.digest
   (:use risingtide.core)
-  (:require [risingtide.stories :as story]))
+  (:require [risingtide.stories :as story]
+            [risingtide.config :as config]))
 
 (defn digest-story
   "stick a story into a digest aggregator
@@ -54,8 +55,10 @@ in order of the score of the first story for that actor"
 
 (defn digest
   [feed]
-  (let [digested (reduce digest-story {} feed)]
-    (let [single-listing-stories (map single-listing-digest-story (:listings digested))
-          ;;TODO single-actor-stories (map single-actor-digest-story (:actors digested))
-          ]
-      (concat single-listing-stories (:nodigest digested)))))
+  (if (get config/digest (env) true)
+    (let [digested (reduce digest-story {} feed)]
+      (let [single-listing-stories (map single-listing-digest-story (:listings digested))
+            ;;TODO single-actor-stories (map single-actor-digest-story (:actors digested))
+            ]
+        (concat single-listing-stories (:nodigest digested))))
+    feed))

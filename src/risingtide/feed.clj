@@ -89,7 +89,7 @@ interest keys for card feeds"
   (let [cache @dc/story-cache
         low-score (:low-score cache)
         high-score (:high-score cache)
-        digested-stories (bench "digest" (doall (map (if (get config/digest (env) true) digest/digest identity)
+        digested-stories (bench "digest" (doall (map digest/digest
                               (bench "stories" (doall (map #(dc/stories-for-interests cache %)
                                    (bench "interesting" (doall (interesting-keys-for-feeds conn destination-feeds)))))))))]
     (flatten

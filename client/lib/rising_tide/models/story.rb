@@ -29,7 +29,11 @@ module RisingTide
       def decode(encoded, timestamp = 0)
         story = self.new
         Yajl::Parser.new.parse(encoded).each do |key,value|
-          story.send("#{REVERSE_ATTRIBUTE_MAP[key.to_sym]}=", (key == 't') ? value.to_sym : value)
+          if REVERSE_ATTRIBUTE_MAP[key.to_sym]
+            story.send("#{REVERSE_ATTRIBUTE_MAP[key.to_sym]}=", (key == 't') ? value.to_sym : value)
+          else
+            logger.warn "ignoring #{key}"
+          end
         end
         story.created_at = Time.at(timestamp.to_i)
         story

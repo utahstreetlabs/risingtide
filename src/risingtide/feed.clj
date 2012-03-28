@@ -85,9 +85,9 @@ interest keys for card feeds"
   [stories]
   (filter #(do (:feed %) (not (= :ev (:feed %)))) stories))
 
-(defn without-ynf
+(defn without-ylf
   [stories]
-  (filter #(not (= :ynf (:feed %))) stories))
+  (filter #(not (= :ylf (:feed %))) stories))
 
 (defn redigest-user-feeds
   [conn destination-feeds]
@@ -109,7 +109,7 @@ interest keys for card feeds"
         low-score (:low-score cache)
         high-score (:high-score cache)]
     (replace-feed-head (key/everything-feed) (digest/digest
-                                              (without-ynf
+                                              (without-ylf
                                                (dc/all-card-stories cache)))
                        low-score high-score)))
 

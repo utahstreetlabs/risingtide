@@ -20,7 +20,7 @@
    (jim sells muffins)
    (jim comments-on breakfast-tacos)
    (jim likes-tag breakfast)
-   (jim likes danishes {:feed :ynf})
+   (jim likes danishes {:feed :ylf})
    (jim likes croissants {:feed :ev}))
 
   (feed-for-rob :card) => (encoded-feed
@@ -131,7 +131,7 @@
    (jon likes bacon)
    (jon likes eggs)
    (bcm likes bacon)
-   (jim likes toast {:feed :ynf})
+   (jim likes toast {:feed :ylf})
    (dave shares muffins)) ;; NOTE THAT THIS HAS NEVER HAPPENED >:o
 
   (everything-feed) => (encoded-feed

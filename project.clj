@@ -15,7 +15,7 @@
                      [lein-midje "1.0.8"]]
   :repositories {"usl-releases" "s3p://utahstreetlabs-maven/releases/"
                  "usl-snapshots" "s3p://utahstreetlabs-maven/snapshots/"}
-  :jvm-opts ["-Xms50g" "-Xmx50g" "-server"]
+  :jvm-opts ["-Xmx5g" "-server"]
   :main risingtide
   :run-aliases {:convert-redis-keys-from-staging-to-dev! risingtide.utils/run-convert-redis-keys-from-staging-to-dev!
                 :build-watcher-indexes! risingtide.utils/run-build-watcher-indexes!

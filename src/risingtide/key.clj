@@ -5,7 +5,7 @@
 
 (defn env-prefix
   []
-  (str "mag" (first (name (env)))))
+  (str "mag" (first (name env))))
 
 (defn format-key
   [& parts]

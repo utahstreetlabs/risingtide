@@ -22,7 +22,7 @@
 (defn admin-info
   [processor]
   (sorted-map
-   "environment" (env)
+   "environment" env
    "connections" (:connections processor)
    "cache size" (count (dc/all-stories @(:cache processor)))
    "cache expiration running" @(:run-expiration-thread processor)

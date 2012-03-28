@@ -8,8 +8,6 @@
   [(before :facts (reset-cache!))]
 
   (fact
-    (against-background (env) => :test)
-
     (cached-stories (cache-story (listing-liked 1 3) 1234)) =>
     {"magt:c:l:3" #{(listing-liked 1 3 1234)},
      "magt:c:a:1" #{(listing-liked 1 3 1234)}})

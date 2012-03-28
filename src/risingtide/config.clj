@@ -11,5 +11,5 @@
 
 (def digest
   {:development true
-   :staging false
-   :production false})
+   :staging true
+   :production true})

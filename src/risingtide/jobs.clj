@@ -50,7 +50,7 @@
   (let [time (now)
         user-feeds (stories/interested-feeds conn story)
         encoded-story (stories/encode story)]
-    (log/info "adding" encoded-story)
+    (log/info "adding" story)
     (dc/cache-story story time)
     (log/debug "cached" encoded-story)
     (bench "redigesting"
@@ -73,7 +73,7 @@
       "Stories::RemoveInterestInListing" (remove-interest! conn :listing args)
       "Stories::RemoveInterestInActor" (remove-interest! conn :actor args)
       "Stories::RemoveInterestInTag" (remove-interest! conn :tag args)
-      "Stories::Create" (add-story! conn (first args)))))
+      "Stories::Create" (add-story! conn (reduce merge args)))))
 
 (defn process-story-jobs-from-queue!
   [run? connection-specs queue-keys]

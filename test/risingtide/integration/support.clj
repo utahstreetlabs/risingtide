@@ -42,6 +42,8 @@
 (def breakfast-tacos :breakfast-tacos)
 (def toast :toast)
 (def scones :scones)
+(def croissants :croissants)
+(def danishes :danishes)
 
 ;; tags
 
@@ -62,30 +64,22 @@
 (def empty-feed [])
 
 ;; actions
+(defmacro listing-action-helper
+  [name action]
+  `(defn ~name
+     ([actor-id# listing-id# args#]
+        (jobs/add-story! conn (merge args# (~action actor-id# listing-id#))))
+     ([actor-id# listing-id#] (~name actor-id# listing-id# {}))))
 
 (defn interested-in-user
   [actor-one-id actor-two-id]
   (jobs/add-interest! conn :actor [actor-one-id actor-two-id]))
 
-(defn activates
-  [actor-id listing-id]
-  (jobs/add-story! conn (listing-activated actor-id listing-id)))
-
-(defn likes
-  [actor-id listing-id]
-  (jobs/add-story! conn (listing-liked actor-id listing-id)))
-
-(defn shares
-  [actor-id listing-id]
-  (jobs/add-story! conn (listing-shared actor-id listing-id)))
-
-(defn sells
-  [actor-id listing-id]
-  (jobs/add-story! conn (listing-sold actor-id listing-id)))
-
-(defn comments-on
-  [actor-id listing-id]
-  (jobs/add-story! conn (listing-commented actor-id listing-id)))
+(listing-action-helper activates listing-activated)
+(listing-action-helper likes listing-liked)
+(listing-action-helper shares listing-shared)
+(listing-action-helper sells listing-sold)
+(listing-action-helper comments-on listing-commented)
 
 (defn likes-tag
   [actor-id tag-id]

@@ -81,6 +81,14 @@ interest keys for card feeds"
     [(redis/zremrangebyscore feed low-score high-score)
      (apply redis/zadd feed (scored-encoded-stories stories))]))
 
+(defn without-everything
+  [stories]
+  (filter #(do (:feed %) (not (= :ev (:feed %)))) stories))
+
+(defn without-ynf
+  [stories]
+  (filter #(not (= :ynf (:feed %))) stories))
+
 (defn redigest-user-feeds
   [conn destination-feeds]
   ;; don't feel awesome about how I'm getting high/low scores to
@@ -89,9 +97,9 @@ interest keys for card feeds"
   (let [cache @dc/story-cache
         low-score (:low-score cache)
         high-score (:high-score cache)
-        digested-stories (bench "digest" (doall (map digest/digest
-                              (bench "stories" (doall (map #(dc/stories-for-interests cache %)
-                                   (bench "interesting" (doall (interesting-keys-for-feeds conn destination-feeds)))))))))]
+        digested-stories (bench "digest" (doall (map digest/digest (map without-everything
+                           (bench "stories" (doall (map #(dc/stories-for-interests cache %)
+                                                        (bench "interesting" (doall (interesting-keys-for-feeds conn destination-feeds))))))))))]
     (flatten
      (bench "replace" (doall (pmap replace-feed-head destination-feeds digested-stories (repeat low-score) (repeat high-score)))))))
 
@@ -100,7 +108,9 @@ interest keys for card feeds"
   (let [cache @dc/story-cache
         low-score (:low-score cache)
         high-score (:high-score cache)]
-    (replace-feed-head (key/everything-feed) (digest/digest (dc/all-card-stories cache))
+    (replace-feed-head (key/everything-feed) (digest/digest
+                                              (without-ynf
+                                               (dc/all-card-stories cache)))
                        low-score high-score)))
 
 (defn- stories-and-scores

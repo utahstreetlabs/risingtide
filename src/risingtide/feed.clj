@@ -66,13 +66,9 @@ interest keys for card feeds"
   [conn feeds]
   (map #(apply interesting-story-keys conn (key/type-user-id-from-feed-key %)) feeds))
 
-(defn scored-encoded-story
-  [story]
-  [(:score story) (stories/encode story)])
-
 (defn scored-encoded-stories
   [stories]
-  (flatten (map scored-encoded-story stories)))
+  (interleave (map :score stories) (map :encoded stories)))
 
 (defn replace-feed-head
   [feed stories low-score high-score]

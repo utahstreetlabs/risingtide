@@ -8,39 +8,13 @@ module RisingTide
     class << self
       attr_reader :feed_token
 
-      def build(user_id, options = {})
-        fkey = key(interested_user_id: user_id, feed: options[:feed])
-        ftype = feed_type(feed: options[:feed])
-        with_redis do |redis|
-          source_keys = [interest_key(user_id, :a)]
-          if ftype == :c
-            [:l, :t].each {|type| source_keys << interest_key(user_id, type)}
-          end
-          interesting_keys = redis.sunion(*source_keys).map {|k| format_key(ftype, k)}
-          if ftype == :n
-            # add stories where this user is the follower
-            interesting_keys << user_key(user_id)
-            # add stories where this user is the actor
-            interesting_keys << format_key(ftype, :a, user_id)
-          end
-          if interesting_keys.count > 0
-            redis.zunionstore(fkey, interesting_keys, aggregate: :MIN)
-            redis.zremrangebyrank(fkey, 0, -1001)
-          end
-        end
-      end
-
       def key(options = {})
         parts = [:f]
         if user_id = options[:interested_user_id]
           parts = parts + [:u, user_id]
         end
-        parts << feed_type(options)
+        parts << (options[:feed] || self.feed_token).to_s[0]
         format_key(parts)
-      end
-
-      def feed_type(options = {})
-        (options[:feed] || self.feed_token).to_s[0].to_sym
       end
 
       # Returns an ordered list of stories from a feed within the limits provide, both in terms of time and counts.

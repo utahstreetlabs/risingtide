@@ -36,7 +36,7 @@
            {:processor (future (jobs/process-story-jobs-from-queue!
                                 run-processor
                                 (:connections config)
-                                (:story-queue config)))
+                                (:story-queues config)))
             :run-processor run-processor
             :expiration-thread (dc/cache-expiration-thread
                                 run-expiration-thread
@@ -90,7 +90,8 @@
   (web/run! processor)
   (let [config
         {:connections (connections)
-         :story-queue "resque:queue:rising_tide_stories"
+         :story-queues ["resque:queue:rising_tide_priority"
+                        "resque:queue:rising_tide_stories"]
          :cache-expiration-frequency 60000
          :cache-ttl (* 6 60 60)}]
     (log/info "Starting Rising Tide: processing story jobs with config" config)

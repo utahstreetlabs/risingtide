@@ -70,11 +70,11 @@
       "Stories::Create" (add-story! conn (first args)))))
 
 (defn process-story-jobs-from-queue!
-  [run? connection-specs queue-key]
+  [run? connection-specs queue-keys]
   (let [resque-conn (:resque connection-specs)
         feed-conn (:feeds connection-specs)]
    ;; doseq is not lazy, and does not retain the head of the seq: perfect!
-   (doseq [json-message (take-while identity (resque/jobs run? resque-conn queue-key))]
+   (doseq [json-message (take-while identity (resque/jobs run? resque-conn queue-keys))]
      (try
        (process-story-job! feed-conn json-message)
        (catch Exception e

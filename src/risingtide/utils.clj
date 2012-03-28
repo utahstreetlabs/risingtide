@@ -10,17 +10,17 @@
 
 (defn- env-connection-config
   []
-  (redis/connection-map (config/redis (:feeds (env)))))
+  (redis/connection-map (config/redis (:feeds env))))
 
 ;; migrate staging keys to development.
 
 (defn convert-redis-keys-from-staging-to-dev!
   ([con]
-     (if (= :development (env))
+     (if (= :development env)
        (apply redis/with-connection con
               (for [key (redis/with-connection con (redis/keys "*"))]
                 (redis/rename key (.replaceFirst key "mags" "magd"))))
-       (prn "holy shit. you really, really don't want to rename keys in" (env))))
+       (prn "holy shit. you really, really don't want to rename keys in" env)))
   ([] (convert-redis-keys-from-staging-to-dev! (env-connection-config))))
 
 

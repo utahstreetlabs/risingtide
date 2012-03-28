@@ -5,9 +5,7 @@
 
 (defn now [] (long (/ (.getTime (java.util.Date.)) 1000)))
 
-(def env-atom (atom nil))
-
-(defn env [] (or @env-atom (keyword (or (System/getenv "RISINGTIDE_ENV") "development"))))
+(def env (keyword (or (System/getenv "RISINGTIDE_ENV") (System/getenv "RT_ENV") "development")))
 
 (defn first-char
   [string-or-keyword]

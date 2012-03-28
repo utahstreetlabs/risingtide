@@ -55,7 +55,7 @@ in order of the score of the first story for that actor"
 
 (defn digest
   [feed]
-  (if (get config/digest (env) true)
+  (if (get config/digest env true)
     (let [digested (reduce digest-story {} feed)]
       (let [single-listing-stories (map single-listing-digest-story (:listings digested))
             ;;TODO single-actor-stories (map single-actor-digest-story (:actors digested))

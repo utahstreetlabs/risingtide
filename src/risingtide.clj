@@ -80,7 +80,7 @@
 (defn- connections
   []
   (reduce (fn [m [key val]] (assoc m key (redis/connection-map val))) {}
-          (config/redis (env))))
+          (config/redis env)))
 
 ;; This is where the magic happens ;;
 

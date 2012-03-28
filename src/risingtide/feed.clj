@@ -83,11 +83,11 @@ interest keys for card feeds"
 
 (defn without-everything
   [stories]
-  (filter #(do (:feed %) (not (= :ev (:feed %)))) stories))
+  (filter #(not (= "ev" (:feed %))) stories))
 
 (defn without-ylf
   [stories]
-  (filter #(not (= :ylf (:feed %))) stories))
+  (filter #(not (= "ylf" (:feed %))) stories))
 
 (defn redigest-user-feeds
   [conn destination-feeds]

@@ -4,6 +4,7 @@ module RisingTide
   class Story < RedisModel
     # map to uncompress keys from json storage
     REVERSE_ATTRIBUTE_MAP = {
+      a: :action,
       t: :type,
       ts: :types,
       aid: :actor_id,

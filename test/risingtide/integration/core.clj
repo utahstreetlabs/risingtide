@@ -19,7 +19,9 @@
    (bcm activates toast)
    (jim sells muffins)
    (jim comments-on breakfast-tacos)
-   (jim likes-tag breakfast))
+   (jim likes-tag breakfast)
+   (jim likes danishes {:feed :ylf})
+   (jim likes croissants {:feed :ev}))
 
   (feed-for-rob :card) => (encoded-feed
                            (listing-activated jim bacon)
@@ -27,7 +29,8 @@
                            (listing-shared jim eggs)
                            (listing-sold jim muffins)
                            (listing-commented jim breakfast-tacos)
-                           (tag-liked jim breakfast))
+                           (tag-liked jim breakfast)
+                           (listing-liked jim danishes))
 
   (feed-for-rob :network) => []
 
@@ -39,7 +42,9 @@
                         (listing-activated bcm toast)
                         (listing-sold jim muffins)
                         (listing-commented jim breakfast-tacos)
-                        (tag-liked jim breakfast)))
+                        (tag-liked jim breakfast)
+                        (listing-liked jim croissants))
+  )
 
 (fact "network feeds are generated correctly"
     (on-copious
@@ -126,6 +131,7 @@
    (jon likes bacon)
    (jon likes eggs)
    (bcm likes bacon)
+   (jim likes toast {:feed :ylf})
    (dave shares muffins)) ;; NOTE THAT THIS HAS NEVER HAPPENED >:o
 
   (everything-feed) => (encoded-feed
@@ -136,4 +142,5 @@
   (feed-for-rob :card) => (encoded-feed
                            (listing-liked jim ham)
                            (story/multi-actor-digest bacon "listing_liked" [jim jon])
-                           (listing-liked jon eggs)))
+                           (listing-liked jon eggs)
+                           (listing-liked jim toast)))

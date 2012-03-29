@@ -77,13 +77,35 @@ interest keys for card feeds"
     [(redis/zremrangebyscore feed low-score high-score)
      (apply redis/zadd feed (scored-encoded-stories stories))]))
 
-(defn without-everything
-  [stories]
-  (filter #(not (= "ev" (:feed %))) stories))
 
-(defn without-ylf
+(def ev-feed-token "ev")
+(def ev-feed-token? #{ev-feed-token})
+
+(def user-feed-token "ylf")
+(def user-feed-token? #{user-feed-token})
+
+(def default-feeds [ev-feed-token user-feed-token])
+
+(defn for-feed-with-token?
+  [story token token-set]
+  (let [f (get story :feed default-feeds)]
+    (or (= f token) (some token-set f))))
+
+(defn for-everything-feed?
+  [story]
+  (for-feed-with-token? story ev-feed-token ev-feed-token?))
+
+(defn for-user-feed?
+  [story]
+  (for-feed-with-token? story user-feed-token user-feed-token?))
+
+(defn everything-feed-stories
   [stories]
-  (filter #(not (= "ylf" (:feed %))) stories))
+  (filter for-everything-feed? stories))
+
+(defn user-feed-stories
+  [stories]
+  (filter for-user-feed? stories))
 
 (defn redigest-user-feeds
   [conn destination-feeds]
@@ -93,7 +115,7 @@ interest keys for card feeds"
   (let [cache @dc/story-cache
         low-score (:low-score cache)
         high-score (:high-score cache)
-        digested-stories (bench "digest" (doall (map digest/digest (map without-everything
+        digested-stories (bench "digest" (doall (map digest/digest (map user-feed-stories
                            (bench "stories" (doall (map #(dc/stories-for-interests cache %)
                                                         (bench "interesting" (doall (interesting-keys-for-feeds conn destination-feeds))))))))))]
     (flatten
@@ -105,7 +127,7 @@ interest keys for card feeds"
         low-score (:low-score cache)
         high-score (:high-score cache)]
     (replace-feed-head (key/everything-feed) (digest/digest
-                                              (without-ylf
+                                              (everything-feed-stories
                                                (dc/all-card-stories cache)))
                        low-score high-score)))
 

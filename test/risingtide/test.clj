@@ -4,17 +4,17 @@
             [risingtide.stories :as stories]))
 
 (defn listing-story
-  ([type actor-id listing-id score]
-     (let [s {:type type :actor_id actor-id :listing_id listing-id :score score}]
-       (assoc s :encoded (stories/encode s))))
+  ([type actor-id listing-id args]
+     (let [s {:type type :actor_id actor-id :listing_id listing-id}]
+       (merge (assoc s :encoded (stories/encode s)) args)))
   ([type actor-id listing-id] (listing-story type actor-id listing-id nil)))
 
 (defmacro listing-story-helper
   [name]
   `(defn ~name
-     ([actor-id# listing-id# score#]
-        (listing-story ~(.replace (str name) "-" "_") actor-id# listing-id# score#))
-     ([actor-id# listing-id#] (~name actor-id# listing-id# (now)))))
+     ([actor-id# listing-id# args#]
+        (listing-story ~(.replace (str name) "-" "_") actor-id# listing-id# args#))
+     ([actor-id# listing-id#] (~name actor-id# listing-id# {:score (now)}))))
 
 (listing-story-helper listing-activated)
 (listing-story-helper listing-liked)

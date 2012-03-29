@@ -21,7 +21,8 @@
    (jim comments-on breakfast-tacos)
    (jim likes-tag breakfast)
    (jim likes danishes {:feed "ylf"})
-   (jim likes croissants {:feed "ev"}))
+   (jim likes croissants {:feed "ev"})
+   (jim likes omelettes {:feed ["ev" "ylf"]}))
 
   (feed-for-rob :card) => (encoded-feed
                            (listing-activated jim bacon)
@@ -30,7 +31,8 @@
                            (listing-sold jim muffins)
                            (listing-commented jim breakfast-tacos)
                            (tag-liked jim breakfast)
-                           (listing-liked jim danishes))
+                           (listing-liked jim danishes {:feed "ylf"})
+                           (listing-liked jim omelettes {:feed ["ev" "ylf"]}))
 
   (feed-for-rob :network) => []
 
@@ -43,8 +45,8 @@
                         (listing-sold jim muffins)
                         (listing-commented jim breakfast-tacos)
                         (tag-liked jim breakfast)
-                        (listing-liked jim croissants))
-  )
+                        (listing-liked jim croissants {:feed "ev"})
+                        (listing-liked jim omelettes {:feed ["ev" "ylf"]})))
 
 (fact "network feeds are generated correctly"
     (on-copious
@@ -143,4 +145,4 @@
                            (listing-liked jim ham)
                            (story/multi-actor-digest bacon "listing_liked" [jim jon])
                            (listing-liked jon eggs)
-                           (listing-liked jim toast)))
+                           (listing-liked jim toast {:feed "ylf"})))

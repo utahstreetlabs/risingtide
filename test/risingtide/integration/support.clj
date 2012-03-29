@@ -107,7 +107,7 @@
 (defn clear-redis!
   []
   (if (= env :test)
-   (let [keys (redis/with-connection conn (redis/keys "*"))]
+   (let [keys (redis/with-connection conn (key/format-key "*"))]
      (when (not (empty? keys))
        (redis/with-connection conn
          (apply redis/del keys))))

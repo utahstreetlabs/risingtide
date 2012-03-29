@@ -16,7 +16,7 @@
   [conn type [user-id object-id]]
   (log/info "adding interest in" type object-id "to" user-id)
   (let [feeds-to-update (isc/feeds-to-update type user-id)]
-    (isc/add-interest-to-feeds! isc/interesting-story-cache
+    (isc/add-interest-to-feeds! conn isc/interesting-story-cache
                                 (interests/interest-token (first-char type) object-id)
                                 feeds-to-update)
     (doseq [feed feeds-to-update]
@@ -38,7 +38,7 @@
 (defn remove-interest!
   [conn type [user-id object-id]]
   (log/info "removing interest in" type object-id "to" user-id)
-  (isc/remove-interest-from-feeds! isc/interesting-story-cache
+  (isc/remove-interest-from-feeds! conn isc/interesting-story-cache
                                    (interests/interest-token (first-char type) object-id)
                                    (isc/feeds-to-update type user-id))
   (apply redis/with-connection conn

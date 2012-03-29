@@ -11,39 +11,15 @@
             [risingtide.queries :as queries]
             [risingtide.interesting-story-cache :as isc]))
 
-(def interests-for-feed-type
-  {:card (map first-char [:actor :listing :tag])
-   :network (map first-char [:actor])})
-
-(defn- feed-source-interest-keys
-  "given a feed type and a user id, get the keys of sets that will serve
-as sources for that feed
-
-currently, returns the actor interest key for network feeds and actor, listing and tag
-interest keys for card feeds"
-  [feed-type user-id]
-  (map #(key/interest user-id %)
-       (interests-for-feed-type feed-type)))
-
 (defn feed-type-key [feed-type]
   "given a feed type keyword return the single character name to use when constructing keys"
   (first-char feed-type))
-
-(defn interesting-key-query
-  [feed-type user-id]
-  (apply redis/sunion (feed-source-interest-keys feed-type user-id)))
 
 (defn interesting-story-keys
   "return the story keys of sets that should be included in the a user's feed of the given type"
   [conn feed-type user-id]
   (let [f (feed-type-key feed-type)]
-    (map #(key/format-key f %)
-         (or
-          (isc/get-interesting-stories-for-feed @isc/interesting-story-cache feed-type user-id)
-          (let [stories
-                (redis/with-connection conn (interesting-key-query feed-type user-id))]
-            (isc/cache-interesting-stories-for-feed! isc/interesting-story-cache stories feed-type user-id)
-            stories)))))
+    (map #(key/format-key f %) (isc/feed-interest conn @isc/interesting-story-cache user-id feed-type))))
 
 (defn build-feed-query
   "returns a query that will build and store a feed of the given type for a user"

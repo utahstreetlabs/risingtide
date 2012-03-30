@@ -107,10 +107,10 @@
 (defn clear-redis!
   []
   (if (= env :test)
-   (let [keys (redis/with-connection conn (key/format-key "*"))]
-     (when (not (empty? keys))
-       (redis/with-connection conn
-         (apply redis/del keys))))
+    (let [keys (redis/with-connection conn (redis/keys (key/format-key "*")))]
+      (when (not (empty? keys))
+        (redis/with-connection conn
+          (apply redis/del keys))))
    (prn "clearing redis in" env "is a super bad idea. let's not.")))
 
 (defn clear-digesting-cache!

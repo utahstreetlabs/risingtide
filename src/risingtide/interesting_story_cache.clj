@@ -34,7 +34,7 @@ interest keys for card feeds"
 (defn interesting-key-query
   [feed-type user-id]
   (apply redis/sunion (feed-source-interest-keys feed-type user-id)))
-(interesting-key-query :card 47)
+
 (defn get-interesting-stories-for-feed
   ([cache feed-type user-id]
      (get-in cache [user-id feed-type]))

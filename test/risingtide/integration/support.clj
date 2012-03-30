@@ -44,6 +44,7 @@
 (def scones :scones)
 (def croissants :croissants)
 (def danishes :danishes)
+(def omelettes :omelettes)
 
 ;; tags
 

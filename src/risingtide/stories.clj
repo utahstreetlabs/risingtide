@@ -38,7 +38,8 @@
 (def listing-tag-story-types #{:listing_activated :listing_sold})
 
 (def short-key
-  {:action :a
+  {:feed :f
+   :action :a
    :type :t
    :types :ts
    :actor_id :aid

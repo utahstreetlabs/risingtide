@@ -10,32 +10,36 @@
              [stories :as stories]
              [key :as key]
              [digesting-cache :as dc]]))
-(defn add-interest!
-  [redii type [user-id object-id]]
-  (log/info "adding interest in" type object-id "to" user-id)
+
+(defn- add-interest-and-redigest!
+  [redii type user-id object-id]
   ;; store and cache new interests
   (interests/add! redii user-id type object-id)
   ;; rebuild feeds
-  (feed/redigest-user-feeds! redii (interests/feeds-to-update type user-id))
-  (log/info "added interest in" type object-id "to" user-id))
+  (feed/redigest-user-feeds! redii (interests/feeds-to-update type user-id)))
+
+(defn add-interest!
+  [redii type [user-id object-id]]
+  (bench (str "add interest in " type object-id " to " user-id)
+         (add-interest-and-redigest! redii type user-id object-id)))
 
 (defn add-interests!
   [redii type [user-ids object-id]]
-  (doseq [user-id user-ids]
-    (add-interest! redii type [user-id object-id])))
+  (bench (str "add interest in " type object-id " to " (count user-ids) " users ")
+         (doseq [user-id user-ids]
+           (add-interest-and-redigest! redii type user-id object-id))))
 
 (defn remove-interest!
   [redii type [user-id object-id]]
-  (log/info "removing interest in" type object-id "to" user-id)
-  (interests/remove! redii user-id type object-id)
-  (log/info "removed interest in" type object-id "to" user-id))
+  (bench (str "remove interest in " type object-id " to " user-id)
+         (interests/remove! redii user-id type object-id)))
 
 (defn add-story!
   [redii story]
-  (log/info "adding" story)
-  (dc/add! redii story (now))
-  (feed/redigest-user-feeds! redii (stories/interested-feeds redii story))
-  (feed/redigest-everything-feed! redii))
+  (bench (str "add story " story)
+         (dc/add! redii story (now))
+         (feed/redigest-user-feeds! redii (stories/interested-feeds redii story))
+         (feed/redigest-everything-feed! redii)))
 
 (defn- process-story-job!
   [redii json-message]

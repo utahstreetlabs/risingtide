@@ -131,13 +131,32 @@
    (followee-story-sets story)))
 
 (defn destination-sets
-  [conn story]
+  [redii story]
   (concat
    (destination-story-sets story)
    (when (= :c (feed-type (group story))) [(key/everything-feed)])
-   (interested-feeds conn story)))
+   (interested-feeds redii story)))
 
-;; stories
+(defn add!
+  [redii story time]
+  (apply redis/with-connection (:stories redii)
+         (map #(redis/zadd % time (encode story))
+              (destination-story-sets story))))
+
+;; finding existing stories
+
+(defn range-with-scores
+  [redii start-score end-score]
+  (let [stories-and-scores-queries
+        (map #(redis/zrangebyscore % start-score end-score "WITHSCORES")
+             (redis/with-connection (:stories redii) (queries/story-keys)))]
+    (if (empty? stories-and-scores-queries)
+      []
+      (partition 2 (apply concat
+                          (apply redis/with-connection (:stories redii) stories-and-scores-queries))))))
+
+
+;; creating new stories
 
 (defn- stash-encoded
   [s]

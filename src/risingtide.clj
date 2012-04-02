@@ -29,8 +29,7 @@
   (let [run-processor (atom true)
         run-expiration-thread (atom true)]
     (log/info "preloading cache")
-    (feed/preload-digest-cache! (redis/connection-map (:feeds (:connections config)))
-                                (:cache-ttl config))
+    (dc/preload! (:connections config) (:cache-ttl config))
     (log/info "cache preloaded with" (count @cache) "keys, starting processor")
     (merge config
            {:processor (future (jobs/process-story-jobs-from-queue!

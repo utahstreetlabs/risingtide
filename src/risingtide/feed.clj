@@ -21,26 +21,9 @@
   (let [f (feed-type-key feed-type)]
     (map #(key/format-key f %) (interesting/feed-stories redii user-id feed-type))))
 
-(defn build-feed-query
-  "returns a query that will build and store a feed of the given type for a user"
-  [user-id feed-type interesting-story-keys]
-  (let [feed-key (key/user-feed user-id feed-type)]
-    (log/info "Generating feed" feed-key)
-    (redis/zunionstore feed-key interesting-story-keys "AGGREGATE" "MIN")))
-
-(defn build-feed
-  [conn user-id feed-type]
-  (redis/with-connection conn
-    (build-feed-query user-id feed-type (interesting-story-keys conn feed-type user-id))))
-
-(defn build-and-truncate-feed
-  [redii user-id feed-type]
-  [(build-feed-query user-id feed-type (interesting-story-keys redii feed-type user-id))
-   (redis/zremrangebyrank (key/user-feed user-id feed-type) 0 -1001)])
-
 (defn interesting-keys-for-feeds
-  [conn feeds]
-  (map #(apply interesting-story-keys conn (key/type-user-id-from-feed-key %)) feeds))
+  [redii feeds]
+  (map #(apply interesting-story-keys redii (key/type-user-id-from-feed-key %)) feeds))
 
 (defn scored-encoded-stories
   [stories]
@@ -83,8 +66,8 @@
   [stories]
   (filter for-user-feed? stories))
 
-(defn redigest-user-feeds
-  [conn destination-feeds]
+(defn- build-redigest-user-feeds-queries
+  [redii destination-feeds]
   ;; don't feel awesome about how I'm getting high/low scores to
   ;; pass to zremrangebyscore - should perhaps actually look through
   ;; digested stories for high/low scores?
@@ -93,11 +76,17 @@
         high-score (:high-score cache)
         digested-stories (bench "digest" (doall (map digest/digest (map user-feed-stories
                            (bench "stories" (doall (map #(dc/stories-for-interests cache %)
-                                                        (bench "interesting" (doall (interesting-keys-for-feeds conn destination-feeds))))))))))]
+                                                        (bench "interesting" (doall (interesting-keys-for-feeds redii destination-feeds))))))))))]
     (flatten
      (bench "replace" (doall (pmap replace-feed-head destination-feeds digested-stories (repeat low-score) (repeat high-score)))))))
 
-(defn redigest-everything-feed
+(defn redigest-user-feeds!
+  [redii destination-feeds]
+  (bench (str "redigesting" (count destination-feeds) "user feeds")
+         (apply redis/with-connection (:feeds redii)
+                (build-redigest-user-feeds-queries redii destination-feeds))))
+
+(defn- build-redigest-everything-feed-queries
   []
   (let [cache @dc/story-cache
         low-score (:low-score cache)
@@ -107,35 +96,7 @@
                                                (dc/all-card-stories cache)))
                        low-score high-score)))
 
-(defn- stories-and-scores
-  [conn start-score end-score]
-  (let [stories-and-scores-queries
-        (map #(redis/zrangebyscore % start-score end-score "WITHSCORES")
-             (redis/with-connection conn (queries/story-keys)))]
-    (if (empty? stories-and-scores-queries)
-      []
-      (partition 2 (apply concat
-                          (apply redis/with-connection conn stories-and-scores-queries))))))
-
-(defn preload-digest-cache!
-  [conn ttl]
-  (doseq [[story score] (stories-and-scores conn (- (now) ttl) (now))]
-    (dc/cache-story (stories/decode story) (Long. score))))
-
-(comment
-  (preload-digest-cache! (redis/connection-map) (* 24 60 60 5))
-  (redis/with-connection
-    (redis/connection-map) (queries/story-keys))
-  (build-feed (redis/connection-map) 47 :card)
-  (build-feed (redis/connection-map) 47 :network)
-
-  (redis/with-connection (redis/connection-map)
-    (redis/zrange (key/user-feed 47 :card) 0 100))
-
-  (redis/with-connection (redis/connection-map)
-    (queries/interest-keys 47 "a"))
-
-  (redis/with-connection (redis/connection-map)
-   (interesting-key-query :card 47))
-  )
-
+(defn redigest-everything-feed!
+  [redii]
+  (bench "redigesting everything feed"
+         (apply redis/with-connection (:feeds redii) (build-redigest-everything-feed-queries))))

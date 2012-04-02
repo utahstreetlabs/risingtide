@@ -63,34 +63,18 @@ feeds that will need to be updated"
      stories)))
 
 (defn update-feed-interest!
-  [conn cache-atom interest-token feed-keys operation]
+  [redii cache-atom interest-token feed-keys operation]
   (swap! cache-atom
          #(reduce (fn [cache feed-key]
                     (let [[feed-type user-id] (key/type-user-id-from-feed-key feed-key)]
                       (assoc-in cache [user-id feed-type]
-                                (conj (feed-interest conn @cache-atom user-id feed-type) interest-token))))
+                                (conj (feed-interest redii @cache-atom user-id feed-type) interest-token))))
                   % feed-keys)))
 
 (defn add-interest-to-feeds!
-  [conn cache-atom interest-token feed-keys]
-  (update-feed-interest! conn cache-atom interest-token feed-keys conj))
+  [redii cache-atom interest-token feed-keys]
+  (update-feed-interest! redii cache-atom interest-token feed-keys conj))
 
 (defn remove-interest-from-feeds!
-  [conn cache-atom interest-token feed-keys]
-  (update-feed-interest! conn cache-atom interest-token feed-keys disj))
-
-(comment
-  (cache-interesting-stories-for-feed! interesting-story-cache  [1 2 3] "magt:f:u:1:c")
-  (get-interesting-stories-for-feed @interesting-story-cache "magt:f:u:1:c")
-  )
-
-
-
-
-
-
-
-
-
-
-
+  [redii cache-atom interest-token feed-keys]
+  (update-feed-interest! redii cache-atom interest-token feed-keys disj))

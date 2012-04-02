@@ -99,14 +99,14 @@
    (followee-watcher-sets story)))
 
 (defn interested-users
-  [conn story]
-  (redis/with-connection conn (apply redis/sunion (watcher-sets story))))
+  [redii story]
+  (redis/with-connection (:interests redii) (apply redis/sunion (watcher-sets story))))
 
 (defn interested-feeds
   ""
-  [conn story]
+  [redii story]
   (map #(key/user-feed % (feed-type (group story)))
-       (interested-users conn story)))
+       (interested-users redii story)))
 
 (defn actor-story-sets
   [story]

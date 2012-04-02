@@ -26,7 +26,7 @@
   (redis/keys (key/network-story "*")))
 
 (defn interest-keys
-  "get all interest keys"
+  "return a redis command to get interest keys"
   ([id type]
      (redis/keys (key/interest id type)))
   ([] (interest-keys "*" "*")))

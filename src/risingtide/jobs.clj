@@ -16,18 +16,17 @@
   [conn type [user-id object-id]]
   (log/info "adding interest in" type object-id "to" user-id)
   (let [feeds-to-update (isc/feeds-to-update type user-id)]
-    (isc/add-interest-to-feeds! conn isc/interesting-story-cache
+    (isc/add-interest-to-feeds! (:interests conn) isc/interesting-story-cache
                                 (interests/interest-token (first-char type) object-id)
                                 feeds-to-update)
     (doseq [feed feeds-to-update]
-      (when (= 0 (redis/with-connection conn (redis/zcard feed)))
+      (when (= 0 (redis/with-connection (:feeds conn) (redis/zcard feed)))
         (log/info "bootstrapping" feed)
         (let [[feed-type user-id] (key/type-user-id-from-feed-key feed)]
-         (apply redis/with-connection conn (feed/build-and-truncate-feed conn user-id feed-type)))))
-    (apply redis/with-connection conn
-           (concat
-            (interests/add-interest user-id (first-char type) object-id)
-            (feed/redigest-user-feeds conn feeds-to-update))))
+          (apply redis/with-connection (:feeds conn) (feed/build-and-truncate-feed (:feeds conn) user-id feed-type)))))
+    (interests/add! conn user-id type object-id)
+    (apply redis/with-connection (:feeds conn)
+           (feed/redigest-user-feeds conn feeds-to-update)))
   (log/info "added interest in" type object-id "to" user-id))
 
 (defn add-interests!
@@ -38,11 +37,10 @@
 (defn remove-interest!
   [conn type [user-id object-id]]
   (log/info "removing interest in" type object-id "to" user-id)
-  (isc/remove-interest-from-feeds! conn isc/interesting-story-cache
+  (isc/remove-interest-from-feeds! (:interests conn) isc/interesting-story-cache
                                    (interests/interest-token (first-char type) object-id)
                                    (isc/feeds-to-update type user-id))
-  (apply redis/with-connection conn
-         (interests/remove-interest user-id (first-char type) object-id))
+  (interests/remove! conn user-id type object-id)
   (log/info "removed interest in" type object-id "to" user-id))
 
 (defn add-story!
@@ -54,10 +52,10 @@
     (dc/cache-story story time)
     (log/debug "cached" encoded-story)
     (bench "redigesting"
-           (apply redis/with-connection conn
+           (apply redis/with-connection (:feeds conn)
                   (concat
                    (bench "add story queries" (doall (map #(redis/zadd % time encoded-story) (stories/destination-story-sets story))))
-                   (bench "user feed queries" (doall (feed/redigest-user-feeds conn user-feeds)))
+                   (bench "user feed queries" (doall (feed/redigest-user-feeds (:feeds conn) user-feeds)))
                    (bench "everything feed queries" (doall (feed/redigest-everything-feed))))))
     (log/info "added" encoded-story)))
 
@@ -73,7 +71,7 @@
       "Stories::RemoveInterestInListing" (remove-interest! conn :listing args)
       "Stories::RemoveInterestInActor" (remove-interest! conn :actor args)
       "Stories::RemoveInterestInTag" (remove-interest! conn :tag args)
-      "Stories::Create" (add-story! conn (reduce merge args)))))
+      "Stories::Create" (add-story! (:feeds conn) (reduce merge args)))))
 
 (defn process-story-jobs-from-queue!
   [run? connection-specs queue-keys]
@@ -82,7 +80,7 @@
    ;; doseq is not lazy, and does not retain the head of the seq: perfect!
    (doseq [json-message (take-while identity (resque/jobs run? resque-conn queue-keys))]
      (try
-       (process-story-job! feed-conn json-message)
+       (process-story-job! connection-specs json-message)
        (catch Exception e
          (log/error "failed to process job:" json-message "with" e)
          (safe-print-stack-trace e "jobs"))))))

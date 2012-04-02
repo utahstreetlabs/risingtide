@@ -1,12 +1,14 @@
 (ns risingtide.utils
   (:use risingtide.core)
   (:require [accession.core :as redis]
+            [clojure.data.json :as json]
             [risingtide
              [config :as config]
              [feed :as feed]
              [interests :as interests]
              [key :as key]
-             [queries :as queries]]))
+             [queries :as queries]
+             [stories :as stories]]))
 
 (defn- env-connection-config
   []
@@ -87,6 +89,39 @@
           (feed/build-and-truncate-feed conn user-id :network))))))
   ([user-ids-string] (build-feeds! (env-connection-config) (read-string (str "[" user-ids-string "]")))))
 
+
+;;;; add "ylf" feed target to disapproved listings, cause that is the
+;;;; current meaning of that parameter
+
+(defn- stories-and-scores
+  [conn key]
+  (map
+   (fn [[story score]] [story (json/read-json story) score])
+   (partition-all
+    2
+    (redis/with-connection
+      conn
+      (redis/zrangebyscore key 0 "+inf" "WITHSCORES")))))
+
+(defn update-story-feed-params!
+  "given a list of disapproved listing ids, find and update stories in redis with appropriate feed params
+
+right now, just adds :feed [\"ylf\"] since that's what disapproval means in the current system"
+  ([conn disapproved-listings]
+     (let [disapproved-listing-set (apply hash-set disapproved-listings)]
+       (doseq [story-key (redis/with-connection (env-connection-config) (redis/keys (key/card-story "*")))]
+         (do
+           (prn "updating" story-key)
+           (doseq [[json story score] (stories-and-scores conn story-key)]
+             (do
+               (when (contains? disapproved-listing-set (:lid story))
+               (redis/with-connection conn
+                 (redis/multi)
+                 (redis/zrem story-key json)
+                 (redis/zadd story-key score (json/json-str (assoc story :f ["ylf"])))
+                 (redis/exec))))))))
+     (shutdown-agents))
+  ([file] (update-story-feed-params! (env-connection-config) (read-string (slurp file)))))
 
 ;;;; define "runnable jobs" suitable for using with lein run ;;;;
 ;;

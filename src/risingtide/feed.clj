@@ -65,7 +65,7 @@
 (defn for-feed-with-token?
   [story token token-set]
   (let [f (get story :feed default-feeds)]
-    (or (= f token) (some token-set f))))
+    (or (= f nil) (= f token) (some token-set f))))
 
 (defn for-everything-feed?
   [story]

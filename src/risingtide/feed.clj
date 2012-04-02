@@ -9,7 +9,7 @@
             [risingtide.key :as key]
             [risingtide.stories :as stories]
             [risingtide.queries :as queries]
-            [risingtide.interesting-story-cache :as isc]))
+            [risingtide.interesting-story-cache :as interesting]))
 
 (defn feed-type-key [feed-type]
   "given a feed type keyword return the single character name to use when constructing keys"
@@ -17,9 +17,9 @@
 
 (defn interesting-story-keys
   "return the story keys of sets that should be included in the a user's feed of the given type"
-  [conn feed-type user-id]
+  [redii feed-type user-id]
   (let [f (feed-type-key feed-type)]
-    (map #(key/format-key f %) (isc/feed-interest conn @isc/interesting-story-cache user-id feed-type))))
+    (map #(key/format-key f %) (interesting/feed-stories redii user-id feed-type))))
 
 (defn build-feed-query
   "returns a query that will build and store a feed of the given type for a user"
@@ -34,8 +34,8 @@
     (build-feed-query user-id feed-type (interesting-story-keys conn feed-type user-id))))
 
 (defn build-and-truncate-feed
-  [conn user-id feed-type]
-  [(build-feed-query user-id feed-type (interesting-story-keys conn feed-type user-id))
+  [redii user-id feed-type]
+  [(build-feed-query user-id feed-type (interesting-story-keys redii feed-type user-id))
    (redis/zremrangebyrank (key/user-feed user-id feed-type) 0 -1001)])
 
 (defn interesting-keys-for-feeds

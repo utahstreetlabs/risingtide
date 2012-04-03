@@ -12,17 +12,18 @@
 
 (defn- env-connection-config
   []
-  (redis/connection-map (config/redis (:feeds env))))
+  (redis/connection-map (config/redis env)))
 
 ;; migrate staging keys to development.
 
 (defn convert-redis-keys-from-staging-to-dev!
-  ([con]
-     (if (= :development env)
-       (apply redis/with-connection con
-              (for [key (redis/with-connection con (redis/keys "*"))]
-                (redis/rename key (.replaceFirst key "mags" "magd"))))
-       (prn "holy shit. you really, really don't want to rename keys in" env)))
+  ([redii]
+     (doseq [con redii]
+      (if (= :development env)
+        (apply redis/with-connection con
+               (for [key (redis/with-connection con (redis/keys "*"))]
+                 (redis/rename key (.replaceFirst key "mags" "magd"))))
+        (prn "holy shit. you really, really don't want to rename keys in" env))))
   ([] (convert-redis-keys-from-staging-to-dev! (env-connection-config))))
 
 
@@ -38,7 +39,7 @@
                    (for [interest-token (redis/with-connection conn (redis/smembers interest-key))]
                      (redis/sadd (key/watchers interest-token) user-id)))))
          (catch Exception e (prn e interest-key)))))
-  ([] (build-watcher-indexes! (env-connection-config))))
+  ([] (build-watcher-indexes! (:interests (env-connection-config)))))
 
 ;;;; interest list/watcher list coherence
 
@@ -55,27 +56,27 @@
   "return any interest keys that don't match the watcher sets"
   ([conn]
      (find-invalid
-      (for [interest-key (redis/with-connection (redis/connection-map {}) (queries/interest-keys))]
+      (for [interest-key (redis/with-connection conn (queries/interest-keys))]
         (let [[user-id type] (key/user-id-type-from-interest-key interest-key)]
           [interest-key
            (all-ones?
             (apply redis/with-connection conn
                    (for [interest-token (redis/with-connection conn (redis/smembers interest-key))]
                      (redis/sismember (key/watchers interest-token) user-id))))]))))
-  ([] (check-interest-coherence (env-connection-config))))
+  ([] (check-interest-coherence (:interests (env-connection-config)))))
 
 (defn check-watcher-coherence
   "return any watcher keys that don't match the interest sets"
   ([conn]
      (find-invalid
-      (for [watchers-key (redis/with-connection (redis/connection-map {}) (queries/watchers-keys))]
+      (for [watchers-key (redis/with-connection conn (queries/watchers-keys))]
         (let [[type object-id] (key/type-object-id-from-watcher-key watchers-key)]
           [watchers-key
            (all-ones?
             (apply redis/with-connection conn
                    (for [user-id (redis/with-connection conn (redis/smembers watchers-key))]
                      (redis/sismember (key/interest user-id type) (interests/interest-token type object-id)))))]))))
-  ([] (check-watcher-coherence (env-connection-config))))
+  ([] (check-watcher-coherence (:interests (env-connection-config)))))
 
 
 ;;;; add "ylf" feed target to disapproved listings, cause that is the

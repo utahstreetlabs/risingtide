@@ -9,10 +9,10 @@
             [risingtide.queries :as queries]
             [risingtide.digesting-cache :as dc]))
 
-(def conn {:interests (redis/connection-map {})
-           :card-feeds (redis/connection-map {})
-           :network-feeds (redis/connection-map {})
-           :stories (redis/connection-map {})})
+(def conn {:interests (redis/connection-map {:db 1})
+           :card-feeds (redis/connection-map {:db 2})
+           :network-feeds (redis/connection-map {:db 3})
+           :stories (redis/connection-map {:db 4})})
 
 ;; users
 (defmacro defuser
@@ -21,9 +21,8 @@
     (def ~name ~id)
     (defn ~(symbol (str "feed-for-" name))
       [type#]
-
       (map json/read-json
-           (redis/with-connection (:feeds conn)
+           (redis/with-connection (conn (keyword (str (name type#) "-feeds")))
              (redis/zrange (key/user-feed ~id type#) 0 100000))))))
 
 (defuser jim 1)
@@ -62,7 +61,7 @@
 (defn everything-feed
   []
   (map json/read-json
-       (redis/with-connection (:feeds conn)
+       (redis/with-connection (:card-feeds conn)
          (redis/zrange (key/everything-feed) 0 1000000000))))
 
 (def empty-feed [])
@@ -111,7 +110,7 @@
 (defn clear-redis!
   []
   (if (= env :test)
-    (doseq [redis [:feeds :interests]]
+    (doseq [redis [:card-feeds :network-feeds :interests :stories]]
       (let [keys (redis/with-connection (redis conn) (redis/keys (key/format-key "*")))]
         (when (not (empty? keys))
           (redis/with-connection (redis conn)

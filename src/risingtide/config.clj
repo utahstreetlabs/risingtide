@@ -1,7 +1,7 @@
 (ns risingtide.config)
 
 (def redis
-  {:development {:resque {} :feeds {} :interests {} :stories {}}
+  {:development {:resque {} :card-feeds {} :network-feeds {} :interests {} :stories {}}
    :staging {:resque {:host "staging3.copious.com"}
              :card-feeds {:host "staging4.copious.com"}
              :network-feeds {:host "staging4.copious.com"}

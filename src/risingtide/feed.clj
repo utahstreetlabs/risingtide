@@ -66,7 +66,7 @@
   [stories]
   (filter for-user-feed? stories))
 
-(defn- build-redigest-user-feeds-queries
+(defn- build-redigest-user-card-feeds-queries
   [redii destination-feeds]
   ;; don't feel awesome about how I'm getting high/low scores to
   ;; pass to zremrangebyscore - should perhaps actually look through
@@ -80,13 +80,13 @@
     (flatten
      (bench "replace" (doall (pmap replace-feed-head destination-feeds digested-stories (repeat low-score) (repeat high-score)))))))
 
-(defn redigest-user-feeds!
+(defn redigest-user-card-feeds!
   [redii destination-feeds]
   (bench (str "redigesting" (count destination-feeds) "user feeds")
-         (apply redis/with-connection (:feeds redii)
-                (build-redigest-user-feeds-queries redii destination-feeds))))
+         (apply redis/with-connection (:card-feeds redii)
+                (build-redigest-user-card-feeds-queries redii destination-feeds))))
 
-(defn- build-redigest-everything-feed-queries
+(defn- build-redigest-everything-card-feed-queries
   []
   (let [cache @dc/story-cache
         low-score (:low-score cache)
@@ -96,7 +96,14 @@
                                                (dc/all-card-stories cache)))
                        low-score high-score)))
 
-(defn redigest-everything-feed!
+(defn redigest-everything-card-feed!
   [redii]
   (bench "redigesting everything feed"
-         (apply redis/with-connection (:feeds redii) (build-redigest-everything-feed-queries))))
+         (apply redis/with-connection (:card-feeds redii) (build-redigest-everything-card-feed-queries))))
+
+(defn add-to-network-feeds!
+  [redii story score]
+  (let [encoded-story (stories/encode story)]
+   (apply redis/with-connection
+          (map #(redis/zadd % score encoded-story)
+               (stories/interested-feeds redii encoded-story)))))

@@ -10,7 +10,8 @@
             [risingtide.digesting-cache :as dc]))
 
 (def conn {:interests (redis/connection-map {})
-           :feeds (redis/connection-map {})
+           :card-feeds (redis/connection-map {})
+           :network-feeds (redis/connection-map {})
            :stories (redis/connection-map {})})
 
 ;; users

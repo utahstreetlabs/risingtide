@@ -9,7 +9,9 @@
             [risingtide.queries :as queries]
             [risingtide.digesting-cache :as dc]))
 
-(def conn (redis/connection-map {}))
+(def conn {:interests (redis/connection-map {})
+           :feeds (redis/connection-map {})
+           :stories (redis/connection-map {})})
 
 ;; users
 (defmacro defuser
@@ -20,7 +22,7 @@
       [type#]
 
       (map json/read-json
-           (redis/with-connection conn
+           (redis/with-connection (:feeds conn)
              (redis/zrange (key/user-feed ~id type#) 0 100000))))))
 
 (defuser jim 1)
@@ -59,7 +61,7 @@
 (defn everything-feed
   []
   (map json/read-json
-       (redis/with-connection conn
+       (redis/with-connection (:feeds conn)
          (redis/zrange (key/everything-feed) 0 1000000000))))
 
 (def empty-feed [])
@@ -108,11 +110,12 @@
 (defn clear-redis!
   []
   (if (= env :test)
-    (let [keys (redis/with-connection conn (redis/keys (key/format-key "*")))]
-      (when (not (empty? keys))
-        (redis/with-connection conn
-          (apply redis/del keys))))
-   (prn "clearing redis in" env "is a super bad idea. let's not.")))
+    (doseq [redis [:feeds :interests]]
+      (let [keys (redis/with-connection (redis conn) (redis/keys (key/format-key "*")))]
+        (when (not (empty? keys))
+          (redis/with-connection (redis conn)
+            (apply redis/del keys)))))
+    (prn "clearing redis in" env "is a super bad idea. let's not.")))
 
 (defn clear-digesting-cache!
   []

@@ -62,6 +62,15 @@
   [story score]
   (swap! story-cache add-story story score))
 
+(defn add!
+  [redii story time]
+  (cache-story story time)
+  (stories/add! redii story time))
+
+(defn preload!
+  [redii ttl]
+  (doseq [[story score] (stories/range-with-scores redii (- (now) ttl) (now))]
+    (cache-story (stories/decode story) (Long. score))))
 
 ;;;; Cache Expiration ;;;;
 

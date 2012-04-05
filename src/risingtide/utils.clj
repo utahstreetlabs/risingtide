@@ -77,18 +77,6 @@
                      (redis/sismember (key/interest user-id type) (interests/interest-token type object-id)))))]))))
   ([] (check-watcher-coherence (env-connection-config))))
 
-;;;; build and truncate a set of feeds
-
-(defn build-feeds!
-  ([conn user-ids]
-     (apply redis/with-connection conn
-      (flatten
-       (for [user-id user-ids]
-         (concat
-          (feed/build-and-truncate-feed conn user-id :card)
-          (feed/build-and-truncate-feed conn user-id :network))))))
-  ([user-ids-string] (build-feeds! (env-connection-config) (read-string (str "[" user-ids-string "]")))))
-
 
 ;;;; add "ylf" feed target to disapproved listings, cause that is the
 ;;;; current meaning of that parameter
@@ -125,6 +113,7 @@ right now, just adds :feed [\"ylf\"] since that's what disapproval means in the 
             (catch Exception e (prn story-key "failed!"))))))
      (shutdown-agents))
   ([file] (update-story-feed-params! (env-connection-config) (read-string (slurp file)))))
+
 
 ;;;; define "runnable jobs" suitable for using with lein run ;;;;
 ;;

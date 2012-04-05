@@ -3,6 +3,7 @@
   (:require [clojure.set :as set]
             [accession.core :as redis]
             [risingtide
+             [interests :as interests]
              [stories :as stories]
              [key :as key]]))
 
@@ -54,43 +55,41 @@ feeds that will need to be updated"
   (cons (key/user-feed user-id "c")
         (when (= type :actor) [(key/user-feed user-id "n")])))
 
-(defn feed-interest
-  [conn cache user-id feed-type]
+(defn feed-stories
+  [redii user-id feed-type]
   (or
    (get-interesting-stories-for-feed @interesting-story-cache feed-type user-id)
-   (let [stories (redis/with-connection conn (interesting-key-query feed-type user-id))]
+   (let [stories (redis/with-connection (:interests redii) (interesting-key-query feed-type user-id))]
      (cache-interesting-stories-for-feed! interesting-story-cache stories feed-type user-id)
      stories)))
 
-(defn update-feed-interest!
-  [conn cache-atom interest-token feed-keys operation]
+(defn- update-feed-interest!
+  [redii cache-atom interest-token feed-keys operation]
   (swap! cache-atom
          #(reduce (fn [cache feed-key]
                     (let [[feed-type user-id] (key/type-user-id-from-feed-key feed-key)]
                       (assoc-in cache [user-id feed-type]
-                                (conj (feed-interest conn @cache-atom user-id feed-type) interest-token))))
+                                (conj (feed-stories redii user-id feed-type) interest-token))))
                   % feed-keys)))
 
-(defn add-interest-to-feeds!
-  [conn cache-atom interest-token feed-keys]
-  (update-feed-interest! conn cache-atom interest-token feed-keys conj))
+(defn- add-interest-to-feeds!
+  [redii cache-atom interest-token feed-keys]
+  (update-feed-interest! redii cache-atom interest-token feed-keys conj))
 
-(defn remove-interest-from-feeds!
-  [conn cache-atom interest-token feed-keys]
-  (update-feed-interest! conn cache-atom interest-token feed-keys disj))
+(defn- remove-interest-from-feeds!
+  [redii cache-atom interest-token feed-keys]
+  (update-feed-interest! redii cache-atom interest-token feed-keys disj))
 
-(comment
-  (cache-interesting-stories-for-feed! interesting-story-cache  [1 2 3] "magt:f:u:1:c")
-  (get-interesting-stories-for-feed @interesting-story-cache "magt:f:u:1:c")
-  )
+(defn add!
+  [redii user-id type object-id]
+  (add-interest-to-feeds! redii interesting-story-cache
+                              (interests/interest-token (first-char type) object-id)
+                              (feeds-to-update type user-id))
+  (interests/add! redii user-id type object-id))
 
-
-
-
-
-
-
-
-
-
-
+(defn remove!
+  [redii user-id type object-id]
+  (remove-interest-from-feeds! redii interesting-story-cache
+                               (interests/interest-token (first-char type) object-id)
+                               (feeds-to-update type user-id))
+  (interests/remove! redii user-id type object-id))

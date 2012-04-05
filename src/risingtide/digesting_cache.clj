@@ -94,7 +94,8 @@
              (assoc cache key new-story-set))))]
 
     (swap! cache-to-expire
-           #(update-low-score (reduce expire-cached-story-set % (cached-stories %)) low-score))))
+           #(bench "attempting to expire cached stories"
+                   (update-low-score (reduce expire-cached-story-set % (cached-stories %)) low-score)))))
 
 (defn cache-expiration-thread
   [run? cache-to-expire expire-every-ms ttl]

@@ -7,7 +7,8 @@
             [risingtide.digesting-cache :as dc]
             [risingtide.config :as config]
             [risingtide.web :as web]
-            [clj-logging-config.log4j :as log-config])
+            [clj-logging-config.log4j :as log-config]
+            [mycroft.main :as mycroft])
   (:import [sun.misc Signal SignalHandler]))
 
 (def processor (atom nil))
@@ -87,6 +88,9 @@
   (log-config/set-logger! :level :info :out :console)
   (install-signal-handlers)
   (web/run! processor)
+  ;; mycroft is a var inspector. it makes it easy to see wtf is going
+  ;; on inside risingtide.
+  (mycroft/run (config/ports :mycroft))
   (let [config
         {:connections (connections)
          :story-queues ["resque:queue:rising_tide_priority"

@@ -14,8 +14,8 @@
 (defn safe-print-stack-trace
   [throwable ns]
   (try
-    (.printStackTrace throwable)
-    (catch Throwable t (log/error "failed to print stack trace with error" t))))
+    (.printStackTrace throwable *out*)
+    (catch Throwable t (prn "failed to print stack trace with error" t))))
 
 (defmacro bench
   [msg & forms]
@@ -32,7 +32,7 @@
   (redis/with-connection (redis/connection-map {}) (redis/lpop "resque:queue:stories"))
 
 
-(dotimes [n 10000]  (redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:stories" (str "{\"class\":\"Stories::Create\",\"args\":[{\"listing_id\":799,\"tag_ids\":[1],\"type\":\"listing_activated\",\"actor_id\":" n "}],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}"))))
+(dotimes [n 10000]  (redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:rising_tide_stories" (str "{\"class\":\"Stories::Create\",\"args\":[{\"listing_id\":799,\"tag_ids\":[1],\"type\":\"listing_activated\",\"actor_id\":" 1 "}],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}"))))
 
 (redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:stories" (str "{\"class\":\"Stories::Create\",\"args\":[{\"listing_id\":799,\"tag_ids\":[1],\"type\":\"listing_activated\",\"actor_id\":" 1 "}],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}")))
 

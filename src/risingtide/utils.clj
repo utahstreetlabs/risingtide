@@ -101,14 +101,17 @@ right now, just adds :feed [\"ylf\"] since that's what disapproval means in the 
        (doseq [story-key (redis/with-connection (env-connection-config) (redis/keys (key/card-story "*")))]
          (do
            (prn "updating" story-key)
-           (doseq [[json story score] (stories-and-scores conn story-key)]
-             (do
-               (when (contains? disapproved-listing-set (:lid story))
-               (redis/with-connection conn
-                 (redis/multi)
-                 (redis/zrem story-key json)
-                 (redis/zadd story-key score (json/json-str (assoc story :f ["ylf"])))
-                 (redis/exec))))))))
+           (try
+            (doseq [[json story score] (stories-and-scores conn story-key)]
+              (do
+                (when (contains? disapproved-listing-set (:lid story))
+                  (redis/with-connection conn
+                    (redis/multi)
+                    (redis/zrem story-key json)
+                    (redis/zadd story-key score (json/json-str (assoc story :f ["ylf"])))
+                    (redis/exec))
+                  )))
+            (catch Exception e (prn story-key "failed!"))))))
      (shutdown-agents))
   ([file] (update-story-feed-params! (env-connection-config) (read-string (slurp file)))))
 

@@ -91,6 +91,46 @@ on the server specified by that connection spec.
   [redii feeds params & body]
   `(doall (map-across-connections-and-feeds ~redii ~feeds (fn ~params ~@body))))
 
+;;;; feed building ;;;;
+
+(defn zunion-withscores
+  [redii story-keys limit & args]
+  (nth
+   (nth
+    (redis/with-connection (:stories redii)
+      (redis/multi)
+      (apply redis/zunionstore "rtzuniontemp" story-keys args)
+      (redis/zrange "rtzuniontemp" (- 0 limit) -1 "WITHSCORES")
+      (redis/del "rtzuniontemp")
+      (redis/exec))
+    4) 1))
+
+(defn zunion-withscores-for-zadd
+  "zunion, but switch score/story order"
+  [redii story-keys limit & args]
+  (apply concat
+         (for [[story score] (partition 2 (apply zunion-withscores redii story-keys limit args))]
+           [score story])))
+
+(defn- build-feed-query
+  "returns a query that will build and store a feed of the given type for a user"
+  ([redii user-id feed-type interesting-story-keys]
+     (let [feed-key (key/user-feed user-id feed-type)]
+       (log/info "Generating feed" feed-key)
+       (apply redis/zadd feed-key (zunion-withscores-for-zadd redii interesting-story-keys 1000 "AGGREGATE" "MIN"))))
+  ([redii feed-key]
+     (let [[feed-type user-id] (key/type-user-id-from-feed-key feed-key)]
+       (build-feed-query redii user-id feed-type (interesting-story-keys redii feed-type user-id)))))
+
+(defn build!
+  [redii feeds-to-build]
+  (with-connections-for-feeds redii feeds-to-build [connection feeds]
+    (apply redis/with-connection connection (map #(build-feed-query redii %) feeds))))
+
+(defn build-for-user!
+  [redii user-id]
+  (build! redii [(key/user-card-feed user-id) (key/user-network-feed user-id)]))
+
 ;;;; redigesting ;;;;
 
 (defn- scored-encoded-stories

@@ -9,44 +9,26 @@
  (before :facts (clear-redis!))
  (before :facts (clear-digesting-cache!)))
 
-(fact "card feeds are generated correctly"
+(fact "initial feed builds bring in old stories"
   (on-copious
-   (rob interested-in-user jim)
    (jim activates bacon)
    (jim likes ham)
-   (dave likes scones)
-   (jim shares eggs)
-   (bcm activates toast)
-   (jim sells muffins)
-   (jim comments-on breakfast-tacos)
-   (jim likes-tag breakfast)
-   (jim likes danishes {:feed "ylf"})
-   (jim likes croissants {:feed "ev"})
-   (jim likes omelettes {:feed ["ev" "ylf"]}))
+   (jim joins)
+   (jim follows jon)
+   (rob interested-in-user jim)
+   (rob builds-feeds))
 
   (feed-for-rob :card) => (encoded-feed
                            (listing-activated jim bacon)
-                           (listing-liked jim ham)
-                           (listing-shared jim eggs)
-                           (listing-sold jim muffins)
-                           (listing-commented jim breakfast-tacos)
-                           (tag-liked jim breakfast)
-                           (listing-liked jim danishes {:feed "ylf"})
-                           (listing-liked jim omelettes {:feed ["ev" "ylf"]}))
+                           (listing-liked jim ham))
 
-  (feed-for-rob :network) => []
+  (feed-for-rob :network) => (encoded-feed
+                              (user-joined jim)
+                              (user-followed jim jon))
 
   (everything-feed) => (encoded-feed
                         (listing-activated jim bacon)
-                        (listing-liked jim ham)
-                        (listing-liked dave scones)
-                        (listing-shared jim eggs)
-                        (listing-activated bcm toast)
-                        (listing-sold jim muffins)
-                        (listing-commented jim breakfast-tacos)
-                        (tag-liked jim breakfast)
-                        (listing-liked jim croissants {:feed "ev"})
-                        (listing-liked jim omelettes {:feed ["ev" "ylf"]})))
+                        (listing-liked jim ham)))
 
 (fact "network feeds are generated correctly"
     (on-copious

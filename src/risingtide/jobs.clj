@@ -15,8 +15,11 @@
   [redii type user-id object-id]
   ;; store and cache new interests
   (interests/add! redii user-id type object-id)
-  ;; rebuild feeds
-  (feed/redigest-user-feeds! redii (interests/feeds-to-update type user-id)))
+  ;; redigest card feeds. don't update network feeds for now because
+  ;; they skip the digesting cache - this means users will only see
+  ;; new stories in their network feed
+  (feed/redigest-user-feeds! redii [(key/user-card-feed user-id)]))
+
 
 (defn add-interest!
   [redii type [user-id object-id]]
@@ -34,12 +37,25 @@
   (bench (str "remove interest in " type object-id " to " user-id)
          (interests/remove! redii user-id type object-id)))
 
-(defn add-story!
+(defn- add-card-story!
   [redii story]
-  (bench (str "add story " story)
+  (bench (str "add card story " story)
          (dc/add! redii story (now))
          (feed/redigest-user-feeds! redii (stories/interested-feeds redii story))
          (feed/redigest-everything-feed! redii)))
+
+(defn- add-network-story!
+  [redii story]
+  (bench (str "add network story " story)
+         (let [score (now)]
+           (stories/add! redii story score)
+           (feed/add! redii story score))))
+
+(defn add-story!
+  [redii story]
+  (case (stories/feed-type story)
+    :card (add-card-story! redii story)
+    :network (add-network-story! redii story)))
 
 (defn- process-story-job!
   [redii json-message]

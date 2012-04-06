@@ -29,8 +29,27 @@
             (assoc m group-name (distinct [(group-key :user) this-group-key])))
           {} group-key))
 
-(def feed-type
-  {:user :n :listing :c :tag :c})
+(def group-feed-type
+  {:user :network :listing :card :tag :card})
+
+;; a map from group names to feed type tokens suitable for
+;; constructing feed keys. currently looks like:
+;; {:user "n" :listing "c" :tag "c"}
+(def group-feed-type-key-token
+  (reduce (fn [m [group-name feed-type]] (assoc m group-name (str (first-char feed-type))))
+          {} group-feed-type))
+
+(defn group
+  [story]
+  (:group (type-info (keyword (:type story)))))
+
+(defn feed-type
+  [story]
+  (group-feed-type (group story)))
+
+(defn feed-type-key-token
+  [story]
+  (group-feed-type-key-token (group story)))
 
 (def id-key
   {:a :actor_id :l :listing_id :t :tag_id})
@@ -68,10 +87,6 @@
   [story]
   (translate-keys (json/read-json story) long-key))
 
-(defn group
-  [story]
-  (:group (type-info (keyword (:type story)))))
-
 (defn listing-tag-story?
   [story]
   (listing-tag-story-types (keyword (:type story))))
@@ -105,12 +120,12 @@
 (defn interested-feeds
   ""
   [redii story]
-  (map #(key/user-feed % (feed-type (group story)))
+  (map #(key/user-feed % (feed-type-key-token story))
        (interested-users redii story)))
 
 (defn actor-story-sets
   [story]
-  [(key/format-key (name (feed-type (group story))) "a" (:actor_id story))])
+  [(key/format-key (feed-type-key-token story) "a" (:actor_id story))])
 
 (defn listing-story-sets
   [story]
@@ -134,7 +149,7 @@
   [redii story]
   (concat
    (destination-story-sets story)
-   (when (= :c (feed-type (group story))) [(key/everything-feed)])
+   (when (= :card (feed-type story)) [(key/everything-feed)])
    (interested-feeds redii story)))
 
 (defn add!

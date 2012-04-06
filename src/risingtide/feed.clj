@@ -11,6 +11,8 @@
             [risingtide.queries :as queries]
             [risingtide.interesting-story-cache :as interesting]))
 
+;;;; keys ;;;;
+
 (defn feed-type-key [feed-type]
   "given a feed type keyword return the single character name to use when constructing keys"
   (first-char feed-type))
@@ -25,17 +27,8 @@
   [redii feeds]
   (map #(apply interesting-story-keys redii (key/type-user-id-from-feed-key %)) feeds))
 
-(defn scored-encoded-stories
-  [stories]
-  (interleave (map :score stories) (map :encoded stories)))
 
-(defn replace-feed-head
-  [feed stories low-score high-score]
-  (if (empty? stories)
-    []
-    [(redis/zremrangebyscore feed low-score high-score)
-     (apply redis/zadd feed (scored-encoded-stories stories))]))
-
+;;;; filtering ;;;;
 
 (def ev-feed-token "ev")
 (def ev-feed-token? #{ev-feed-token})
@@ -66,6 +59,51 @@
   [stories]
   (filter for-user-feed? stories))
 
+
+;;;; connection negotation ;;;;
+;;
+;; not all feeds live on the same redis. these utilities make it
+;; easier to live in this world.
+
+(defn feeds-by-type
+  [feeds]
+  (reduce
+   (fn [m feed]
+     (case (last feed)
+       \c (assoc m :card-feeds (cons feed (get m :card-feeds)))
+       \n (assoc m :network-feeds (cons feed (get m :network-feeds)))))
+   {} feeds))
+
+(defn map-across-connections-and-feeds
+  "given a redii map, a collection of feeds and function of two arguments like
+
+ (fn [connection feeds] (do-stuff))
+
+call the function once for each set of feeds that live on different servers. The function
+will be passed the connection spec for the server to use and the set of feeds that live
+on the server specified by that connection spec.
+"
+  [redii feeds f]
+  (map #(apply f %)
+       (map (fn [[redis-key feeds]] [(redii redis-key) feeds]) (feeds-by-type feeds))))
+
+(defmacro with-connections-for-feeds
+  [redii feeds params & body]
+  `(doall (map-across-connections-and-feeds ~redii ~feeds (fn ~params ~@body))))
+
+;;;; redigesting ;;;;
+
+(defn- scored-encoded-stories
+  [stories]
+  (interleave (map :score stories) (map :encoded stories)))
+
+(defn- replace-feed-head-query
+  [feed stories low-score high-score]
+  (if (empty? stories)
+    []
+    [(redis/zremrangebyscore feed low-score high-score)
+     (apply redis/zadd feed (scored-encoded-stories stories))]))
+
 (defn- build-redigest-user-feeds-queries
   [redii destination-feeds]
   ;; don't feel awesome about how I'm getting high/low scores to
@@ -78,25 +116,34 @@
                            (bench "stories" (doall (map #(dc/stories-for-interests cache %)
                                                         (bench "interesting" (doall (interesting-keys-for-feeds redii destination-feeds))))))))))]
     (flatten
-     (bench "replace" (doall (pmap replace-feed-head destination-feeds digested-stories (repeat low-score) (repeat high-score)))))))
+     (bench "replace" (doall (pmap replace-feed-head-query destination-feeds digested-stories (repeat low-score) (repeat high-score)))))))
 
 (defn redigest-user-feeds!
   [redii destination-feeds]
   (bench (str "redigesting" (count destination-feeds) "user feeds")
-         (apply redis/with-connection (:feeds redii)
-                (build-redigest-user-feeds-queries redii destination-feeds))))
+         (with-connections-for-feeds redii destination-feeds [redis feeds]
+           (apply redis/with-connection redis
+                  (build-redigest-user-feeds-queries redii feeds)))))
 
-(defn- build-redigest-everything-feed-queries
+(defn- build-redigest-everything-card-feed-queries
   []
   (let [cache @dc/story-cache
         low-score (:low-score cache)
         high-score (:high-score cache)]
-    (replace-feed-head (key/everything-feed) (digest/digest
-                                              (everything-feed-stories
-                                               (dc/all-card-stories cache)))
-                       low-score high-score)))
+    (replace-feed-head-query
+     (key/everything-feed)
+     (digest/digest (everything-feed-stories (dc/all-card-stories cache)))
+     low-score high-score)))
 
 (defn redigest-everything-feed!
   [redii]
   (bench "redigesting everything feed"
-         (apply redis/with-connection (:feeds redii) (build-redigest-everything-feed-queries))))
+         (apply redis/with-connection (:card-feeds redii) (build-redigest-everything-card-feed-queries))))
+
+(defn add!
+  "add a story with the given score to the set of feeds that are interested in it"
+  [redii story score]
+  (let [encoded-story (stories/encode story)]
+    (with-connections-for-feeds redii (stories/interested-feeds redii story) [connection feeds]
+      (apply redis/with-connection connection
+            (map #(redis/zadd % score encoded-story) feeds)))))

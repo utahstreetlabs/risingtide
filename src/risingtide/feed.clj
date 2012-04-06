@@ -124,10 +124,10 @@ on the server specified by that connection spec.
 (defn- build-user-feed-query
   "returns a query that will build and store a feed of the given type for a user"
   ([redii user-id feed-type interesting-story-keys]
-     (let [feed-key (key/user-feed user-id feed-type)]
-       (log/info "Generating feed" feed-key)
-       (apply redis/zadd feed-key
-              (zadd-encode-stories (fetch-filter-digest-user-stories redii interesting-story-keys)))))
+     (let [feed-key (key/user-feed user-id feed-type)
+           stories (zadd-encode-stories (fetch-filter-digest-user-stories redii interesting-story-keys))]
+       (when (not (empty? stories))
+         (apply redis/zadd feed-key stories))))
   ([redii feed-key]
      (let [[feed-type user-id] (key/type-user-id-from-feed-key feed-key)]
        (build-user-feed-query redii user-id feed-type (interesting-story-keys redii feed-type user-id)))))
@@ -135,7 +135,9 @@ on the server specified by that connection spec.
 (defn build!
   [redii feeds-to-build]
   (with-connections-for-feeds redii feeds-to-build [connection feeds]
-    (apply redis/with-connection connection (map #(build-user-feed-query redii %) feeds))))
+    (let [queries (filter identity (map #(build-user-feed-query redii %) feeds))]
+      (when (not (empty? queries))
+        (apply redis/with-connection connection queries)))))
 
 (defn build-for-user!
   [redii user-id]

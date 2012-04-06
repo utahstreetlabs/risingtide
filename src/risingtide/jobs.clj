@@ -59,7 +59,8 @@
 
 (defn build-feeds!
   [redii [user-id]]
-  (feed/build-for-user! redii user-id))
+  (bench (str "building feeds for user " user-id)
+   (feed/build-for-user! redii user-id)))
 
 (defn- process-story-job!
   [redii json-message]

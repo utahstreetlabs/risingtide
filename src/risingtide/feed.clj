@@ -112,18 +112,19 @@ on the server specified by that connection spec.
   (let [cache @dc/story-cache
         low-score (:low-score cache)
         high-score (:high-score cache)
-        digested-stories (bench "digest" (doall (map digest/digest (map user-feed-stories
-                           (bench "stories" (doall (map #(dc/stories-for-interests cache %)
-                                                        (bench "interesting" (doall (interesting-keys-for-feeds redii destination-feeds))))))))))]
+        digested-stories (doall
+                          (map digest/digest
+                               (map user-feed-stories
+                                    (map #(dc/stories-for-interests cache %)
+                                         (interesting-keys-for-feeds redii destination-feeds)))))]
     (flatten
-     (bench "replace" (doall (pmap replace-feed-head-query destination-feeds digested-stories (repeat low-score) (repeat high-score)))))))
+     (doall (pmap replace-feed-head-query destination-feeds digested-stories (repeat low-score) (repeat high-score))))))
 
 (defn redigest-user-feeds!
   [redii destination-feeds]
-  (bench (str "redigesting" (count destination-feeds) "user feeds")
-         (with-connections-for-feeds redii destination-feeds [redis feeds]
-           (apply redis/with-connection redis
-                  (build-redigest-user-feeds-queries redii feeds)))))
+  (with-connections-for-feeds redii destination-feeds [redis feeds]
+    (apply redis/with-connection redis
+           (build-redigest-user-feeds-queries redii feeds))))
 
 (defn- build-redigest-everything-card-feed-queries
   []

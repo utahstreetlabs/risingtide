@@ -13,14 +13,20 @@
   (on-copious
    (jim activates bacon)
    (jim likes ham)
+   (jim likes toast)
+   (jim shares toast)
+   (jim likes omelettes {:feed ["ev"]})
    (jim joins)
-   (jim follows jon)
+   (jim follows jon))
+  (clear-digesting-cache!)
+  (on-copious
    (rob interested-in-user jim)
    (rob builds-feeds))
 
   (feed-for-rob :card) => (encoded-feed
                            (listing-activated jim bacon)
-                           (listing-liked jim ham))
+                           (listing-liked jim ham)
+                           (story/multi-action-digest toast jim ["listing_liked" "listing_shared"]))
 
   (feed-for-rob :network) => (encoded-feed
                               (user-joined jim)
@@ -28,7 +34,9 @@
 
   (everything-feed) => (encoded-feed
                         (listing-activated jim bacon)
-                        (listing-liked jim ham)))
+                        (listing-liked jim ham)
+                        (story/multi-action-digest toast jim ["listing_liked" "listing_shared"])
+                        (listing-liked jim omelettes {:feed ["ev"]})))
 
 (fact "network feeds are generated correctly"
     (on-copious

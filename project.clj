@@ -10,7 +10,7 @@
                  [ring/ring-core "1.0.2"]
                  [ring/ring-jetty-adapter "1.0.2"]
                  [robert/bruce "0.7.1"]
-                 [utahstreetlabs/accession "0.1.2-usl2" :exclusions [org.clojure/clojure]]]
+                 [utahstreetlabs/accession "0.1.2-usl3" :exclusions [org.clojure/clojure]]]
   :dev-dependencies [[midje "1.3.1"]
                      [lein-midje "1.0.8"]]
   :repositories {"usl-releases" "s3p://utahstreetlabs-maven/releases/"

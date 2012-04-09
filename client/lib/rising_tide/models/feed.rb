@@ -30,20 +30,13 @@ module RisingTide
         offset = [options[:offset].to_i, 0].max
         limit = options[:limit].to_i
         limit = Kaminari.config.default_per_page unless limit > 0
-        count = 0
-        before = options[:before]
-        after = options[:after]
-        if timeslice = (before || after)
-          # zrevrangebyscore is inclusive, so we offset by 1 millisecond on each end to get exclusive behavior
-          before = before ? (before - 1) : :inf
-          after = after ? (after + 1 ) : 0
-        end
+        cnt = 0
+        fkey, before, after = common_options(options)
 
         values = with_redis(default_data: []) do |redis|
-          fkey = self.key(options)
-          count = benchmark("Get Cardinality for #{fkey} #{after} #{before}") { timeslice ? redis.zcount(fkey, after, before) : redis.zcard(fkey) }
+          cnt = count(options)
           benchmark("Fetch values for #{fkey} #{after} #{before} #{offset} #{limit}") do
-            if timeslice
+            if (before || after)
               redis.zrevrangebyscore(fkey, before, after, withscores: true, limit: [offset, limit])
             else
               redis.zrevrange(fkey, offset, (offset + limit - 1), withscores: true)
@@ -54,7 +47,26 @@ module RisingTide
         # XXX: redis-rb introduced a change to the client that's going to break this whenever we upgrade
         # (they are doing this map inside the client, instead of returning the raw array)
         stories = values.each_slice(2).map {|s,t| Story.decode(s,t)}
-        Kaminari::PaginatableArray.new(stories, limit: limit, offset: offset, total_count: count)
+        Kaminari::PaginatableArray.new(stories, limit: limit, offset: offset, total_count: cnt)
+      end
+
+      def count(options = {})
+        fkey, before, after = common_options(options)
+        benchmark("Get Cardinality for #{fkey} #{after} #{before}") do
+          with_redis {|r| (before || after) ? r.zcount(fkey, after, before) : r.zcard(fkey) }
+        end
+      end
+
+      def common_options(options = {})
+        fkey = self.key(options)
+        before = options[:before]
+        after = options[:after]
+        if (before || after)
+          # zrevrangebyscore is inclusive, so we offset by 1 second on each end to get exclusive behavior
+          before = before ? (before - 1) : :inf
+          after = after ? (after + 1 ) : 0
+        end
+        [fkey, before, after]
       end
     end
   end

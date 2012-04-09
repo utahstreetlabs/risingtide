@@ -5,6 +5,7 @@
         risingtide.core)
   (:require [clojure.tools.logging :as log]
             [risingtide.digesting-cache :as dc]
+            [risingtide.version :as version]
             [net.cgrand.enlive-html :as html]))
 
 (html/deftemplate layout "html/layout.html"
@@ -22,6 +23,7 @@
 (defn admin-info
   [processor]
   (sorted-map
+   "version" version/version
    "environment" env
    "connections" (:connections processor)
    "cache size" (count (dc/all-stories @(:cache processor)))

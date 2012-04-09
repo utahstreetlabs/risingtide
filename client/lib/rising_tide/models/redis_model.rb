@@ -47,8 +47,8 @@ module RisingTide
     def self.with_redis(&block)
       # use long-lived connections to redis, but reconnect if the connection has been lost
       # XXX: this approach is not threadsafe, designed specifically for use within unicorn
-      RedisModel.redis = Redis.new(RedisModel.config) unless RedisModel.redis && RedisModel.redis.client.connected?
-      block.call(RedisModel.redis)
+      self.redis = Redis.new(self.config) unless self.redis && self.redis.client.connected?
+      block.call(self.redis)
     end
 
     def self.benchmark(description, &block)

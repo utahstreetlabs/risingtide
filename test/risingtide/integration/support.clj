@@ -104,6 +104,9 @@
   [actor-id invitee-profile-id]
   (jobs/add-story! conn (user-piled-on actor-id invitee-profile-id)))
 
+(defn builds-feeds
+  [actor-id]
+  (jobs/build-feeds! conn [actor-id]))
 
 ;; reset
 

@@ -9,44 +9,34 @@
  (before :facts (clear-redis!))
  (before :facts (clear-digesting-cache!)))
 
-(fact "card feeds are generated correctly"
+(fact "initial feed builds bring in old stories"
   (on-copious
-   (rob interested-in-user jim)
    (jim activates bacon)
    (jim likes ham)
-   (dave likes scones)
-   (jim shares eggs)
-   (bcm activates toast)
-   (jim sells muffins)
-   (jim comments-on breakfast-tacos)
-   (jim likes-tag breakfast)
-   (jim likes danishes {:feed "ylf"})
-   (jim likes croissants {:feed "ev"})
-   (jim likes omelettes {:feed ["ev" "ylf"]}))
+   (jim likes toast)
+   (jim shares toast)
+   (jim likes omelettes {:feed ["ev"]})
+   (jim joins)
+   (jim follows jon))
+  (clear-digesting-cache!)
+  (on-copious
+   (rob interested-in-user jim)
+   (rob builds-feeds))
 
   (feed-for-rob :card) => (encoded-feed
                            (listing-activated jim bacon)
                            (listing-liked jim ham)
-                           (listing-shared jim eggs)
-                           (listing-sold jim muffins)
-                           (listing-commented jim breakfast-tacos)
-                           (tag-liked jim breakfast)
-                           (listing-liked jim danishes {:feed "ylf"})
-                           (listing-liked jim omelettes {:feed ["ev" "ylf"]}))
+                           (story/multi-action-digest toast jim ["listing_liked" "listing_shared"]))
 
-  (feed-for-rob :network) => []
+  (feed-for-rob :network) => (encoded-feed
+                              (user-joined jim)
+                              (user-followed jim jon))
 
   (everything-feed) => (encoded-feed
                         (listing-activated jim bacon)
                         (listing-liked jim ham)
-                        (listing-liked dave scones)
-                        (listing-shared jim eggs)
-                        (listing-activated bcm toast)
-                        (listing-sold jim muffins)
-                        (listing-commented jim breakfast-tacos)
-                        (tag-liked jim breakfast)
-                        (listing-liked jim croissants {:feed "ev"})
-                        (listing-liked jim omelettes {:feed ["ev" "ylf"]})))
+                        (story/multi-action-digest toast jim ["listing_liked" "listing_shared"])
+                        (listing-liked jim omelettes {:feed ["ev"]})))
 
 (fact "network feeds are generated correctly"
     (on-copious

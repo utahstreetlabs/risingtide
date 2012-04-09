@@ -91,6 +91,58 @@ on the server specified by that connection spec.
   [redii feeds params & body]
   `(doall (map-across-connections-and-feeds ~redii ~feeds (fn ~params ~@body))))
 
+;;;; feed building ;;;;
+
+(defn zunion-withscores
+  [redii story-keys limit & args]
+  (nth
+   (nth
+    (redis/with-connection (:stories redii)
+      (redis/multi)
+      (apply redis/zunionstore "rtzuniontemp" story-keys args)
+      (redis/zrange "rtzuniontemp" (- 0 limit) -1 "WITHSCORES")
+      (redis/del "rtzuniontemp")
+      (redis/exec))
+    4) 1))
+
+(defn- parse-stories-and-scores
+  [stories-and-scores]
+  (for [[story score] (partition 2 stories-and-scores)]
+    (assoc (stories/decode story) :score (Long. score))))
+
+(defn- fetch-filter-digest-user-stories
+  [redii interesting-story-keys]
+  (user-feed-stories
+   (digest/digest
+    (parse-stories-and-scores
+     (zunion-withscores redii interesting-story-keys 1000 "AGGREGATE" "MIN")))))
+
+(defn- zadd-encode-stories
+  [stories]
+  (flatten (map #(vector (:score %) (stories/encode %)) stories)))
+
+(defn- build-user-feed-query
+  "returns a query that will build and store a feed of the given type for a user"
+  ([redii user-id feed-type interesting-story-keys]
+     (let [feed-key (key/user-feed user-id feed-type)
+           stories (zadd-encode-stories (fetch-filter-digest-user-stories redii interesting-story-keys))]
+       (when (not (empty? stories))
+         (apply redis/zadd feed-key stories))))
+  ([redii feed-key]
+     (let [[feed-type user-id] (key/type-user-id-from-feed-key feed-key)]
+       (build-user-feed-query redii user-id feed-type (interesting-story-keys redii feed-type user-id)))))
+
+(defn build!
+  [redii feeds-to-build]
+  (with-connections-for-feeds redii feeds-to-build [connection feeds]
+    (let [queries (filter identity (map #(build-user-feed-query redii %) feeds))]
+      (when (not (empty? queries))
+        (apply redis/with-connection connection queries)))))
+
+(defn build-for-user!
+  [redii user-id]
+  (build! redii [(key/user-card-feed user-id) (key/user-network-feed user-id)]))
+
 ;;;; redigesting ;;;;
 
 (defn- scored-encoded-stories

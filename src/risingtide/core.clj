@@ -22,7 +22,7 @@
   `(let [start# (.getTime (java.util.Date.))
          _# (log/debug "executing" ~msg)
          result# (do ~@forms)]
-     (log/info ~msg "in" (- (.getTime (java.util.Date.)) start#))
+     (log/info ~msg "in" (- (.getTime (java.util.Date.)) start#) "ms")
      result#))
 
 (comment

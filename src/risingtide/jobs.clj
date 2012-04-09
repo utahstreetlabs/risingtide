@@ -57,6 +57,11 @@
     :card (add-card-story! redii story)
     :network (add-network-story! redii story)))
 
+(defn build-feeds!
+  [redii [user-id]]
+  (bench (str "building feeds for user " user-id)
+   (feed/build-for-user! redii user-id)))
+
 (defn- process-story-job!
   [redii json-message]
   (let [msg (json/read-json json-message)
@@ -69,7 +74,8 @@
       "Stories::RemoveInterestInListing" (remove-interest! redii :listing args)
       "Stories::RemoveInterestInActor" (remove-interest! redii :actor args)
       "Stories::RemoveInterestInTag" (remove-interest! redii :tag args)
-      "Stories::Create" (add-story! redii (reduce merge args)))))
+      "Stories::Create" (add-story! redii (reduce merge args))
+      "Stories::BuildFeed" (build-feeds! redii args))))
 
 (defn process-story-jobs-from-queue!
   [run? redii queue-keys]

@@ -30,6 +30,10 @@
 (defuser bcm 3)
 (defuser dave 4)
 (defuser rob 5)
+(defuser cutter 6)
+(defuser kaitlyn 7)
+(defuser courtney 8)
+
 
 ;; profiles
 
@@ -67,16 +71,16 @@
 (def empty-feed [])
 
 ;; actions
+(defn interested-in-user
+  [actor-one-id actor-two-id]
+  (jobs/add-interest! conn :actor [actor-one-id actor-two-id]))
+
 (defmacro listing-action-helper
   [name action]
   `(defn ~name
      ([actor-id# listing-id# args#]
         (jobs/add-story! conn (merge args# (~action actor-id# listing-id#))))
      ([actor-id# listing-id#] (~name actor-id# listing-id# {}))))
-
-(defn interested-in-user
-  [actor-one-id actor-two-id]
-  (jobs/add-interest! conn :actor [actor-one-id actor-two-id]))
 
 (listing-action-helper activates listing-activated)
 (listing-action-helper likes listing-liked)

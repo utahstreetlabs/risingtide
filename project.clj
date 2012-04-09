@@ -1,4 +1,6 @@
-(defproject risingtide "1.0.0-SNAPSHOT"
+(load-file "src/risingtide/version.clj")
+
+(defproject risingtide risingtide.version/version
   :description "He who reads the stories writes the feeds."
   :dependencies [[org.clojure/clojure "1.3.0"]
                  [org.clojure/data.json "0.1.1"]

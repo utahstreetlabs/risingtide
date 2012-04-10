@@ -10,6 +10,7 @@ module RisingTide
       aid: :actor_id,
       aids: :actor_ids,
       lid: :listing_id,
+      lids: :listing_ids,
       tid: :tag_id,
       bid: :buyer_id,
       fid: :followee_id,

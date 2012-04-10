@@ -25,3 +25,5 @@
 
 (def max-card-feed-size 1000)
 (def max-network-feed-size 250)
+
+(def single-actor-digest-story-min 15)

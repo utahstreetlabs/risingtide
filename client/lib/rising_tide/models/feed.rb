@@ -39,7 +39,7 @@ module RisingTide
           after = after ? (after + 1 ) : 0
         end
 
-        values = with_redis do |redis|
+        values = with_redis(default_data: []) do |redis|
           fkey = self.key(options)
           count = benchmark("Get Cardinality for #{fkey} #{after} #{before}") { timeslice ? redis.zcount(fkey, after, before) : redis.zcard(fkey) }
           benchmark("Fetch values for #{fkey} #{after} #{before} #{offset} #{limit}") do

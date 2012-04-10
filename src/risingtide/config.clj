@@ -22,3 +22,6 @@
   {:development true
    :staging true
    :production true})
+
+(def max-card-feed-size 1000)
+(def max-network-feed-size 250)

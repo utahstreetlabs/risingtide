@@ -11,6 +11,21 @@
             [risingtide.queries :as queries]
             [risingtide.interesting-story-cache :as interesting]))
 
+;;;; truncation ;;;;
+
+(def ^:dynamic *max-card-feed-size* config/max-card-feed-size)
+(def ^:dynamic *max-network-feed-size* config/max-network-feed-size)
+
+(defn- truncation-range
+  [feed]
+  (case (last feed)
+    \c [0 (- 0 *max-card-feed-size* 1)]
+    \n [0 (- 0 *max-network-feed-size* 1)]))
+
+(defn truncate
+  [feed]
+  (apply redis/zremrangebyrank feed (truncation-range feed)))
+
 ;;;; keys ;;;;
 
 (defn feed-type-key [feed-type]
@@ -154,7 +169,8 @@ on the server specified by that connection spec.
   (if (empty? stories)
     []
     [(redis/zremrangebyscore feed low-score high-score)
-     (apply redis/zadd feed (scored-encoded-stories stories))]))
+     (apply redis/zadd feed (scored-encoded-stories stories))
+     (truncate feed)]))
 
 (defn- build-redigest-user-feeds-queries
   [redii destination-feeds]
@@ -199,4 +215,6 @@ on the server specified by that connection spec.
   (let [encoded-story (stories/encode story)]
     (with-connections-for-feeds redii (stories/interested-feeds redii story) [connection feeds]
       (apply redis/with-connection connection
-            (map #(redis/zadd % score encoded-story) feeds)))))
+             (interleave
+              (map #(redis/zadd % score encoded-story) feeds)
+              (map truncate feeds))))))

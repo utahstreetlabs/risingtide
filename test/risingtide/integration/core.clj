@@ -3,7 +3,8 @@
         risingtide.integration.support
         risingtide.test)
   (:use [midje.sweet])
-  (:require [risingtide.stories :as story]))
+  (:require [risingtide.stories :as story]
+            [risingtide.feed :as feed]))
 
 (background
  (before :facts (clear-redis!))
@@ -136,3 +137,40 @@
                            (story/multi-actor-digest bacon "listing_liked" [jim jon])
                            (listing-liked jon eggs)
                            (listing-liked jim toast {:feed "ylf"})))
+
+(fact "card feeds are truncated when a new card story is added"
+  (binding [feed/*max-card-feed-size* 5]
+    (on-copious
+     (rob interested-in-user jim)
+     (jim likes bacon)
+     (jim likes eggs)
+     (jim likes toast)
+     (jim likes muffins)
+     (jim likes ham)
+     (jim likes omelettes))
+
+    (feed-for-rob :card) => (encoded-feed
+                             (listing-liked jim eggs)
+                             (listing-liked jim toast)
+                             (listing-liked jim muffins)
+                             (listing-liked jim ham)
+                             (listing-liked jim omelettes))))
+
+(fact "network feeds are truncated when a new network story is added"
+  (binding [feed/*max-network-feed-size* 5]
+    (on-copious
+     (rob interested-in-user jim)
+     (jim follows jon)
+     (jim follows bcm)
+     (jim follows dave)
+     (jim follows cutter)
+     (jim follows kaitlyn)
+     (jim follows courtney))
+
+    (feed-for-rob :network) => (encoded-feed
+                                (user-followed jim bcm)
+                                (user-followed jim dave)
+                                (user-followed jim cutter)
+                                (user-followed jim kaitlyn)
+                                (user-followed jim courtney))))
+

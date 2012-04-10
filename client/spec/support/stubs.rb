@@ -12,8 +12,13 @@ module Stubs
     Redis.expects(:new).returns(redis)
     redis
   end
+
+
 end
 
 RSpec.configure do |config|
   config.include Stubs
+  config.before do
+    Airbrake.stubs(:notify)
+  end
 end

@@ -15,6 +15,8 @@ RSpec.configure do |config|
   config.mock_with :mocha
 end
 
+Ladon.logger = Logger.new('/dev/null')
+
 pattern = File.join(Dir.pwd, 'spec/support/**/*.rb')
 Dir[pattern].each {|f| require f}
 

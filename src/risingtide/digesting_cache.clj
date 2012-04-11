@@ -1,6 +1,7 @@
 (ns risingtide.digesting-cache
   (:use risingtide.core)
-  (:require [clojure.set :as set]
+  (:require [clojure.tools.logging :as log]
+            [clojure.set :as set]
             [risingtide
              [stories :as stories]
              [key :as key]]))
@@ -80,29 +81,28 @@
 
 (defn expire-cached-stories
   [cache-to-expire low-score]
-  (letfn
-      [(expire-cached-story
-         [set story]
-         (if (> (:score story) low-score)
-           (conj set story)
-           set))
-       (expire-cached-story-set
-         [cache [key story-set]]
-         (let [new-story-set (reduce expire-cached-story #{} story-set)]
-           (if (empty? new-story-set)
-             (dissoc cache key)
-             (assoc cache key new-story-set))))]
+  (try
+   (letfn
+       [(expire-cached-story
+          [set story]
+          (if (> (:score story) low-score)
+            (conj set story)
+            set))
+        (expire-cached-story-set
+          [cache [key story-set]]
+          (let [new-story-set (reduce expire-cached-story #{} story-set)]
+            (if (empty? new-story-set)
+              (dissoc cache key)
+              (assoc cache key new-story-set))))]
 
-    (swap! cache-to-expire
-           #(bench "attempting to expire cached stories"
-                   (update-low-score (reduce expire-cached-story-set % (cached-stories %)) low-score)))))
+     (swap! cache-to-expire
+            #(bench "attempting to expire cached stories"
+                    (update-low-score (reduce expire-cached-story-set % (cached-stories %)) low-score))))
+   (catch Throwable t (log/error t) (safe-print-stack-trace t))))
 
-(defn cache-expiration-thread
-  [run? cache-to-expire expire-every-ms ttl]
-  (future
-    (loop [last-run (now)]
-      (let [run-next (+ last-run expire-every-ms)
-            expiration-time (- (now) ttl)]
-        (expire-cached-stories cache-to-expire expiration-time)
-        (while (and @run? (< (now) run-next)) (Thread/sleep 500))
-        (when @run? (recur run-next))))))
+(defn cache-expirer
+  [cache-to-expire expire-every-ms ttl]
+  (doto (java.util.concurrent.ScheduledThreadPoolExecutor. 1)
+    (.scheduleWithFixedDelay
+     #(expire-cached-stories cache-to-expire (- (now) ttl))
+     0 expire-every-ms java.util.concurrent.TimeUnit/SECONDS)))

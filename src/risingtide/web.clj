@@ -28,7 +28,6 @@
    "environment" env
    "connections" (:connections processor)
    "cache size" (count (dc/all-stories @(:cache processor)))
-   "cache expiration running" @(:run-expiration-thread processor)
    "processor running" @(:run-processor processor)))
 
 (defn handler

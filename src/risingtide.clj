@@ -21,14 +21,21 @@
   []
   (stop-thread :run-processor))
 
-(defn stop-expiration-thread
+(defn wait-for-processor
   []
-  (stop-thread :run-expiration-thread))
+  (deref (:processor @processor)))
+
+(defn stop-expirer
+  []
+  (.shutdown (:expirer @processor)))
+
+(defn wait-for-expirer
+  []
+  (.awaitTermination (:expirer @processor) 5 java.util.concurrent.TimeUnit/SECONDS))
 
 (defn start-processor
   [config cache]
-  (let [run-processor (atom true)
-        run-expiration-thread (atom true)]
+  (let [run-processor (atom true)]
     (log/info "preloading cache")
     (dc/preload! (:connections config) (:cache-ttl config))
     (log/info "cache preloaded with" (count @cache) "keys, starting processor")
@@ -38,12 +45,10 @@
                                 (:connections config)
                                 (:story-queues config)))
             :run-processor run-processor
-            :expiration-thread (dc/cache-expiration-thread
-                                run-expiration-thread
+            :expirer (dc/cache-expirer
                                 cache
                                 (:cache-expiration-frequency config)
                                 (:cache-ttl config))
-            :run-expiration-thread run-expiration-thread
             :cache cache})))
 
 (defn stop
@@ -51,11 +56,11 @@
   []
   (log/info "stopping" processor)
   (stop-processor)
-  (stop-expiration-thread)
+  (stop-expirer)
   (log/info "waiting for processor thread" (:processor @processor))
-  (deref (:processor @processor))
-  (log/info "waiting for expiration thread" (:expiration-thread @processor))
-  (deref (:expiration-thread @processor))
+  (wait-for-processor)
+  (log/info "waiting for expirer" (:expirer @processor))
+  (wait-for-expirer)
   (log/info "stopped" processor)
   @processor)
 
@@ -66,7 +71,7 @@
     (handle [signal]
       (log/info "received" signal)
       (try (stop)
-           (catch Throwable t (log/error "error stopping:" t) (safe-print-stack-trace t "shutdown")))
+           (catch Throwable t (log/error "error stopping:" t) (safe-print-stack-trace t)))
       (log/info "stopped")
       (shutdown-agents)
       (.exit (Runtime/getRuntime) 0))))
@@ -95,8 +100,9 @@
         {:connections (connections)
          :story-queues ["resque:queue:rising_tide_priority"
                         "resque:queue:rising_tide_stories"]
-         :cache-expiration-frequency 60000
-         :cache-ttl (* 6 60 60)}]
+         :cache-expiration-frequency (* 5 60) ;; seconds
+         :cache-ttl (* 6 60 60) ;; seconds
+         }]
     (log/info "Starting Rising Tide: processing story jobs with config" config)
     (swap! processor (fn [_] (start-processor config dc/story-cache)))
     "Started Rising Tide: The Feeds Must Flow"))
@@ -104,4 +110,4 @@
 ;;(-main)
 ;;(stop)
 ;;(stop-processor)
-;;(stop-expiration-thread)
+;;(stop-expirer)

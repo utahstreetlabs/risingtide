@@ -13,10 +13,10 @@
           :interests {:host "demo1.copious.com"}
           :stories {:host "demo1.copious.com"}}
    :production {:resque {:host "resque-redis-master.copious.com"}
-                :card-feeds {:host "mag-redis-master.copious.com"}
-                :network-feeds {:host "mag-redis-master.copious.com"}
-                :interests {:host "mag-redis-master.copious.com"}
-                :stories {:host "mag-redis-master.copious.com"}}})
+                :card-feeds {:host "rt-card-feeds-redis.copious.com"}
+                :network-feeds {:host "rt-network-feeds-redis.copious.com"}
+                :interests {:host "rt-interests-redis.copious.com"}
+                :stories {:host "rt-stories-redis.copious.com"}}})
 
 (def digest
   {:development true

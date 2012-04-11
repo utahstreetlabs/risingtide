@@ -101,8 +101,12 @@
    (catch Throwable t (log/error t) (safe-print-stack-trace t))))
 
 (defn cache-expirer
-  [cache-to-expire expire-every-ms ttl]
+  "Given a cache, an interval in seconds and a time-to-live in seconds, start
+scheduling tasks with a fixed delay of expiration-interval to expire items in the
+cache that have been around longer than the time-to-live.
+"
+  [cache-to-expire expiration-interval ttl]
   (doto (java.util.concurrent.ScheduledThreadPoolExecutor. 1)
     (.scheduleWithFixedDelay
      #(expire-cached-stories cache-to-expire (- (now) ttl))
-     0 expire-every-ms java.util.concurrent.TimeUnit/SECONDS)))
+     0 expiration-interval java.util.concurrent.TimeUnit/SECONDS)))

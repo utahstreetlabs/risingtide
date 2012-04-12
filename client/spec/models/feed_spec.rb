@@ -69,5 +69,15 @@ describe RisingTide::Feed do
         result.first.should == RisingTide::Story.decode(*stories[0..1])
       end
     end
+
+    context 'when an error occurs' do
+      let(:key) { "magt:f:c" }
+
+      it 'should return the default data' do
+        redis.expects(:zcard).raises(Exception.new('explosions!'))
+        result = RisingTide::CardFeed.find_slice
+        result.should have(0).stories
+      end
+    end
   end
 end

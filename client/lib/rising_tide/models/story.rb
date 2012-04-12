@@ -54,7 +54,7 @@ module RisingTide
       # @return [Hash] a lookup table of listing id to stories
       def find_most_recent_for_listings(listing_ids, options = {})
         limit = options[:limit] || 1
-        with_redis do |redis|
+        with_redis(default_data: {}) do |redis|
           if user_id = options[:interested_user_id]
             interesting_listings = Set.new(redis.smembers(interest_key(user_id, :l)).map {|m| m.split(':').last.to_i})
             interesting_actors = Set.new(redis.smembers(interest_key(user_id, :a)).map {|m| m.split(':').last.to_i})

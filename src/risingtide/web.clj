@@ -6,6 +6,7 @@
   (:require [clojure.tools.logging :as log]
             [risingtide.digesting-cache :as dc]
             [risingtide.version :as version]
+            [risingtide.config :as config]
             [net.cgrand.enlive-html :as html]))
 
 (html/deftemplate layout "html/layout.html"
@@ -27,7 +28,6 @@
    "environment" env
    "connections" (:connections processor)
    "cache size" (count (dc/all-stories @(:cache processor)))
-   "cache expiration running" @(:run-expiration-thread processor)
    "processor running" @(:run-processor processor)))
 
 (defn handler
@@ -45,7 +45,7 @@
 
 (defn run!
   [processor-atom]
-  (let [port 4050]
+  (let [port (config/ports :admin)]
     (log/info (format "starting console on http://localhost:%s" port))
     (future (run-jetty
              (-> (handler processor-atom)

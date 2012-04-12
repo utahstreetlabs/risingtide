@@ -1,7 +1,10 @@
+require 'ladon'
 require 'redis'
 
 module RisingTide
   class RedisModel
+    include Ladon::ErrorHandling
+
     class << self
       attr_accessor :config
       attr_accessor :redis
@@ -44,11 +47,17 @@ module RisingTide
       self.feed_key(:c)
     end
 
-    def self.with_redis(&block)
+    def self.with_redis(options={}, &block)
       # use long-lived connections to redis, but reconnect if the connection has been lost
-      # XXX: this approach is not threadsafe, designed specifically for use within unicorn
-      self.redis = Redis.new(self.config) unless self.redis && self.redis.client.connected?
-      block.call(self.redis)
+      # XXX: this approach is not threadsafe, designed specifically for use within unicorn (or other non-threaded,
+      # forked servers)
+      begin
+        self.redis = Redis.new(self.config) unless self.redis && self.redis.client.connected?
+        block.call(self.redis)
+      rescue Exception => e
+        handle_error('Redis Connection', e)
+        options[:default_data] or nil
+      end
     end
 
     def self.benchmark(description, &block)

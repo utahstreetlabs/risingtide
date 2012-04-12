@@ -62,6 +62,7 @@
   (bench (str "building feeds for user " user-id)
    (feed/build-for-user! redii user-id)))
 
+
 (defn- process-story-job!
   [redii json-message]
   (let [msg (json/read-json json-message)
@@ -85,5 +86,5 @@
       (process-story-job! redii json-message)
       (catch Exception e
         (log/error "failed to process job:" json-message "with" e)
-        (safe-print-stack-trace e "jobs")))))
+        (safe-print-stack-trace e)))))
 

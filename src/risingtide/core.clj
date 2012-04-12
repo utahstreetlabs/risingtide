@@ -12,9 +12,9 @@
   (first (name string-or-keyword)))
 
 (defn safe-print-stack-trace
-  [throwable ns]
+  [throwable]
   (try
-    (.printStackTrace throwable *out*)
+    (.printStackTrace throwable)
     (catch Throwable t (prn "failed to print stack trace with error" t))))
 
 (defmacro bench

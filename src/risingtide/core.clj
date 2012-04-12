@@ -14,7 +14,7 @@
 (defn safe-print-stack-trace
   [throwable]
   (try
-    (.printStackTrace throwable)
+    (.printStackTrace throwable (java.io.PrintWriter. *out*))
     (catch Throwable t (prn "failed to print stack trace with error" t))))
 
 (defmacro bench

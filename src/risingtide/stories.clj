@@ -64,7 +64,6 @@
    :actor_id :aid
    :actor_ids :aids
    :listing_id :lid
-   :listing_ids :lids
    :tag_id :tid
    :buyer_id :bid
    :followee_id :fid
@@ -193,7 +192,3 @@
      (stash-encoded {:type :listing_multi_actor_multi_action :listing_id listing-id :types actions :score score}))
   ([listing-id actions] (multi-actor-multi-action-digest listing-id actions nil)))
 
-(defn multi-listing-digest
-  ([actor-id action listing-ids score]
-     (stash-encoded {:type :actor_multi_listing :actor_id actor-id :action action :listing_ids listing-ids :score score}))
-  ([actor-id action listing-ids] (multi-listing-digest actor-id action listing-ids nil)))

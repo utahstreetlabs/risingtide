@@ -25,7 +25,6 @@
 
 (def max-card-feed-size 1000)
 (def max-network-feed-size 250)
-(def single-actor-digest-story-min 15)
 
 (def ports {:admin 4050
             :mycroft 4055})

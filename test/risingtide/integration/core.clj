@@ -98,6 +98,26 @@
                                          bacon "listing_liked" [jim jon]))
   (feed-for-jim :card) => empty-feed)
 
+(fact "one user performing the same action on more than 15 listings is digested"
+  (on-copious
+   (rob interested-in-user jim)
+   (jim activates-many-listings (range 0 16))
+   ;; stuff that shouldn't matter
+   (bcm likes bacon))
+
+  (feed-for-rob :card) => (encoded-feed (story/multi-listing-digest jim "listing_activated" (range 0 16))))
+
+(fact "multi-listing and single-listing digest stories coexist and sometimes carry redundant information"
+  (on-copious
+   (rob interested-in-user jim)
+   (jim activates-many-listings (range 0 16))
+   (jim likes 1)
+   ;; stuff that shouldn't matter
+   (bcm likes bacon))
+
+  (feed-for-rob :card) => (encoded-feed (story/multi-listing-digest jim "listing_activated" (range 0 16))
+                                        (story/multi-action-digest 1 jim ["listing_activated" "listing_liked"])))
+
 (fact "digest stories coexist peacefully with other stories"
   (on-copious
    (jim likes ham)

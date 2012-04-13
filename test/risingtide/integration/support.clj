@@ -108,11 +108,6 @@
   [actor-id invitee-profile-id]
   (jobs/add-story! conn (user-piled-on actor-id invitee-profile-id)))
 
-(defn activates-many-listings
-  [actor-id ids]
-  (doseq [id ids]
-    (activates actor-id id)))
-
 (defn builds-feeds
   [actor-id]
   (jobs/build-feeds! conn [actor-id]))

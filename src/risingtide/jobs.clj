@@ -86,5 +86,5 @@
       (process-story-job! redii json-message)
       (catch Exception e
         (log/error "failed to process job:" json-message "with" e)
-        (safe-print-stack-trace e "jobs")))))
+        (safe-print-stack-trace e)))))
 

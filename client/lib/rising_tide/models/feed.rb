@@ -53,7 +53,7 @@ module RisingTide
       def count(options = {})
         fkey, before, after = common_options(options)
         benchmark("Get Cardinality for #{fkey} #{after} #{before}") do
-          with_redis {|r| (before || after) ? r.zcount(fkey, after, before) : r.zcard(fkey) }
+          with_redis { |r| (before || after) ? r.zcount(fkey, after, before) : r.zcard(fkey) }
         end
       end
 

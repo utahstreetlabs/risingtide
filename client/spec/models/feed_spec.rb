@@ -2,13 +2,14 @@ require 'spec_helper'
 require 'rising_tide/models/feed'
 
 describe RisingTide::Feed do
+  let(:redis) { stub_redis }
+
   describe '#find_slice' do
     let(:story_hashes) do
       [{t: :listing_activated, lid: 1, aid: 2}, {t: :listing_liked, lid: 3, aid: 4},
        {t: :listing_sold, lid: 5, aid: 6}, {t: :tag_liked, tid: 7, aid: 8}]
     end
     let(:stories) { story_hashes.each_with_index.flat_map {|h,i| [Yajl::Encoder.encode(h), i.days.ago.to_i]} }
-    let(:redis) { stub_redis }
 
     context 'with no interested user id specified' do
       let(:key) { "magt:f:c" }
@@ -77,6 +78,31 @@ describe RisingTide::Feed do
         redis.expects(:zcard).raises(Exception.new('explosions!'))
         result = RisingTide::CardFeed.find_slice
         result.should have(0).stories
+      end
+    end
+  end
+
+  describe '#count' do
+    context 'with an interested user id specified' do
+      let(:user_id) { 10 }
+      let(:key) { "magt:f:u:#{user_id}:c" }
+      let(:count) { 7 }
+
+      context 'with no timeslicing' do
+        it 'should return the count of new listings for the user' do
+          redis.expects(:zcard).with(key).returns(count)
+          result = RisingTide::CardFeed.count(interested_user_id: user_id)
+          result.should == count
+        end
+      end
+
+      context 'with a before parameter' do
+        let(:before) { 1334457543 }
+        it 'should return the count of new listings for the user before that time' do
+          redis.expects(:zcount).with(key, 0, before - 1).returns(count)
+          result = RisingTide::CardFeed.count(interested_user_id: user_id, before: before)
+          result.should == count
+        end
       end
     end
   end

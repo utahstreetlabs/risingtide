@@ -145,6 +145,17 @@
  ;; ;; digests to
  [(story/multi-listing-digest jim "listing_activated" (range 0 16))])
 
+
 (comment
   (feed-from-index (index-predigested-feed [jim-liked-hams]))
+
+(fact "adding stuff to the feed cache works"
+  (map #(add-story-to-feed-cache "testfeed" %))
+
+  )
+  (feed-from-index
+   (binding [*cache-ttl* (* 5 24 60 60)]
+      (add-story-to-feed-cache (:development risingtide.config/redii)
+                               "magt:f:u:0:c" jim-liked-hams)))
+
 )

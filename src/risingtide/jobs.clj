@@ -9,7 +9,8 @@
              [resque :as resque]
              [stories :as stories]
              [key :as key]
-             [digesting-cache :as dc]]))
+             [digesting-cache :as dc]
+             [dgest :as dgest]]))
 
 (defn- add-interest-and-redigest!
   [redii type user-id object-id]
@@ -38,11 +39,14 @@
          (interests/remove! redii user-id type object-id)))
 
 (defn- add-card-story!
-  [redii story]
-  (bench (str "add card story " story)
-         (dc/add! redii story (now))
-         (feed/redigest-user-feeds! redii (stories/interested-feeds redii story))
-         (feed/redigest-everything-feed! redii)))
+  [redii raw-story]
+  (bench (str "add card story " raw-story)
+         (let [story (stories/stash-encoded raw-story)]
+          (stories/add! redii story (now))
+          (when (feed/for-user-feed? story)
+            (doall (map #(dgest/add-story-to-feed-cache redii % story) (stories/interested-feeds redii story))))
+          (when (feed/for-everything-feed? story)
+            (dgest/add-story-to-feed-cache redii (key/everything-feed) story)))))
 
 (defn- add-network-story!
   [redii story]

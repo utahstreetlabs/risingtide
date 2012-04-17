@@ -3,11 +3,13 @@
         risingtide.test)
   (:require [clojure.data.json :as json]
             [accession.core :as redis]
+            [risingtide.config :as config]
             [risingtide.key :as key]
             [risingtide.jobs :as jobs]
             [risingtide.stories :as story]
             [risingtide.queries :as queries]
-            [risingtide.digesting-cache :as dc]))
+            [risingtide.digesting-cache :as dc]
+            [risingtide.dgest :as dgest]))
 
 (def conn {:interests (redis/connection-map {:db 1})
            :card-feeds (redis/connection-map {:db 2})
@@ -133,6 +135,10 @@
   []
   (dc/reset-cache!))
 
+(defn clear-dgest-cache!
+  []
+  (dgest/reset-cache!))
+
 
 ;; effing macros, how do they work
 
@@ -171,4 +177,5 @@ usable in backgrounds yet.
 "
   [& statements]
   `(with-increasing-seconds-timeline
-    ~@(map swap-subject-action statements)))
+     ~@(map swap-subject-action statements)
+     (dgest/write-cache! conn)))

@@ -174,9 +174,13 @@
 
 ;; creating new stories
 
-(defn- stash-encoded
+(defn stash-encoded
   [s]
   (assoc s :encoded (encode s)))
+
+(defn update-digest
+  [digest & args]
+  (stash-encoded (apply assoc digest args)))
 
 (def digest-types
   {:lmt "listing_multi_action"

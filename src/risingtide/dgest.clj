@@ -248,7 +248,7 @@
 
 (defn clean-feed-index
   [feed-index]
-  (dissoc (expire-feed-index feed-index) :dirty))
+  (dissoc (expire-feed-indexes feed-index) :dirty))
 
 (defn write-feed-atom!
   [redii key feed-atom]

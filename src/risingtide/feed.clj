@@ -168,7 +168,7 @@ on the server specified by that connection spec.
   [stories]
   (interleave (map :score stories) (map :encoded stories)))
 
-(defn- replace-feed-head-query
+(defn replace-feed-head-query
   [feed stories low-score high-score]
   (if (empty? stories)
     []

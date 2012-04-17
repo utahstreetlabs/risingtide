@@ -178,22 +178,35 @@
   [s]
   (assoc s :encoded (encode s)))
 
+(def digest-types
+  {:lmt "listing_multi_action"
+   :lma "listing_multi_actor"
+   :lmama "listing_multi_actor_multi_action"
+   :aml "actor_multi_listing"})
+
+(def digest-type-names
+  (into #{} (vals digest-types)))
+
+(defn digest-story?
+  [story]
+  (digest-type-names (:type story)))
+
 (defn multi-action-digest
   ([listing-id actor-id actions score]
-     (stash-encoded {:type :listing_multi_action :actor_id actor-id :listing_id listing-id :types actions :score score}))
+     (stash-encoded {:type (digest-types :lmt) :actor_id actor-id :listing_id listing-id :types actions :score score}))
   ([listing-id actor-id actions] (multi-action-digest listing-id actor-id actions nil)))
 
 (defn multi-actor-digest
   ([listing-id action actor-ids score]
-     (stash-encoded {:type :listing_multi_actor :listing_id listing-id :action action :actor_ids actor-ids :score score}))
+     (stash-encoded {:type (digest-types :lma) :listing_id listing-id :action action :actor_ids actor-ids :score score}))
   ([listing-id action actor-ids] (multi-actor-digest listing-id action actor-ids nil)))
 
 (defn multi-actor-multi-action-digest
   ([listing-id actions score]
-     (stash-encoded {:type :listing_multi_actor_multi_action :listing_id listing-id :types actions :score score}))
+     (stash-encoded {:type (digest-types :lmama) :listing_id listing-id :types actions :score score}))
   ([listing-id actions] (multi-actor-multi-action-digest listing-id actions nil)))
 
 (defn multi-listing-digest
   ([actor-id action listing-ids score]
-     (stash-encoded {:type :actor_multi_listing :actor_id actor-id :action action :listing_ids listing-ids :score score}))
+     (stash-encoded {:type (digest-types :aml) :actor_id actor-id :action action :listing_ids listing-ids :score score}))
   ([actor-id action listing-ids] (multi-listing-digest actor-id action listing-ids nil)))

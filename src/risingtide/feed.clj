@@ -106,6 +106,10 @@ on the server specified by that connection spec.
   [redii feeds params & body]
   `(doall (map-across-connections-and-feeds ~redii ~feeds (fn ~params ~@body))))
 
+(defmacro with-connection-for-feed
+  [redii feed-key connection-vec & body]
+  `(first (feed/with-connections-for-feeds ~redii [~feed-key] [~(first connection-vec) _#] ~@body)))
+
 ;;;; feed building ;;;;
 
 (defn zunion-withscores
@@ -120,7 +124,7 @@ on the server specified by that connection spec.
       (redis/exec))
     4) 1))
 
-(defn- parse-stories-and-scores
+(defn parse-stories-and-scores
   [stories-and-scores]
   (for [[story score] (partition 2 stories-and-scores)]
     (assoc (stories/decode story) :score (Long. score))))

@@ -8,7 +8,6 @@
 
 (background
  (before :facts (clear-redis!))
- (before :facts (clear-digesting-cache!))
  (before :facts (clear-dgest-cache!)))
 
 (fact "initial feed builds bring in old stories"

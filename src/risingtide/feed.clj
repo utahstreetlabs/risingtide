@@ -4,8 +4,6 @@
   (:require [clojure.tools.logging :as log]
             [accession.core :as redis]
             [risingtide.config :as config]
-            [risingtide.digest :as digest]
-            [risingtide.digesting-cache :as dc]
             [risingtide.key :as key]
             [risingtide.stories :as stories]
             [risingtide.queries :as queries]

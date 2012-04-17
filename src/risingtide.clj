@@ -4,7 +4,7 @@
             [accession.core :as redis]
             [risingtide.feed :as feed]
             [risingtide.jobs :as jobs]
-            [risingtide.digesting-cache :as dc]
+            [risingtide.dgest :as digest]
             [risingtide.config :as config]
             [risingtide.web :as web]
             [clj-logging-config.log4j :as log-config]
@@ -25,19 +25,10 @@
   []
   (deref (:processor @processor)))
 
-(defn stop-expirer
-  []
-  (.shutdown (:expirer @processor)))
-
-(defn wait-for-expirer
-  []
-  (.awaitTermination (:expirer @processor) 5 java.util.concurrent.TimeUnit/SECONDS))
-
 (defn start-processor
   [config cache]
   (let [run-processor (atom true)]
     (log/info "preloading cache")
-    (dc/preload! (:connections config) (:cache-ttl config))
     (log/info "cache preloaded with" (count @cache) "keys, starting processor")
     (merge config
            {:processor (future (jobs/process-story-jobs-from-queue!
@@ -45,10 +36,6 @@
                                 (:connections config)
                                 (:story-queues config)))
             :run-processor run-processor
-            :expirer (dc/cache-expirer
-                                cache
-                                (:cache-expiration-frequency config)
-                                (:cache-ttl config))
             :cache cache})))
 
 (defn stop
@@ -56,11 +43,8 @@
   []
   (log/info "stopping" processor)
   (stop-processor)
-  (stop-expirer)
   (log/info "waiting for processor thread" (:processor @processor))
   (wait-for-processor)
-  (log/info "waiting for expirer" (:expirer @processor))
-  (wait-for-expirer)
   (log/info "stopped" processor)
   @processor)
 
@@ -100,11 +84,10 @@
         {:connections (connections)
          :story-queues ["resque:queue:rising_tide_priority"
                         "resque:queue:rising_tide_stories"]
-         :cache-expiration-frequency (* 5 60) ;; seconds
          :cache-ttl (* 6 60 60) ;; seconds
          }]
     (log/info "Starting Rising Tide: processing story jobs with config" config)
-    (swap! processor (fn [_] (start-processor config dc/story-cache)))
+    (swap! processor (fn [_] (start-processor config digest/feed-cache)))
     "Started Rising Tide: The Feeds Must Flow"))
 
 ;;(-main)

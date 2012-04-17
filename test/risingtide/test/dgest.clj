@@ -1,4 +1,4 @@
-(ns risingtide.test.digest
+(ns risingtide.test.dgest
   (:use risingtide.dgest
         risingtide.test
         [risingtide.core :only [env now]])

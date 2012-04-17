@@ -9,7 +9,6 @@
              [resque :as resque]
              [stories :as stories]
              [key :as key]
-             [digesting-cache :as dc]
              [dgest :as dgest]]))
 
 (defn- add-interest-and-redigest!

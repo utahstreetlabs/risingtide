@@ -19,14 +19,16 @@
    (jim shares toast)
    (jim likes omelettes {:feed ["ev"]})
    (jim joins)
-   (jim follows jon)
+   (jim follows jon))
+  ;; implicit write here
+  (on-copious
    (rob interested-in-user jim)
    (rob builds-feeds))
 
   (feed-for-rob :card) => (encoded-feed
                            (listing-activated jim bacon)
                            (listing-liked jim ham)
-                           (story/multi-action-digest toast jim ["listing_liked" "listing_shared"]))
+                           (story/multi-action-digest toast jim ["listing_shared" "listing_liked"]))
 
   (feed-for-rob :network) => (encoded-feed
                               (user-joined jim)

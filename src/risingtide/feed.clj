@@ -38,10 +38,6 @@
   (let [f (feed-type-key feed-type)]
     (map #(key/format-key f %) (interesting/feed-stories redii user-id feed-type))))
 
-(defn interesting-keys-for-feeds
-  [redii feeds]
-  (map #(apply interesting-story-keys redii (key/type-user-id-from-feed-key %)) feeds))
-
 
 ;;;; filtering ;;;;
 
@@ -110,58 +106,6 @@ on the server specified by that connection spec.
   [redii feed-key connection-vec & body]
   `(first (feed/with-connections-for-feeds ~redii [~feed-key] [~(first connection-vec) _#] ~@body)))
 
-;;;; feed building ;;;;
-
-(defn zunion-withscores
-  [redii story-keys limit & args]
-  (nth
-   (nth
-    (redis/with-connection (:stories redii)
-      (redis/multi)
-      (apply redis/zunionstore "rtzuniontemp" story-keys args)
-      (redis/zrange "rtzuniontemp" (- 0 limit) -1 "WITHSCORES")
-      (redis/del "rtzuniontemp")
-      (redis/exec))
-    4) 1))
-
-(defn parse-stories-and-scores
-  [stories-and-scores]
-  (for [[story score] (partition 2 stories-and-scores)]
-    (assoc (stories/decode story) :score (Long. score))))
-
-(defn- fetch-filter-digest-user-stories
-  [redii interesting-story-keys]
-  (user-feed-stories
-   (digest/digest
-    (parse-stories-and-scores
-     (zunion-withscores redii interesting-story-keys 1000 "AGGREGATE" "MIN")))))
-
-(defn- zadd-encode-stories
-  [stories]
-  (flatten (map #(vector (:score %) (stories/encode %)) stories)))
-
-(defn- build-user-feed-query
-  "returns a query that will build and store a feed of the given type for a user"
-  ([redii user-id feed-type interesting-story-keys]
-     (let [feed-key (key/user-feed user-id feed-type)
-           stories (zadd-encode-stories (fetch-filter-digest-user-stories redii interesting-story-keys))]
-       (when (not (empty? stories))
-         (apply redis/zadd feed-key stories))))
-  ([redii feed-key]
-     (let [[feed-type user-id] (key/type-user-id-from-feed-key feed-key)]
-       (build-user-feed-query redii user-id feed-type (interesting-story-keys redii feed-type user-id)))))
-
-(defn build!
-  [redii feeds-to-build]
-  (with-connections-for-feeds redii feeds-to-build [connection feeds]
-    (let [queries (filter identity (map #(build-user-feed-query redii %) feeds))]
-      (when (not (empty? queries))
-        (apply redis/with-connection connection queries)))))
-
-(defn build-for-user!
-  [redii user-id]
-  (build! redii [(key/user-card-feed user-id) (key/user-network-feed user-id)]))
-
 ;;;; redigesting ;;;;
 
 (defn- scored-encoded-stories
@@ -175,44 +119,6 @@ on the server specified by that connection spec.
     [(redis/zremrangebyscore feed low-score high-score)
      (apply redis/zadd feed (scored-encoded-stories stories))
      (truncate feed)]))
-
-(defn- build-redigest-user-feeds-queries
-  [redii destination-feeds]
-  ;; don't feel awesome about how I'm getting high/low scores to
-  ;; pass to zremrangebyscore - should perhaps actually look through
-  ;; digested stories for high/low scores?
-  (let [cache @dc/story-cache
-        low-score (:low-score cache)
-        high-score (:high-score cache)
-        digested-stories (bench "digesting"
-                          (doall
-                           (pmap digest/digest
-                                 (map user-feed-stories
-                                      (map #(dc/stories-for-interests cache %)
-                                           (interesting-keys-for-feeds redii destination-feeds))))))]
-    (flatten
-     (doall (pmap replace-feed-head-query destination-feeds digested-stories (repeat low-score) (repeat high-score))))))
-
-(defn redigest-user-feeds!
-  [redii destination-feeds]
-  (with-connections-for-feeds redii destination-feeds [redis feeds]
-    (apply redis/with-connection redis
-           (build-redigest-user-feeds-queries redii feeds))))
-
-(defn- build-redigest-everything-card-feed-queries
-  []
-  (let [cache @dc/story-cache
-        low-score (:low-score cache)
-        high-score (:high-score cache)]
-    (replace-feed-head-query
-     (key/everything-feed)
-     (digest/digest (everything-feed-stories (dc/all-card-stories cache)))
-     low-score high-score)))
-
-(defn redigest-everything-feed!
-  [redii]
-  (bench "redigesting everything feed"
-         (apply redis/with-connection (:card-feeds redii) (build-redigest-everything-card-feed-queries))))
 
 (defn add!
   "add a story with the given score to the set of feeds that are interested in it"

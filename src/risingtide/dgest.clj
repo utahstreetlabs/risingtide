@@ -279,6 +279,16 @@
   ([cache-atom redii] (doall (map (fn [[k v]] (write-feed-atom! redii k v)) @cache-atom)))
   ([redii] (write-cache! feed-cache redii)))
 
+(defn cache-flusher
+  "Given a cache, a redis config and an interval in seconds, start scheduling tasks with a fixed
+delay of interval to flush cached feeds to redis.
+"
+  [cache-atom redii interval]
+  (doto (java.util.concurrent.ScheduledThreadPoolExecutor. 1)
+    (.scheduleWithFixedDelay
+     #(bench "flushing cache" (write-cache! cache-atom redii))
+     interval interval java.util.concurrent.TimeUnit/SECONDS)))
+
 ;;;; feed building ;;;;
 
 (defn zunion-withscores
@@ -315,17 +325,3 @@
 (defn build-for-user!
   [redii user-id]
   (build! redii [(key/user-card-feed user-id) (key/user-network-feed user-id)]))
-
-(comment
-  (get-or-load-feed-atom feed-cache (:development config/redii) "magd:f:u:47:c" (* 5 24 60 60))
-  (binding [*cache-ttl* (* 5 24 60 60)]
-   (add-story-to-feed-cache (:development config/redii) "hi" ))
-
-  (let [f (load-feed (:development config/redii) "magd:f:u:47:c" (- (now) (* 15 24 60 60)) (now))
-        f2 (feed-from-index (index-predigested-feed f))]
-
-    (count f2))
-
-
-  )
-

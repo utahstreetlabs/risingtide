@@ -4,9 +4,9 @@
             [accession.core :as redis]
             [risingtide.feed :as feed]
             [risingtide.jobs :as jobs]
-            [risingtide.dgest :as digest]
             [risingtide.config :as config]
             [risingtide.web :as web]
+            [risingtide.dgest :as digest]
             [clj-logging-config.log4j :as log-config]
             [mycroft.main :as mycroft])
   (:import [sun.misc Signal SignalHandler]))
@@ -25,6 +25,14 @@
   []
   (deref (:processor @processor)))
 
+(defn stop-flusher
+  []
+  (.shutdown (:flusher @processor)))
+
+(defn wait-for-flusher
+  []
+  (.awaitTermination (:flusher @processor) 5 java.util.concurrent.TimeUnit/SECONDS))
+
 (defn start-processor
   [config cache]
   (let [run-processor (atom true)]
@@ -36,6 +44,7 @@
                                 (:connections config)
                                 (:story-queues config)))
             :run-processor run-processor
+            :flusher (digest/cache-flusher cache (:connections config) (:cache-flush-frequency config))
             :cache cache})))
 
 (defn stop
@@ -43,8 +52,12 @@
   []
   (log/info "stopping" processor)
   (stop-processor)
+  (stop-flusher)
   (log/info "waiting for processor thread" (:processor @processor))
   (wait-for-processor)
+  (log/info "waiting for flusher" (:flusher @processor))
+  (wait-for-flusher)
+  (digest/write-cache! (:cache @processor) (:connections @processor))
   (log/info "stopped" processor)
   @processor)
 
@@ -84,6 +97,7 @@
         {:connections (connections)
          :story-queues ["resque:queue:rising_tide_priority"
                         "resque:queue:rising_tide_stories"]
+         :cache-flush-frequency 5  ;; seconds
          :cache-ttl (* 6 60 60) ;; seconds
          }]
     (log/info "Starting Rising Tide: processing story jobs with config" config)
@@ -93,4 +107,4 @@
 ;;(-main)
 ;;(stop)
 ;;(stop-processor)
-;;(stop-expirer)
+;;(stop-flusher)

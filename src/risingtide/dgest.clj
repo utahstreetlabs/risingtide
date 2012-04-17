@@ -228,12 +228,35 @@
       (apply redis/with-connection connection
              (feed/replace-feed-head-query feed-key stories low-score high-score)))))
 
+(defn expired?
+  [story]
+  (< (:score story) (- (now) *cache-ttl*)))
+
+(defn expire-feed-index
+  [feed-index]
+  (reduce (fn [f [key value]]
+            (assoc f key
+                   (if (map? value)
+                     (when (not (expired? value)) value)
+                     (let [s (filter #(not (expired? %)) value)]
+                       (when (not (empty? s)) (apply hash-set s))))))
+          {} feed-index))
+
+(defn expire-feed-indexes
+  [feed-indexes]
+  (reduce (fn [f key] (assoc f key (expire-feed-index (f key)))) feed-indexes [:listings :actors]))
+
+(defn clean-feed-index
+  [feed-index]
+  (dissoc (expire-feed-index feed-index) :dirty))
+
 (defn write-feed-atom!
   [redii key feed-atom]
   (swap! feed-atom (fn [feed-index]
                      (if (:dirty feed-index)
                        (do
-                         (write-feed-index! redii key feed-index))
+                         (write-feed-index! redii key feed-index)
+                         (clean-feed-index feed-index))
                        feed-index))))
 
 (defn write-cache!

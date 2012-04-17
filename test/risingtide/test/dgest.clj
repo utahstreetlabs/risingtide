@@ -1,7 +1,7 @@
 (ns risingtide.test.digest
   (:use risingtide.dgest
         risingtide.test
-        [risingtide.core :only [env]])
+        [risingtide.core :only [env now]])
   (:require
    [risingtide.stories :as story])
   (:use [midje.sweet]))
@@ -145,17 +145,15 @@
  ;; ;; digests to
  [(story/multi-listing-digest jim "listing_activated" (range 0 16))])
 
+(defn scored-seconds-ago
+  [story seconds]
+  (assoc story :score (- (now) seconds)))
 
-(comment
-  (feed-from-index (index-predigested-feed [jim-liked-hams]))
+(def ssa scored-seconds-ago)
 
-(fact "adding stuff to the feed cache works"
-  (map #(add-story-to-feed-cache "testfeed" %))
+(fact "expiration works"
+  (let [index (index-predigested-feed [(ssa jim-shared-hams 90) (ssa jim-activated-hams 60) (ssa jon-shared-bacon 30)])]
+    (map us (feed-from-index index)) => (map us [(story/multi-action-digest hams jim ["listing_shared" "listing_activated"]) jon-shared-bacon])
+    (map us (feed-from-index (binding [*cache-ttl* 45] (expire-feed-indexes index)))) =>
+    (map us [jon-shared-bacon])))
 
-  )
-  (feed-from-index
-   (binding [*cache-ttl* (* 5 24 60 60)]
-      (add-story-to-feed-cache (:development risingtide.config/redii)
-                               "magt:f:u:0:c" jim-liked-hams)))
-
-)

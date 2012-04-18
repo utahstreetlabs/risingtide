@@ -8,7 +8,8 @@
 
 (background
  (before :facts (clear-redis!))
- (before :facts (clear-digesting-cache!)))
+ (before :facts (clear-digesting-cache!))
+ (before :facts (clear-dgest-cache!)))
 
 (fact "initial feed builds bring in old stories"
   (on-copious
@@ -18,9 +19,7 @@
    (jim shares toast)
    (jim likes omelettes {:feed ["ev"]})
    (jim joins)
-   (jim follows jon))
-  (clear-digesting-cache!)
-  (on-copious
+   (jim follows jon)
    (rob interested-in-user jim)
    (rob builds-feeds))
 
@@ -36,7 +35,7 @@
   (everything-feed) => (encoded-feed
                         (listing-activated jim bacon)
                         (listing-liked jim ham)
-                        (story/multi-action-digest toast jim ["listing_liked" "listing_shared"])
+                        (story/multi-action-digest toast jim ["listing_shared" "listing_liked"])
                         (listing-liked jim omelettes {:feed ["ev"]})))
 
 (fact "network feeds are generated correctly"
@@ -67,7 +66,7 @@
    (jon likes bacon))
 
   (feed-for-rob :card) => (encoded-feed
-                           (story/multi-action-digest bacon jim ["listing_activated" "listing_liked"]))
+                           (story/multi-action-digest bacon jim ["listing_liked" "listing_activated"]))
   (feed-for-jim :card) => empty-feed)
 
 (fact "multiple actions by a multiple interesting users are digested"
@@ -82,7 +81,7 @@
 
   (feed-for-rob :card) => (encoded-feed (story/multi-actor-multi-action-digest
                                          bacon
-                                         {"listing_liked" [jim jon] "listing_activated" [jim]}))
+                                         {"listing_liked" [jon jim] "listing_activated" [jim]}))
   (feed-for-jim :card) => empty-feed)
 
 (fact "multiple users performing the same action are digested"
@@ -116,13 +115,13 @@
    (bcm likes bacon))
 
   (feed-for-rob :card) => (encoded-feed (story/multi-listing-digest jim "listing_activated" (range 0 16))
-                                        (story/multi-action-digest 1 jim ["listing_activated" "listing_liked"])))
+                                        (story/multi-action-digest 1 jim ["listing_liked" "listing_activated"])))
 
 (fact "digest stories coexist peacefully with other stories"
   (on-copious
-   (jim likes ham)
    (rob interested-in-user jim)
    (rob interested-in-user jon)
+   (jim likes ham)
    (jim likes bacon)
    (jon likes bacon)
    (jon likes eggs)
@@ -137,15 +136,15 @@
 
 (fact "the everything feed contains (allthethings)"
   (on-copious
-   (jim likes ham)
    (rob interested-in-user jim)
    (rob interested-in-user jon)
+   (jim likes ham)
    (jim likes bacon)
    (jon likes bacon)
    (jon likes eggs)
    (bcm likes bacon)
    (jim likes toast {:feed "ylf"})
-   (dave shares muffins)) ;; NOTE THAT THIS HAS NEVER HAPPENED >:o
+  (dave shares muffins)) ;; NOTE THAT THIS HAS NEVER HAPPENED >:o
 
   (everything-feed) => (encoded-feed
                         (listing-liked jim ham)

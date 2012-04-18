@@ -7,7 +7,7 @@
             [accession.core :as redis]
             [clojure.set :as set]))
 
-
+(def ^:dynamic *cache-ttl* (* 6 60 60))
 
 (defn feed-load-cmd
   ([feed-key since until]
@@ -29,7 +29,7 @@
 (defmethod add-to-listing-digest "listing_multi_action" [current story]
   {:pre [(= (:listing_id current) (:listing_id story))]}
   (if (= (:actor_id current) (:actor_id story))
-    (assoc current
+    (story/update-digest current
       :types (distinct (conj (:types current) (:type story)))
       :score (:score story))
     (story/multi-actor-multi-action-digest
@@ -42,7 +42,7 @@
 (defmethod add-to-listing-digest "listing_multi_actor" [current story]
    {:pre [(= (:listing_id current) (:listing_id story))]}
    (if (= (:type story) (:action current))
-     (assoc current
+     (story/update-digest current
        :actor_ids (distinct (conj (:actor_ids current) (:actor_id story)))
        :score (:score story))
      (story/multi-actor-multi-action-digest
@@ -54,9 +54,9 @@
 (defmethod add-to-listing-digest "listing_multi_actor_multi_action" [current story]
   {:pre [(= (:listing_id current) (:listing_id story))]}
   (let [path [:types (:type story)]]
-    (-> current
-        (assoc-in path (distinct (conj (get-in current path) (:actor_id story))))
-        (assoc :score (:score story)))))
+    (story/update-digest
+     (assoc-in current path (distinct (conj (get-in current path) (:actor_id story))))
+     :score (:score story))))
 
 (defn- listing-digest-index-for-stories [stories]
   (reduce (fn [m story]
@@ -117,7 +117,7 @@
 
 (defn add-to-actor-digest [current story]
   {:pre [(= (:actor_id current) (:actor_id story))]}
-  (assoc current
+  (story/update-digest current
     :listing_ids (distinct (conj (:listing_ids current) (:listing_id story)))
     :score (:score story)))
 
@@ -162,13 +162,43 @@
 
 (defn add-story
   [digesting-index story]
-  (-> digesting-index
-      (add-story-to-listings-index story)
-      (add-story-to-actors-index story)))
+  (if (:listing_id story)
+   (-> digesting-index
+       (add-story-to-listings-index story)
+       (add-story-to-actors-index story))
+   (assoc digesting-index :nodigest (cons story (:nodigest digesting-index)))))
 
 (defn index-predigested-feed
   [feed]
   (reduce add-story {:listings {} :actors {}} feed))
+
+;;; cache
+
+(def feed-cache (atom {}))
+
+(defn reset-cache! []
+  (swap! feed-cache (constantly {}) feed-cache))
+
+(defn get-or-load-feed-atom
+  [cache-atom redii feed-key ttl]
+  (or (@cache-atom feed-key)
+      (let [feed-index-atom (atom (index-predigested-feed (load-feed redii feed-key (- (now) ttl) (now))))]
+        (swap! cache-atom (fn [cache] (assoc cache feed-key feed-index-atom)))
+        feed-index-atom)))
+
+(defn add-story-to-feed-index
+  [feed-index-atom story]
+  (swap! feed-index-atom (fn [feed-index]
+                           (assoc (add-story feed-index story)
+                             :dirty true))))
+
+(defn add-story-to-feed-cache
+  ([cache-atom redii feed-key story]
+     (add-story-to-feed-index (get-or-load-feed-atom cache-atom redii feed-key *cache-ttl*) story))
+  ([redii feed-key story] (add-story-to-feed-cache feed-cache redii feed-key story)))
+
+
+;;; creating a feed from the digesting index
 
 (defn- bucket-story
   [m story]
@@ -181,11 +211,64 @@
   (let [bucketed-stories
         [(reduce bucket-story {} (vals (:listings digesting-index)))
          (reduce bucket-story {} (vals (:actors digesting-index)))]]
-    (concat (apply set/union (map :digest bucketed-stories))
-            (apply set/intersection (map :single bucketed-stories)))))
+    (concat (:nodigest digesting-index)
+     (apply set/union (map :digest bucketed-stories))
+     (apply set/intersection (map :single bucketed-stories)))))
+
+;;; writing out the cache
+
+(defn write-feed-index!
+  [redii feed-key feed-atom]
+  (let [stories (feed-from-index feed-atom)
+        scores (map :score stories)
+        low-score (apply min scores)
+        high-score (apply max scores)]
+    (feed/with-connection-for-feed redii feed-key
+      [connection]
+      (apply redis/with-connection connection
+             (feed/replace-feed-head-query feed-key stories low-score high-score)))))
+
+(defn expired?
+  [story]
+  (< (:score story) (- (now) *cache-ttl*)))
+
+(defn expire-feed-index
+  [feed-index]
+  (reduce (fn [f [key value]]
+            (assoc f key
+                   (if (map? value)
+                     (when (not (expired? value)) value)
+                     (let [s (filter #(not (expired? %)) value)]
+                       (when (not (empty? s)) (apply hash-set s))))))
+          {} feed-index))
+
+(defn expire-feed-indexes
+  [feed-indexes]
+  (reduce (fn [f key] (assoc f key (expire-feed-index (f key)))) feed-indexes [:listings :actors]))
+
+(defn clean-feed-index
+  [feed-index]
+  (dissoc (expire-feed-index feed-index) :dirty))
+
+(defn write-feed-atom!
+  [redii key feed-atom]
+  (swap! feed-atom (fn [feed-index]
+                     (if (:dirty feed-index)
+                       (do
+                         (write-feed-index! redii key feed-index)
+                         (clean-feed-index feed-index))
+                       feed-index))))
+
+(defn write-cache!
+  ([cache-atom redii] (doall (pmap (fn [[k v]] (write-feed-atom! redii k v)) @cache-atom)))
+  ([redii] (write-cache! feed-cache redii)))
 
 (comment
-  (let [f (load-feed (:development config/redii) "magd:f:u:47:c" 0 (now))
+  (get-or-load-feed-atom feed-cache (:development config/redii) "magd:f:u:47:c" (* 5 24 60 60))
+  (binding [*cache-ttl* (* 5 24 60 60)]
+   (add-story-to-feed-cache (:development config/redii) "hi" ))
+
+  (let [f (load-feed (:development config/redii) "magd:f:u:47:c" (- (now) (* 15 24 60 60)) (now))
         f2 (feed-from-index (index-predigested-feed f))]
 
     (count f2))

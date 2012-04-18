@@ -6,7 +6,7 @@
             [risingtide.jobs :as jobs]
             [risingtide.config :as config]
             [risingtide.web :as web]
-            [risingtide.dgest :as digest]
+            [risingtide.digest :as digest]
             [clj-logging-config.log4j :as log-config]
             [mycroft.main :as mycroft])
   (:import [sun.misc Signal SignalHandler]))

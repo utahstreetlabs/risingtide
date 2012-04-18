@@ -1,4 +1,4 @@
-(ns risingtide.dgest
+(ns risingtide.digest
   (:use risingtide.core)
   (:require [risingtide.stories :as story]
             [risingtide.feed :as feed]

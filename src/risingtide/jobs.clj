@@ -4,7 +4,7 @@
             [clojure.data.json :as json]
             [accession.core :as redis]
             [risingtide
-             [interesting-story-cache :as interests]
+             [interests :as interests]
              [feed :as feed]
              [resque :as resque]
              [stories :as stories]

@@ -36,8 +36,6 @@
 (defn start-processor
   [config cache]
   (let [run-processor (atom true)]
-    (log/info "preloading cache")
-    (log/info "cache preloaded with" (count @cache) "keys, starting processor")
     (merge config
            {:processor (future (jobs/process-story-jobs-from-queue!
                                 run-processor

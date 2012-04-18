@@ -168,11 +168,11 @@
 
 (defn add-story
   [digesting-index story]
-  (if (:listing_id story)
-   (-> digesting-index
-       (add-story-to-listings-index story)
-       (add-story-to-actors-index story))
-   (assoc digesting-index :nodigest (cons story (:nodigest digesting-index)))))
+  (if (and (:listing_id story) (:actor_id story))
+    (-> digesting-index
+        (add-story-to-listings-index story)
+        (add-story-to-actors-index story))
+    (assoc digesting-index :nodigest (cons story (:nodigest digesting-index)))))
 
 (defn index-predigested-feed
   [feed]
@@ -202,7 +202,7 @@
 
 (defn add-story-to-feed-cache
   ([cache-atom redii feed-key story]
-     (add-story-to-feed-index (get-or-load-feed-atom cache-atom redii feed-key *cache-ttl*) (story/stash-encoded story)))
+     (add-story-to-feed-index (get-or-load-feed-atom cache-atom redii feed-key *cache-ttl*) story))
   ([redii feed-key story] (add-story-to-feed-cache feed-cache redii feed-key story)))
 
 (defn replace-feed-index!
@@ -276,7 +276,15 @@
                        feed-index))))
 
 (defn write-cache!
-  ([cache-atom redii] (doall (map (fn [[k v]] (write-feed-atom! redii k v)) @cache-atom)))
+  ([cache-atom redii]
+     (doall (pmap-in-batches
+             (fn [[k v]]
+               (try
+                 (write-feed-atom! redii k v)
+                 (catch Exception e
+                   (log/error (str "exception flushing cache for" k) e)
+                   (safe-print-stack-trace e))))
+             @cache-atom)))
   ([redii] (write-cache! feed-cache redii)))
 
 (defn cache-flusher
@@ -286,7 +294,11 @@ delay of interval to flush cached feeds to redis.
   [cache-atom redii interval]
   (doto (java.util.concurrent.ScheduledThreadPoolExecutor. 1)
     (.scheduleWithFixedDelay
-     #(bench "flushing cache" (write-cache! cache-atom redii))
+     #(bench "flushing cache"
+             (try (write-cache! cache-atom redii)
+                  (catch Exception e
+                    (log/error "exception flushing cache" e)
+                    (safe-print-stack-trace e))))
      interval interval java.util.concurrent.TimeUnit/SECONDS)))
 
 ;;;; feed building ;;;;
@@ -307,11 +319,10 @@ delay of interval to flush cached feeds to redis.
   [redii feed-key]
   (let [[feed-type user-id] (key/type-user-id-from-feed-key feed-key)]
     (index-predigested-feed
-     (map story/stash-encoded
-          (feed/user-feed-stories
-           (parse-stories-and-scores
-            (zunion-withscores redii (feed/interesting-story-keys redii feed-type user-id)
-                               1000 "AGGREGATE" "MIN")))))))
+     (feed/user-feed-stories
+      (parse-stories-and-scores
+       (zunion-withscores redii (feed/interesting-story-keys redii feed-type user-id)
+                          1000 "AGGREGATE" "MIN"))))))
 
 (defn- zadd-encode-stories
   [stories]

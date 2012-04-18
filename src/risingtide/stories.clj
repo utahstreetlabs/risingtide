@@ -176,7 +176,9 @@
 
 (defn stash-encoded
   [s]
-  (assoc s :encoded (encode s)))
+  ;; (assoc s :encoded (encode s)) ;; XXX - disabled for now because
+  ;; it was causing tricky bugs where the encoded value was wrong/missing
+  s)
 
 (defn update-digest
   [digest & args]

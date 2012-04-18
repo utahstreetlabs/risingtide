@@ -108,7 +108,7 @@ on the server specified by that connection spec.
 
 (defn- scored-encoded-stories
   [stories]
-  (interleave (map :score stories) (map :encoded stories)))
+  (interleave (map :score stories) (map stories/encode stories)))
 
 (defn replace-feed-head-query
   [feed stories low-score high-score]

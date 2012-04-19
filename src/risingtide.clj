@@ -48,7 +48,7 @@
 (defn stop
   "gracefully shut down the processor"
   []
-  (log/info "stopping" processor)
+  (log/info "stopping processor")
   (stop-processor)
   (stop-flusher)
   (log/info "waiting for processor thread" (:processor @processor))
@@ -56,7 +56,7 @@
   (log/info "waiting for flusher" (:flusher @processor))
   (wait-for-flusher)
   (digest/write-cache! (:cache @processor) (:connections @processor))
-  (log/info "stopped" processor)
+  (log/info "stopped processor")
   @processor)
 
 ;; Signal Handling ;;

@@ -27,8 +27,10 @@
      result#))
 
 (defn pmap-in-batches
-  [f coll]
-  (pmap #(doall (map f %)) (partition-all 100 coll)))
+  ([f coll n]
+     (pmap #(doall (map f %)) (partition-all n coll)))
+  ([f coll]
+     (pmap-in-batches f coll 1000)))
 
 (comment
   (redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:stories" "{\"class\":\"Stories::AddInterestInActor\",\"args\":[47,634],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-aef04660348f5f018d1f\"}}"))

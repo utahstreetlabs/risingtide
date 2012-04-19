@@ -24,11 +24,14 @@
 
 (defn load-feed
   [redii feed-key since until]
-  (feed/with-connection-for-feed redii feed-key
-    [connection]
-    (parse-stories-and-scores
-     (redis/with-connection connection
-       (feed-load-cmd feed-key since until)))))
+  (try
+   (feed/with-connection-for-feed redii feed-key
+     [connection]
+     (parse-stories-and-scores
+      (redis/with-connection connection
+        (feed-load-cmd feed-key since until))))
+   (catch Throwable e
+     (throw (Throwable. (str "exception loading" feed-key) e)))))
 
 (defmulti add-to-listing-digest :type)
 
@@ -110,8 +113,8 @@
     [nil true] story
 
     ;; pathological states, try to repair
-    [:digest true] (do (log/warn "duplicate digest stories! " current story "using newer") story)
-    [:set true] (do (log/warn "undigested and digested coexist! " current story "using digest") story)))
+    [:digest true] (do (log/warn "duplicate listing digest stories! " current story "using newer") story)
+    [:set true] (do (log/warn "undigested and digested listing coexist! " current story "using digest") story)))
 
 (defn add-story-to-listings-index
   [digesting-index story]
@@ -155,8 +158,8 @@
     [nil true] story
 
     ;; pathological states, try to repair
-    [:digest true] (do (log/warn "duplicate digest stories! " current story "using newer") story)
-    [:set true] (do (log/warn "undigested and digested coexist! " current story "using digest") story)))
+    [:digest true] (do (log/warn "duplicate actor digest stories! " current story "using newer") story)
+    [:set true] (do (log/warn "undigested and digested actor stories coexist! " current story "using digest") story)))
 
 (defn add-story-to-actors-index
   [digesting-index story]
@@ -174,9 +177,17 @@
         (add-story-to-actors-index story))
     (assoc digesting-index :nodigest (cons story (:nodigest digesting-index)))))
 
+(defn add-predigested-story
+  [digesting-index story]
+  (if (story/digest-story? story)
+    (if (story/listing-digest-story? story)
+      (add-story-to-listings-index digesting-index story)
+      (add-story-to-actors-index digesting-index story))
+    (add-story digesting-index story)))
+
 (defn index-predigested-feed
   [feed]
-  (reduce add-story {:listings {} :actors {}} feed))
+  (reduce add-predigested-story {:listings {} :actors {}} feed))
 
 ;;; cache
 
@@ -305,15 +316,17 @@ delay of interval to flush cached feeds to redis.
 
 (defn zunion-withscores
   [redii story-keys limit & args]
-  (nth
-   (nth
-    (redis/with-connection (:stories redii)
-      (redis/multi)
-      (apply redis/zunionstore "rtzuniontemp" story-keys args)
-      (redis/zrange "rtzuniontemp" (- 0 limit) -1 "WITHSCORES")
-      (redis/del "rtzuniontemp")
-      (redis/exec))
-    4) 1))
+  (if (empty? story-keys)
+    []
+    (nth
+     (nth
+      (redis/with-connection (:stories redii)
+        (redis/multi)
+        (apply redis/zunionstore "rtzuniontemp" story-keys args)
+        (redis/zrange "rtzuniontemp" (- 0 limit) -1 "WITHSCORES")
+        (redis/del "rtzuniontemp")
+        (redis/exec))
+      4) 1)))
 
 (defn- fetch-filter-digest-user-stories
   [redii feed-key]

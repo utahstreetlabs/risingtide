@@ -41,7 +41,8 @@
 
 (defn add-story-to-interested-feeds!
   [redii story]
-  (doall (pmap-in-batches #(digest/add-story-to-feed-cache redii % story) (stories/interested-feeds redii story))))
+  (doall (pmap-in-batches #(digest/add-story-to-feed-cache redii % story)
+                          (stories/interested-feeds redii story))))
 
 (defn- add-card-story!
   [redii story]
@@ -67,7 +68,6 @@
   [redii [user-id]]
   (bench (str "building feeds for user " user-id)
    (digest/build-for-user! redii user-id)))
-
 
 (defn- process-story-job!
   [redii json-message]

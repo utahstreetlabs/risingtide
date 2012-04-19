@@ -180,12 +180,11 @@ on the server specified by that connection spec.
   (let [cache @dc/story-cache
         low-score (:low-score cache)
         high-score (:high-score cache)
-        digested-stories (bench "digesting"
-                          (doall
-                           (pmap digest/digest
-                                 (map user-feed-stories
-                                      (map #(dc/stories-for-interests cache %)
-                                           (interesting-keys-for-feeds redii destination-feeds))))))]
+        digested-stories (doall
+                          (pmap digest/digest
+                                (map user-feed-stories
+                                     (map #(dc/stories-for-interests cache %)
+                                          (interesting-keys-for-feeds redii destination-feeds)))))]
     (flatten
      (doall (pmap replace-feed-head-query destination-feeds digested-stories (repeat low-score) (repeat high-score))))))
 

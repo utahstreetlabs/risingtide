@@ -8,7 +8,6 @@
             [risingtide.jobs :as jobs]
             [risingtide.stories :as story]
             [risingtide.queries :as queries]
-            [risingtide.digesting-cache :as dc]
             [risingtide.dgest :as dgest]))
 
 (def conn {:interests (redis/connection-map {:db 1})
@@ -130,10 +129,6 @@
           (redis/with-connection (redis conn)
             (apply redis/del keys)))))
     (prn "clearing redis in" env "is a super bad idea. let's not.")))
-
-(defn clear-digesting-cache!
-  []
-  (dc/reset-cache!))
 
 (defn clear-dgest-cache!
   []

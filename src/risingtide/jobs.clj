@@ -9,7 +9,6 @@
              [resque :as resque]
              [stories :as stories]
              [key :as key]
-             [digesting-cache :as dc]
              [dgest :as dgest]]))
 
 (defn- add-interest-and-redigest!
@@ -19,7 +18,9 @@
   ;; redigest card feeds. don't update network feeds for now because
   ;; they skip the digesting cache - this means users will only see
   ;; new stories in their network feed
-  (feed/redigest-user-feeds! redii [(key/user-card-feed user-id)]))
+  ;; XXX: disabled for now due to new design - should probably load
+  ;; stories from redis story sets and add them to digesting cache
+  #_(feed/redigest-user-feeds! redii [(key/user-card-feed user-id)]))
 
 
 (defn add-interest!
@@ -39,14 +40,13 @@
          (interests/remove! redii user-id type object-id)))
 
 (defn- add-card-story!
-  [redii raw-story]
-  (bench (str "add card story " raw-story)
-         (let [story (stories/stash-encoded raw-story)]
-          (stories/add! redii story (now))
-          (when (feed/for-user-feed? story)
-            (doall (map #(dgest/add-story-to-feed-cache redii % story) (stories/interested-feeds redii story))))
-          (when (feed/for-everything-feed? story)
-            (dgest/add-story-to-feed-cache redii (key/everything-feed) story)))))
+  [redii story]
+  (bench (str "add card story " story)
+         (stories/add! redii story (now))
+         (when (feed/for-user-feed? story)
+           (doall (map #(dgest/add-story-to-feed-cache redii % story) (stories/interested-feeds redii story))))
+         (when (feed/for-everything-feed? story)
+           (dgest/add-story-to-feed-cache redii (key/everything-feed) story))))
 
 (defn- add-network-story!
   [redii story]
@@ -64,7 +64,7 @@
 (defn build-feeds!
   [redii [user-id]]
   (bench (str "building feeds for user " user-id)
-   (feed/build-for-user! redii user-id)))
+   (dgest/build-for-user! redii user-id)))
 
 
 (defn- process-story-job!

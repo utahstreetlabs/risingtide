@@ -3,6 +3,7 @@
   (:require [risingtide.stories :as story]
             [risingtide.feed :as feed]
             [risingtide.config :as config]
+            [risingtide.key :as key]
             [clojure.tools.logging :as log]
             [accession.core :as redis]
             [clojure.set :as set]))
@@ -16,11 +17,16 @@
   ([feed-key since] (feed-load-cmd feed-key since (now)))
   ([feed-key] (feed-load-cmd feed-key 0)))
 
+(defn parse-stories-and-scores
+  [stories-and-scores]
+  (for [[story score] (partition 2 stories-and-scores)]
+    (assoc (story/decode story) :score (Long. score))))
+
 (defn load-feed
   [redii feed-key since until]
   (feed/with-connection-for-feed redii feed-key
     [connection]
-    (feed/parse-stories-and-scores
+    (parse-stories-and-scores
      (redis/with-connection connection
        (feed-load-cmd feed-key since until)))))
 
@@ -186,16 +192,26 @@
         (swap! cache-atom (fn [cache] (assoc cache feed-key feed-index-atom)))
         feed-index-atom)))
 
+(defn mark-dirty
+  [feed-index]
+  (assoc feed-index :dirty true))
+
 (defn add-story-to-feed-index
   [feed-index-atom story]
-  (swap! feed-index-atom (fn [feed-index]
-                           (assoc (add-story feed-index story)
-                             :dirty true))))
+  (swap! feed-index-atom (fn [feed-index] (mark-dirty (add-story feed-index story)))))
 
 (defn add-story-to-feed-cache
   ([cache-atom redii feed-key story]
-     (add-story-to-feed-index (get-or-load-feed-atom cache-atom redii feed-key *cache-ttl*) story))
+     (add-story-to-feed-index (get-or-load-feed-atom cache-atom redii feed-key *cache-ttl*) (story/stash-encoded story)))
   ([redii feed-key story] (add-story-to-feed-cache feed-cache redii feed-key story)))
+
+(defn replace-feed-index!
+  ([cache-atom feed-key feed-index]
+     (let [new-feed-index (mark-dirty feed-index)]
+       (if (@cache-atom feed-key)
+         (swap! (@cache-atom feed-key) (fn [_] new-feed-index))
+         (swap! cache-atom (fn [cache] (assoc cache feed-key (atom new-feed-index)))))))
+  ([feed-key story] (replace-feed-index! feed-cache feed-key story)))
 
 
 ;;; creating a feed from the digesting index
@@ -248,7 +264,7 @@
 
 (defn clean-feed-index
   [feed-index]
-  (dissoc (expire-feed-index feed-index) :dirty))
+  (dissoc (expire-feed-indexes feed-index) :dirty))
 
 (defn write-feed-atom!
   [redii key feed-atom]
@@ -260,19 +276,52 @@
                        feed-index))))
 
 (defn write-cache!
-  ([cache-atom redii] (doall (pmap (fn [[k v]] (write-feed-atom! redii k v)) @cache-atom)))
+  ([cache-atom redii] (doall (map (fn [[k v]] (write-feed-atom! redii k v)) @cache-atom)))
   ([redii] (write-cache! feed-cache redii)))
 
-(comment
-  (get-or-load-feed-atom feed-cache (:development config/redii) "magd:f:u:47:c" (* 5 24 60 60))
-  (binding [*cache-ttl* (* 5 24 60 60)]
-   (add-story-to-feed-cache (:development config/redii) "hi" ))
+(defn cache-flusher
+  "Given a cache, a redis config and an interval in seconds, start scheduling tasks with a fixed
+delay of interval to flush cached feeds to redis.
+"
+  [cache-atom redii interval]
+  (doto (java.util.concurrent.ScheduledThreadPoolExecutor. 1)
+    (.scheduleWithFixedDelay
+     #(bench "flushing cache" (write-cache! cache-atom redii))
+     interval interval java.util.concurrent.TimeUnit/SECONDS)))
 
-  (let [f (load-feed (:development config/redii) "magd:f:u:47:c" (- (now) (* 15 24 60 60)) (now))
-        f2 (feed-from-index (index-predigested-feed f))]
+;;;; feed building ;;;;
 
-    (count f2))
+(defn zunion-withscores
+  [redii story-keys limit & args]
+  (nth
+   (nth
+    (redis/with-connection (:stories redii)
+      (redis/multi)
+      (apply redis/zunionstore "rtzuniontemp" story-keys args)
+      (redis/zrange "rtzuniontemp" (- 0 limit) -1 "WITHSCORES")
+      (redis/del "rtzuniontemp")
+      (redis/exec))
+    4) 1))
 
+(defn- fetch-filter-digest-user-stories
+  [redii feed-key]
+  (let [[feed-type user-id] (key/type-user-id-from-feed-key feed-key)]
+    (index-predigested-feed
+     (map story/stash-encoded
+          (feed/user-feed-stories
+           (parse-stories-and-scores
+            (zunion-withscores redii (feed/interesting-story-keys redii feed-type user-id)
+                               1000 "AGGREGATE" "MIN")))))))
 
-  )
+(defn- zadd-encode-stories
+  [stories]
+  (flatten (map #(vector (:score %) (story/encode %)) stories)))
 
+(defn build! [redii feeds-to-build]
+  (doall
+   (map replace-feed-index! feeds-to-build
+        (map #(fetch-filter-digest-user-stories redii %) feeds-to-build))))
+
+(defn build-for-user!
+  [redii user-id]
+  (build! redii [(key/user-card-feed user-id) (key/user-network-feed user-id)]))

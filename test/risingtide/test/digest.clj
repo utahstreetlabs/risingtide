@@ -1,5 +1,5 @@
-(ns risingtide.test.dgest
-  (:use risingtide.dgest
+(ns risingtide.test.digest
+  (:use risingtide.digest
         risingtide.test
         [risingtide.core :only [env now]])
   (:require

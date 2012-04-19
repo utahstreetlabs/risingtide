@@ -8,7 +8,7 @@
             [risingtide.jobs :as jobs]
             [risingtide.stories :as story]
             [risingtide.queries :as queries]
-            [risingtide.dgest :as dgest]))
+            [risingtide.digest :as digest]))
 
 (def conn {:interests (redis/connection-map {:db 1})
            :card-feeds (redis/connection-map {:db 2})
@@ -130,9 +130,9 @@
             (apply redis/del keys)))))
     (prn "clearing redis in" env "is a super bad idea. let's not.")))
 
-(defn clear-dgest-cache!
+(defn clear-digest-cache!
   []
-  (dgest/reset-cache!))
+  (digest/reset-cache!))
 
 
 ;; effing macros, how do they work
@@ -173,4 +173,4 @@ usable in backgrounds yet.
   [& statements]
   `(with-increasing-seconds-timeline
      ~@(map swap-subject-action statements)
-     (dgest/write-cache! conn)))
+     (digest/write-cache! conn)))

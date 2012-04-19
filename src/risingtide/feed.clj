@@ -7,7 +7,7 @@
             [risingtide.key :as key]
             [risingtide.stories :as stories]
             [risingtide.queries :as queries]
-            [risingtide.interesting-story-cache :as interesting]))
+            [risingtide.interests :as interesting]))
 
 ;;;; truncation ;;;;
 

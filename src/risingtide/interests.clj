@@ -64,6 +64,27 @@ the user's interest in the specified object."
   [redii interested-user-id type object-id]
   (apply redis/with-connection (:interests redii) (remove-interest interested-user-id (first-char type) object-id)))
 
+(def interests-for-feed-type
+  {:card (map first-char [:actor :listing :tag])
+   :network (map first-char [:actor])})
+
+(defn- feed-source-interest-keys
+  "given a feed type and a user id, get the keys of sets that will serve
+as sources for that feed
+
+currently, returns the actor interest key for network feeds and actor, listing and tag
+interest keys for card feeds"
+  [feed-type user-id]
+  (map #(key/interest user-id %)
+       (interests-for-feed-type feed-type)))
+
+(defn interesting-key-query
+  [feed-type user-id]
+  (apply redis/sunion (feed-source-interest-keys feed-type user-id)))
+
+(defn feed-stories
+  [redii user-id feed-type]
+  (redis/with-connection (:interests redii) (interesting-key-query feed-type user-id)))
 
 
 

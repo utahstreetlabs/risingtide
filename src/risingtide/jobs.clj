@@ -4,12 +4,12 @@
             [clojure.data.json :as json]
             [accession.core :as redis]
             [risingtide
-             [interesting-story-cache :as interests]
+             [interests :as interests]
              [feed :as feed]
              [resque :as resque]
              [stories :as stories]
              [key :as key]
-             [dgest :as dgest]]))
+             [digest :as digest]]))
 
 (defn- add-interest-and-redigest!
   [redii type user-id object-id]
@@ -44,9 +44,9 @@
   (bench (str "add card story " story)
          (stories/add! redii story (now))
          (when (feed/for-user-feed? story)
-           (doall (map #(dgest/add-story-to-feed-cache redii % story) (stories/interested-feeds redii story))))
+           (doall (map #(digest/add-story-to-feed-cache redii % story) (stories/interested-feeds redii story))))
          (when (feed/for-everything-feed? story)
-           (dgest/add-story-to-feed-cache redii (key/everything-feed) story))))
+           (digest/add-story-to-feed-cache redii (key/everything-feed) story))))
 
 (defn- add-network-story!
   [redii story]
@@ -64,7 +64,7 @@
 (defn build-feeds!
   [redii [user-id]]
   (bench (str "building feeds for user " user-id)
-   (dgest/build-for-user! redii user-id)))
+   (digest/build-for-user! redii user-id)))
 
 
 (defn- process-story-job!

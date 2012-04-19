@@ -176,20 +176,41 @@
 
 (defn stash-encoded
   [s]
-  (assoc s :encoded (encode s)))
+  ;; (assoc s :encoded (encode s)) ;; XXX - disabled for now because
+  ;; it was causing tricky bugs where the encoded value was wrong/missing
+  s)
 
 (defn update-digest
   [digest & args]
   (stash-encoded (apply assoc digest args)))
 
-(def digest-types
+(def listing-digest-types
   {:lmt "listing_multi_action"
    :lma "listing_multi_actor"
-   :lmama "listing_multi_actor_multi_action"
-   :aml "actor_multi_listing"})
+   :lmama "listing_multi_actor_multi_action"})
+
+(def actor-digest-types
+  {:aml "actor_multi_listing"})
+
+(def digest-types
+  (merge listing-digest-types actor-digest-types))
+
+(def listing-digest-type-names
+  (into #{} (vals listing-digest-types)))
+
+(def actor-digest-type-names
+  (into #{} (vals actor-digest-types)))
 
 (def digest-type-names
   (into #{} (vals digest-types)))
+
+(defn listing-digest-story?
+  [story]
+  (listing-digest-type-names (:type story)))
+
+(defn actor-digest-story?
+  [story]
+  (actor-digest-type-names (:type story)))
 
 (defn digest-story?
   [story]

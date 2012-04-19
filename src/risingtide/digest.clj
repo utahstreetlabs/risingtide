@@ -24,11 +24,14 @@
 
 (defn load-feed
   [redii feed-key since until]
-  (feed/with-connection-for-feed redii feed-key
-    [connection]
-    (parse-stories-and-scores
-     (redis/with-connection connection
-       (feed-load-cmd feed-key since until)))))
+  (try
+   (feed/with-connection-for-feed redii feed-key
+     [connection]
+     (parse-stories-and-scores
+      (redis/with-connection connection
+        (feed-load-cmd feed-key since until))))
+   (catch Throwable e
+     (throw (Throwable. (str "exception loading" feed-key) e)))))
 
 (defmulti add-to-listing-digest :type)
 
@@ -110,8 +113,8 @@
     [nil true] story
 
     ;; pathological states, try to repair
-    [:digest true] (do (log/warn "duplicate digest stories! " current story "using newer") story)
-    [:set true] (do (log/warn "undigested and digested coexist! " current story "using digest") story)))
+    [:digest true] (do (log/warn "duplicate listing digest stories! " current story "using newer") story)
+    [:set true] (do (log/warn "undigested and digested listing coexist! " current story "using digest") story)))
 
 (defn add-story-to-listings-index
   [digesting-index story]
@@ -155,8 +158,8 @@
     [nil true] story
 
     ;; pathological states, try to repair
-    [:digest true] (do (log/warn "duplicate digest stories! " current story "using newer") story)
-    [:set true] (do (log/warn "undigested and digested coexist! " current story "using digest") story)))
+    [:digest true] (do (log/warn "duplicate actor digest stories! " current story "using newer") story)
+    [:set true] (do (log/warn "undigested and digested actor stories coexist! " current story "using digest") story)))
 
 (defn add-story-to-actors-index
   [digesting-index story]
@@ -168,15 +171,23 @@
 
 (defn add-story
   [digesting-index story]
-  (if (:listing_id story)
-   (-> digesting-index
-       (add-story-to-listings-index story)
-       (add-story-to-actors-index story))
-   (assoc digesting-index :nodigest (cons story (:nodigest digesting-index)))))
+  (if (and (:listing_id story) (:actor_id story))
+    (-> digesting-index
+        (add-story-to-listings-index story)
+        (add-story-to-actors-index story))
+    (assoc digesting-index :nodigest (cons story (:nodigest digesting-index)))))
+
+(defn add-predigested-story
+  [digesting-index story]
+  (if (story/digest-story? story)
+    (if (story/listing-digest-story? story)
+      (add-story-to-listings-index digesting-index story)
+      (add-story-to-actors-index digesting-index story))
+    (add-story digesting-index story)))
 
 (defn index-predigested-feed
   [feed]
-  (reduce add-story {:listings {} :actors {}} feed))
+  (reduce add-predigested-story {:listings {} :actors {}} feed))
 
 ;;; cache
 
@@ -202,7 +213,7 @@
 
 (defn add-story-to-feed-cache
   ([cache-atom redii feed-key story]
-     (add-story-to-feed-index (get-or-load-feed-atom cache-atom redii feed-key *cache-ttl*) (story/stash-encoded story)))
+     (add-story-to-feed-index (get-or-load-feed-atom cache-atom redii feed-key *cache-ttl*) story))
   ([redii feed-key story] (add-story-to-feed-cache feed-cache redii feed-key story)))
 
 (defn replace-feed-index!
@@ -276,7 +287,15 @@
                        feed-index))))
 
 (defn write-cache!
-  ([cache-atom redii] (doall (map (fn [[k v]] (write-feed-atom! redii k v)) @cache-atom)))
+  ([cache-atom redii]
+     (doall (pmap-in-batches
+             (fn [[k v]]
+               (try
+                 (write-feed-atom! redii k v)
+                 (catch Exception e
+                   (log/error (str "exception flushing cache for" k) e)
+                   (safe-print-stack-trace e))))
+             @cache-atom)))
   ([redii] (write-cache! feed-cache redii)))
 
 (defn cache-flusher
@@ -286,32 +305,37 @@ delay of interval to flush cached feeds to redis.
   [cache-atom redii interval]
   (doto (java.util.concurrent.ScheduledThreadPoolExecutor. 1)
     (.scheduleWithFixedDelay
-     #(bench "flushing cache" (write-cache! cache-atom redii))
+     #(bench "flushing cache"
+             (try (write-cache! cache-atom redii)
+                  (catch Exception e
+                    (log/error "exception flushing cache" e)
+                    (safe-print-stack-trace e))))
      interval interval java.util.concurrent.TimeUnit/SECONDS)))
 
 ;;;; feed building ;;;;
 
 (defn zunion-withscores
   [redii story-keys limit & args]
-  (nth
-   (nth
-    (redis/with-connection (:stories redii)
-      (redis/multi)
-      (apply redis/zunionstore "rtzuniontemp" story-keys args)
-      (redis/zrange "rtzuniontemp" (- 0 limit) -1 "WITHSCORES")
-      (redis/del "rtzuniontemp")
-      (redis/exec))
-    4) 1))
+  (if (empty? story-keys)
+    []
+    (nth
+     (nth
+      (redis/with-connection (:stories redii)
+        (redis/multi)
+        (apply redis/zunionstore "rtzuniontemp" story-keys args)
+        (redis/zrange "rtzuniontemp" (- 0 limit) -1 "WITHSCORES")
+        (redis/del "rtzuniontemp")
+        (redis/exec))
+      4) 1)))
 
 (defn- fetch-filter-digest-user-stories
   [redii feed-key]
   (let [[feed-type user-id] (key/type-user-id-from-feed-key feed-key)]
     (index-predigested-feed
-     (map story/stash-encoded
-          (feed/user-feed-stories
-           (parse-stories-and-scores
-            (zunion-withscores redii (feed/interesting-story-keys redii feed-type user-id)
-                               1000 "AGGREGATE" "MIN")))))))
+     (feed/user-feed-stories
+      (parse-stories-and-scores
+       (zunion-withscores redii (feed/interesting-story-keys redii feed-type user-id)
+                          1000 "AGGREGATE" "MIN"))))))
 
 (defn- zadd-encode-stories
   [stories]

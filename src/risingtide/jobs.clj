@@ -39,33 +39,35 @@
   (bench (str "remove interest in " type object-id " to " user-id)
          (interests/remove! redii user-id type object-id)))
 
+(defn add-story-to-interested-feeds!
+  [redii story]
+  (doall (pmap-in-batches #(digest/add-story-to-feed-cache redii % story)
+                          (stories/interested-feeds redii story))))
+
 (defn- add-card-story!
   [redii story]
   (bench (str "add card story " story)
-         (stories/add! redii story (now))
-         (when (feed/for-user-feed? story)
-           (doall (map #(digest/add-story-to-feed-cache redii % story) (stories/interested-feeds redii story))))
+         (when (feed/for-user-feed? story) (add-story-to-interested-feeds! redii story))
          (when (feed/for-everything-feed? story)
            (digest/add-story-to-feed-cache redii (key/everything-feed) story))))
 
 (defn- add-network-story!
   [redii story]
-  (bench (str "add network story " story)
-         (let [score (now)]
-           (stories/add! redii story score)
-           (feed/add! redii story score))))
+  (bench (str "add network story " story) (add-story-to-interested-feeds! redii story)))
 
 (defn add-story!
   [redii story]
-  (case (stories/feed-type story)
-    :card (add-card-story! redii story)
-    :network (add-network-story! redii story)))
+  (let [score (now)
+        scored-story (assoc story :score score)]
+    (stories/add! redii story score)
+    (case (stories/feed-type story)
+      :card (add-card-story! redii scored-story)
+      :network (add-network-story! redii scored-story))))
 
 (defn build-feeds!
   [redii [user-id]]
   (bench (str "building feeds for user " user-id)
    (digest/build-for-user! redii user-id)))
-
 
 (defn- process-story-job!
   [redii json-message]

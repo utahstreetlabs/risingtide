@@ -36,8 +36,6 @@
 (defn start-processor
   [config cache]
   (let [run-processor (atom true)]
-    (log/info "preloading cache")
-    (log/info "cache preloaded with" (count @cache) "keys, starting processor")
     (merge config
            {:processor (future (jobs/process-story-jobs-from-queue!
                                 run-processor
@@ -50,7 +48,7 @@
 (defn stop
   "gracefully shut down the processor"
   []
-  (log/info "stopping" processor)
+  (log/info "stopping processor")
   (stop-processor)
   (stop-flusher)
   (log/info "waiting for processor thread" (:processor @processor))
@@ -58,7 +56,7 @@
   (log/info "waiting for flusher" (:flusher @processor))
   (wait-for-flusher)
   (digest/write-cache! (:cache @processor) (:connections @processor))
-  (log/info "stopped" processor)
+  (log/info "stopped processor")
   @processor)
 
 ;; Signal Handling ;;

@@ -108,7 +108,7 @@ on the server specified by that connection spec.
 
 (defn- scored-encoded-stories
   [stories]
-  (interleave (map :score stories) (map :encoded stories)))
+  (interleave (map :score stories) (map stories/encode stories)))
 
 (defn replace-feed-head-query
   [feed stories low-score high-score]
@@ -117,13 +117,3 @@ on the server specified by that connection spec.
     [(redis/zremrangebyscore feed low-score high-score)
      (apply redis/zadd feed (scored-encoded-stories stories))
      (truncate feed)]))
-
-(defn add!
-  "add a story with the given score to the set of feeds that are interested in it"
-  [redii story score]
-  (let [encoded-story (stories/encode story)]
-    (with-connections-for-feeds redii (stories/interested-feeds redii story) [connection feeds]
-      (apply redis/with-connection connection
-             (interleave
-              (map #(redis/zadd % score encoded-story) feeds)
-              (map truncate feeds))))))

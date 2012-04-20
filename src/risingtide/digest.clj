@@ -9,7 +9,14 @@
             [clojure.set :as set])
   (:import [redis.clients.jedis ZParams ZParams$Aggregate]))
 
-(def ^:dynamic *cache-ttl* (* 6 60 60))
+(def ^:dynamic *card-cache-ttl* (* 6 60 60))
+(def ^:dynamic *network-cache-ttl* 0)
+
+(defn cache-ttl
+  [feed-key]
+  (case (last feed-key)
+    \c *card-cache-ttl*
+    \n *network-cache-ttl*))
 
 (defn parse-stories-and-scores
   [stories-and-scores]
@@ -207,7 +214,7 @@
 
 (defn add-story-to-feed-cache
   ([cache-atom redii feed-key story]
-     (add-story-to-feed-index (get-or-load-feed-atom cache-atom redii feed-key *cache-ttl*) story))
+     (add-story-to-feed-index (get-or-load-feed-atom cache-atom redii feed-key (cache-ttl feed-key)) story))
   ([redii feed-key story] (add-story-to-feed-cache feed-cache redii feed-key story)))
 
 (defn replace-feed-index!
@@ -249,26 +256,26 @@
       (feed/replace-feed-head! connection feed-key stories low-score high-score))))
 
 (defn expired?
-  [story]
-  (< (:score story) (- (now) *cache-ttl*)))
+  [feed-key story]
+  (< (:score story) (- (now) (cache-ttl feed-key))))
 
 (defn expire-feed-index
-  [feed-index]
+  [feed-key feed-index]
   (reduce (fn [f [key value]]
             (assoc f key
                    (if (map? value)
-                     (when (not (expired? value)) value)
-                     (let [s (filter #(not (expired? %)) value)]
+                     (when (not (expired? feed-key value)) value)
+                     (let [s (filter #(not (expired? feed-key %)) value)]
                        (when (not (empty? s)) (apply hash-set s))))))
           {} feed-index))
 
 (defn expire-feed-indexes
-  [feed-indexes]
-  (reduce (fn [f key] (assoc f key (expire-feed-index (f key)))) feed-indexes [:listings :actors]))
+  [feed-key feed-indexes]
+  (reduce (fn [f key] (assoc f key (expire-feed-index feed-key (f key)))) feed-indexes [:listings :actors]))
 
 (defn clean-feed-index
-  [feed-index]
-  (dissoc (expire-feed-indexes feed-index) :dirty))
+  [feed-key feed-index]
+  (dissoc (expire-feed-indexes feed-key feed-index) :dirty))
 
 (defn write-feed-atom!
   [redii key feed-atom]
@@ -276,7 +283,7 @@
                      (if (:dirty feed-index)
                        (do
                          (write-feed-index! redii key feed-index)
-                         (clean-feed-index feed-index))
+                         (clean-feed-index key feed-index))
                        feed-index))))
 
 (defn write-cache!

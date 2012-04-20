@@ -1,13 +1,13 @@
 (ns risingtide.redis
   (:use risingtide.core)
   (:require [risingtide.config :as config])
-  (:import redis.clients.jedis.JedisPool))
+  (:import [redis.clients.jedis JedisPool JedisPoolConfig]))
 
 (defn redis [config]
-  (JedisPool. (or (:host config) "localhost") (or (:port config) 6379)))
+  (JedisPool. (JedisPoolConfig.) (or (:host config) "localhost") (or (:port config) 6379) (or (:timeout config) 60000)))
 
 (defn redii [env]
-  (reduce (fn [m [k v]] (assoc m k (redis v))) {} (config/redii env)))
+  (reduce (fn [m [k v]] (assoc m k (redis v))) {} (config/redis env)))
 
 (defn with-jedis* [pool f]
   (let [jedis (.getResource pool)]

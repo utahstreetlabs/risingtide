@@ -23,14 +23,17 @@
   (for [tuple stories-and-scores]
     (assoc (story/decode (.getElement tuple)) :score (.getScore tuple))))
 
+(defn load-stories
+  [pool key since until]
+  (parse-stories-and-scores
+   (redis/with-jedis* pool
+     (fn [jedis] (.zrangeByScoreWithScores jedis key (double since) (double until))))))
+
 (defn load-feed
   [redii feed-key since until]
   (try
-   (feed/with-connection-for-feed redii feed-key
-     [connection]
-     (parse-stories-and-scores
-      (redis/with-jedis* connection
-        (fn [jedis] (.zrangeByScoreWithScores jedis feed-key (double since) (double until))))))
+    (feed/with-connection-for-feed redii feed-key
+      [connection] (load-stories connection feed-key since until))
    (catch Throwable e
      (throw (Throwable. (str "exception loading" feed-key) e)))))
 
@@ -279,12 +282,13 @@
 
 (defn write-feed-atom!
   [redii key feed-atom]
-  (swap! feed-atom (fn [feed-index]
-                     (if (:dirty feed-index)
-                       (do
-                         (write-feed-index! redii key feed-index)
-                         (clean-feed-index key feed-index))
-                       feed-index))))
+  (when feed-atom
+   (swap! feed-atom (fn [feed-index]
+                      (if (:dirty feed-index)
+                        (do
+                          (write-feed-index! redii key feed-index)
+                          (clean-feed-index key feed-index))
+                        feed-index)))))
 
 (defn write-cache!
   ([cache-atom redii]
@@ -343,8 +347,12 @@ delay of interval to flush cached feeds to redis.
    (map replace-feed-index! feeds-to-build
         (map #(fetch-filter-digest-user-stories redii %) feeds-to-build))))
 
+(defn write-feeds!
+  [redii feed-keys]
+  (doall (map #(write-feed-atom! redii %1 %2) feed-keys (map @feed-cache feed-keys))))
+
 (defn build-for-user!
   [redii user-id]
   (let [keys [(key/user-card-feed user-id) (key/user-network-feed user-id)]]
-   (build! redii keys)
-   (doall (map #(write-feed-atom! redii %1 %2) keys (map @feed-cache keys)))))
+    (build! redii keys)
+    (write-feeds! redii keys)))

@@ -11,28 +11,30 @@
              [key :as key]
              [digest :as digest]]))
 
-(defn- add-interest-and-redigest!
+(defn- add-interest-and-backfill!
   [redii type user-id object-id]
-  ;; store and cache new interests
   (interests/add! redii user-id type object-id)
-  ;; redigest card feeds. don't update network feeds for now because
-  ;; they skip the digesting cache - this means users will only see
-  ;; new stories in their network feed
-  ;; XXX: disabled for now due to new design - should probably load
-  ;; stories from redis story sets and add them to digesting cache
-  #_(feed/redigest-user-feeds! redii [(key/user-card-feed user-id)]))
-
+  ;; update and write feeds with last 24 hours of stories about this object
+  (doall
+   (for [feed-type ["c" "n"]]
+     (let [feed-key (key/user-feed user-id feed-type)]
+       (doall
+        (for [story (feed/user-feed-stories
+                     (digest/load-stories (:stories redii) (key/format-key feed-type (first-char type) object-id)
+                       (- (now) (* 24 60 60)) (now)))]
+          (digest/add-story-to-feed-cache redii feed-key story)))
+       (digest/write-feeds! redii [(key/user-feed user-id feed-type)])))))
 
 (defn add-interest!
   [redii type [user-id object-id]]
   (bench (str "add interest in " type object-id " to " user-id)
-         (add-interest-and-redigest! redii type user-id object-id)))
+         (add-interest-and-backfill! redii type user-id object-id)))
 
 (defn add-interests!
   [redii type [user-ids object-id]]
   (bench (str "add interest in " type object-id " to " (count user-ids) " users ")
          (doseq [user-id user-ids]
-           (add-interest-and-redigest! redii type user-id object-id))))
+           (interests/add! redii user-id type object-id))))
 
 (defn remove-interest!
   [redii type [user-id object-id]]

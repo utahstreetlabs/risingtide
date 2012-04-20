@@ -1,12 +1,12 @@
 (ns risingtide
   (:use risingtide.core)
   (:require [clojure.tools.logging :as log]
-            [accession.core :as redis]
             [risingtide.feed :as feed]
             [risingtide.jobs :as jobs]
             [risingtide.config :as config]
             [risingtide.web :as web]
             [risingtide.digest :as digest]
+            [risingtide.redis :as redis]
             [clj-logging-config.log4j :as log-config]
             [mycroft.main :as mycroft])
   (:import [sun.misc Signal SignalHandler]))
@@ -79,8 +79,7 @@
 
 (defn- connections
   []
-  (reduce (fn [m [key val]] (assoc m key (redis/connection-map val))) {}
-          (config/redis env)))
+  (redis/redii env))
 
 ;; This is where the magic happens ;;
 

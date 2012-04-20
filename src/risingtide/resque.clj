@@ -2,7 +2,7 @@
   "Utilities for reading from resque queues"
   (:use [robert.bruce :only [try-try-again]])
   (:require [clojure.tools.logging :as log]
-            [accession.core :as redis]))
+            [risingtide.redis :as redis]))
 
 (defn first-value-from-queues
   [conn queue-names]
@@ -10,8 +10,8 @@
     (if (empty? queues)
       nil
       (let [queue-name (first queues)]
-       (let [v (redis/with-connection conn (redis/lpop queue-name))]
-         (if v v (recur (next queues))))))))
+        (let [v (redis/with-jedis* conn (fn [jedis] (.lpop jedis queue-name)))]
+          (if v v (recur (next queues))))))))
 
 (defn- pop-or-throw
   [run? conn queue-names]

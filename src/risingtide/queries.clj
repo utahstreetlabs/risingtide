@@ -35,13 +35,3 @@
   "get all watcher set keys"
   []
   (redis/keys (key/watchers "*" "*")))
-
-(comment
-  (redis/with-connection (redis/connection-map {}) (user-feed-keys))
-  (redis/with-connection (redis/connection-map {})
-   (redis/zscore "magd:f:u:47:n"
-                  (first (redis/with-connection (redis/connection-map {}) (redis/zrevrange "magd:f:u:47:n" 0 100)))))
-  (redis/with-connection (redis/connection-map)
-    (interest-keys "47" "*"))
-
-  )

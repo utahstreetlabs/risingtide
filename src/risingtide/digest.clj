@@ -5,22 +5,16 @@
             [risingtide.config :as config]
             [risingtide.key :as key]
             [clojure.tools.logging :as log]
-            [accession.core :as redis]
-            [clojure.set :as set]))
+            [risingtide.redis :as redis]
+            [clojure.set :as set])
+  (:import [redis.clients.jedis ZParams ZParams$Aggregate]))
 
 (def ^:dynamic *cache-ttl* (* 6 60 60))
 
-(defn feed-load-cmd
-  ([feed-key since until]
-     {:pre [(not (nil? feed-key)) (>= since 0) (pos? until)]}
-     (redis/zrangebyscore feed-key since until "WITHSCORES"))
-  ([feed-key since] (feed-load-cmd feed-key since (now)))
-  ([feed-key] (feed-load-cmd feed-key 0)))
-
 (defn parse-stories-and-scores
   [stories-and-scores]
-  (for [[story score] (partition 2 stories-and-scores)]
-    (assoc (story/decode story) :score (Long. score))))
+  (for [tuple stories-and-scores]
+    (assoc (story/decode (.getElement tuple)) :score (.getScore tuple))))
 
 (defn load-feed
   [redii feed-key since until]
@@ -28,8 +22,8 @@
    (feed/with-connection-for-feed redii feed-key
      [connection]
      (parse-stories-and-scores
-      (redis/with-connection connection
-        (feed-load-cmd feed-key since until))))
+      (redis/with-jedis* connection
+        (fn [jedis] (.zrangeByScoreWithScores jedis feed-key (double since) (double until))))))
    (catch Throwable e
      (throw (Throwable. (str "exception loading" feed-key) e)))))
 
@@ -252,8 +246,7 @@
         high-score (apply max scores)]
     (feed/with-connection-for-feed redii feed-key
       [connection]
-      (apply redis/with-connection connection
-             (feed/replace-feed-head-query feed-key stories low-score high-score)))))
+      (feed/replace-feed-head! connection feed-key stories low-score high-score))))
 
 (defn expired?
   [story]
@@ -315,18 +308,16 @@ delay of interval to flush cached feeds to redis.
 ;;;; feed building ;;;;
 
 (defn zunion-withscores
-  [redii story-keys limit & args]
+  [redii story-keys limit]
   (if (empty? story-keys)
     []
-    (nth
-     (nth
-      (redis/with-connection (:stories redii)
-        (redis/multi)
-        (apply redis/zunionstore "rtzuniontemp" story-keys args)
-        (redis/zrange "rtzuniontemp" (- 0 limit) -1 "WITHSCORES")
-        (redis/del "rtzuniontemp")
-        (redis/exec))
-      4) 1)))
+    (redis/with-transaction* (:stories redii)
+      (fn [jedis]
+        (let [tmp "rtzuniontmp"]
+          (.zunionstore jedis tmp (.aggregate (ZParams.) ZParams$Aggregate/MIN) (into-array String story-keys))
+          (let [r (.zrangeWithScores jedis tmp (- 0 limit) -1)]
+            (.del jedis (into-array String [tmp]))
+            r))))))
 
 (defn- fetch-filter-digest-user-stories
   [redii feed-key]
@@ -334,8 +325,7 @@ delay of interval to flush cached feeds to redis.
     (index-predigested-feed
      (feed/user-feed-stories
       (parse-stories-and-scores
-       (zunion-withscores redii (feed/interesting-story-keys redii feed-type user-id)
-                          1000 "AGGREGATE" "MIN"))))))
+       (zunion-withscores redii (feed/interesting-story-keys redii feed-type user-id) 1000))))))
 
 (defn- zadd-encode-stories
   [stories]

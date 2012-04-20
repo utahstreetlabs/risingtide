@@ -345,4 +345,6 @@ delay of interval to flush cached feeds to redis.
 
 (defn build-for-user!
   [redii user-id]
-  (build! redii [(key/user-card-feed user-id) (key/user-network-feed user-id)]))
+  (let [keys [(key/user-card-feed user-id) (key/user-network-feed user-id)]]
+   (build! redii keys)
+   (doall (map #(write-feed-atom! redii %1 %2) keys (map @feed-cache keys)))))

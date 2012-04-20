@@ -5,31 +5,35 @@
             [risingtide.config :as config]
             [risingtide.key :as key]
             [clojure.tools.logging :as log]
-            [accession.core :as redis]
-            [clojure.set :as set]))
+            [risingtide.redis :as redis]
+            [clojure.set :as set])
+  (:import [redis.clients.jedis ZParams ZParams$Aggregate]))
 
-(def ^:dynamic *cache-ttl* (* 6 60 60))
+(def ^:dynamic *card-cache-ttl* (* 6 60 60))
+(def ^:dynamic *network-cache-ttl* 0)
 
-(defn feed-load-cmd
-  ([feed-key since until]
-     {:pre [(not (nil? feed-key)) (>= since 0) (pos? until)]}
-     (redis/zrangebyscore feed-key since until "WITHSCORES"))
-  ([feed-key since] (feed-load-cmd feed-key since (now)))
-  ([feed-key] (feed-load-cmd feed-key 0)))
+(defn cache-ttl
+  [feed-key]
+  (case (last feed-key)
+    \c *card-cache-ttl*
+    \n *network-cache-ttl*))
 
 (defn parse-stories-and-scores
   [stories-and-scores]
-  (for [[story score] (partition 2 stories-and-scores)]
-    (assoc (story/decode story) :score (Long. score))))
+  (for [tuple stories-and-scores]
+    (assoc (story/decode (.getElement tuple)) :score (.getScore tuple))))
+
+(defn load-stories
+  [pool key since until]
+  (parse-stories-and-scores
+   (redis/with-jedis* pool
+     (fn [jedis] (.zrangeByScoreWithScores jedis key (double since) (double until))))))
 
 (defn load-feed
   [redii feed-key since until]
   (try
-   (feed/with-connection-for-feed redii feed-key
-     [connection]
-     (parse-stories-and-scores
-      (redis/with-connection connection
-        (feed-load-cmd feed-key since until))))
+    (feed/with-connection-for-feed redii feed-key
+      [connection] (load-stories connection feed-key since until))
    (catch Throwable e
      (throw (Throwable. (str "exception loading" feed-key) e)))))
 
@@ -213,7 +217,7 @@
 
 (defn add-story-to-feed-cache
   ([cache-atom redii feed-key story]
-     (add-story-to-feed-index (get-or-load-feed-atom cache-atom redii feed-key *cache-ttl*) story))
+     (add-story-to-feed-index (get-or-load-feed-atom cache-atom redii feed-key (cache-ttl feed-key)) story))
   ([redii feed-key story] (add-story-to-feed-cache feed-cache redii feed-key story)))
 
 (defn replace-feed-index!
@@ -252,39 +256,39 @@
         high-score (apply max scores)]
     (feed/with-connection-for-feed redii feed-key
       [connection]
-      (apply redis/with-connection connection
-             (feed/replace-feed-head-query feed-key stories low-score high-score)))))
+      (feed/replace-feed-head! connection feed-key stories low-score high-score))))
 
 (defn expired?
-  [story]
-  (< (:score story) (- (now) *cache-ttl*)))
+  [feed-key story]
+  (< (:score story) (- (now) (cache-ttl feed-key))))
 
 (defn expire-feed-index
-  [feed-index]
+  [feed-key feed-index]
   (reduce (fn [f [key value]]
             (assoc f key
                    (if (map? value)
-                     (when (not (expired? value)) value)
-                     (let [s (filter #(not (expired? %)) value)]
+                     (when (not (expired? feed-key value)) value)
+                     (let [s (filter #(not (expired? feed-key %)) value)]
                        (when (not (empty? s)) (apply hash-set s))))))
           {} feed-index))
 
 (defn expire-feed-indexes
-  [feed-indexes]
-  (reduce (fn [f key] (assoc f key (expire-feed-index (f key)))) feed-indexes [:listings :actors]))
+  [feed-key feed-indexes]
+  (reduce (fn [f key] (assoc f key (expire-feed-index feed-key (f key)))) feed-indexes [:listings :actors]))
 
 (defn clean-feed-index
-  [feed-index]
-  (dissoc (expire-feed-indexes feed-index) :dirty))
+  [feed-key feed-index]
+  (dissoc (expire-feed-indexes feed-key feed-index) :dirty))
 
 (defn write-feed-atom!
   [redii key feed-atom]
-  (swap! feed-atom (fn [feed-index]
-                     (if (:dirty feed-index)
-                       (do
-                         (write-feed-index! redii key feed-index)
-                         (clean-feed-index feed-index))
-                       feed-index))))
+  (when feed-atom
+   (swap! feed-atom (fn [feed-index]
+                      (if (:dirty feed-index)
+                        (do
+                          (write-feed-index! redii key feed-index)
+                          (clean-feed-index key feed-index))
+                        feed-index)))))
 
 (defn write-cache!
   ([cache-atom redii]
@@ -315,18 +319,16 @@ delay of interval to flush cached feeds to redis.
 ;;;; feed building ;;;;
 
 (defn zunion-withscores
-  [redii story-keys limit & args]
+  [redii story-keys limit]
   (if (empty? story-keys)
     []
-    (nth
-     (nth
-      (redis/with-connection (:stories redii)
-        (redis/multi)
-        (apply redis/zunionstore "rtzuniontemp" story-keys args)
-        (redis/zrange "rtzuniontemp" (- 0 limit) -1 "WITHSCORES")
-        (redis/del "rtzuniontemp")
-        (redis/exec))
-      4) 1)))
+    (redis/with-transaction* (:stories redii)
+      (fn [jedis]
+        (let [tmp "rtzuniontmp"]
+          (.zunionstore jedis tmp (.aggregate (ZParams.) ZParams$Aggregate/MIN) (into-array String story-keys))
+          (let [r (.zrangeWithScores jedis tmp (- 0 limit) -1)]
+            (.del jedis (into-array String [tmp]))
+            r))))))
 
 (defn- fetch-filter-digest-user-stories
   [redii feed-key]
@@ -334,8 +336,7 @@ delay of interval to flush cached feeds to redis.
     (index-predigested-feed
      (feed/user-feed-stories
       (parse-stories-and-scores
-       (zunion-withscores redii (feed/interesting-story-keys redii feed-type user-id)
-                          1000 "AGGREGATE" "MIN"))))))
+       (zunion-withscores redii (feed/interesting-story-keys redii feed-type user-id) 1000))))))
 
 (defn- zadd-encode-stories
   [stories]
@@ -346,6 +347,12 @@ delay of interval to flush cached feeds to redis.
    (map replace-feed-index! feeds-to-build
         (map #(fetch-filter-digest-user-stories redii %) feeds-to-build))))
 
+(defn write-feeds!
+  [redii feed-keys]
+  (doall (map #(write-feed-atom! redii %1 %2) feed-keys (map @feed-cache feed-keys))))
+
 (defn build-for-user!
   [redii user-id]
-  (build! redii [(key/user-card-feed user-id) (key/user-network-feed user-id)]))
+  (let [keys [(key/user-card-feed user-id) (key/user-network-feed user-id)]]
+    (build! redii keys)
+    (write-feeds! redii keys)))

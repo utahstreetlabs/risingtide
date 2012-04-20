@@ -2,7 +2,7 @@
   "utilities for building feeds"
   (:use risingtide.core)
   (:require [clojure.tools.logging :as log]
-            [accession.core :as redis]
+            [risingtide.redis :as redis]
             [risingtide.config :as config]
             [risingtide.key :as key]
             [risingtide.stories :as stories]
@@ -14,15 +14,11 @@
 (def ^:dynamic *max-card-feed-size* config/max-card-feed-size)
 (def ^:dynamic *max-network-feed-size* config/max-network-feed-size)
 
-(defn- truncation-range
+(defn- truncate-to
   [feed]
   (case (last feed)
-    \c [0 (- 0 *max-card-feed-size* 1)]
-    \n [0 (- 0 *max-network-feed-size* 1)]))
-
-(defn truncate
-  [feed]
-  (apply redis/zremrangebyrank feed (truncation-range feed)))
+    \c (- 0 *max-card-feed-size* 1)
+    \n (- 0 *max-network-feed-size* 1)))
 
 ;;;; keys ;;;;
 
@@ -110,10 +106,12 @@ on the server specified by that connection spec.
   [stories]
   (interleave (map :score stories) (map stories/encode stories)))
 
-(defn replace-feed-head-query
-  [feed stories low-score high-score]
-  (if (empty? stories)
-    []
-    [(redis/zremrangebyscore feed low-score high-score)
-     (apply redis/zadd feed (scored-encoded-stories stories))
-     (truncate feed)]))
+(defn replace-feed-head!
+  [redis feed stories low-score high-score]
+  (when-not (empty? stories)
+    (redis/with-transaction* redis
+      (fn [jedis]
+        (.zremrangeByScore jedis feed (double low-score) (double high-score))
+        (doseq [story stories]
+          (.zadd jedis feed (double (:score story)) (stories/encode story)))
+        (.zremrangeByRank jedis feed 0 (truncate-to feed))))))

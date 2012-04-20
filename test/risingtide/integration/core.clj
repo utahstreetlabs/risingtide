@@ -39,6 +39,32 @@
                         (story/multi-action-digest toast jim ["listing_shared" "listing_liked"])
                         (listing-liked jim omelettes {:feed ["ev"]})))
 
+(fact "adding interests backfills the feed"
+  (on-copious
+   (jim activates bacon)
+   (jim likes ham)
+   (jim likes toast)
+   (jim shares toast)
+   (jim likes omelettes {:feed ["ev"]})
+   (jim joins)
+   (jim follows jon)
+   (rob interested-in-user jim))
+
+  (feed-for-rob :card) => (encoded-feed
+                           (listing-activated jim bacon)
+                           (listing-liked jim ham)
+                           (story/multi-action-digest toast jim ["listing_shared" "listing_liked"]))
+
+  (feed-for-rob :network) => (encoded-feed
+                              (user-joined jim)
+                              (user-followed jim jon))
+
+  (everything-feed) => (encoded-feed
+                        (listing-activated jim bacon)
+                        (listing-liked jim ham)
+                        (story/multi-action-digest toast jim ["listing_shared" "listing_liked"])
+                        (listing-liked jim omelettes {:feed ["ev"]})))
+
 (fact "network feeds are generated correctly"
     (on-copious
      (rob interested-in-user jim)

@@ -2,7 +2,7 @@
   (:use risingtide.core
         risingtide.test)
   (:require [clojure.data.json :as json]
-            [accession.core :as redis]
+            [risingtide.redis :as redis]
             [risingtide.config :as config]
             [risingtide.key :as key]
             [risingtide.jobs :as jobs]
@@ -10,21 +10,22 @@
             [risingtide.queries :as queries]
             [risingtide.digest :as digest]))
 
-(def conn {:interests (redis/connection-map {:db 1})
-           :card-feeds (redis/connection-map {:db 2})
-           :network-feeds (redis/connection-map {:db 3})
-           :stories (redis/connection-map {:db 4})})
+(def conn {:interests (redis/redis {})
+           :card-feeds (redis/redis {})
+           :network-feeds (redis/redis {})
+           :stories (redis/redis {})})
 
 ;; users
 (defmacro defuser
-  [name id]
+  [n id]
   `(do
-    (def ~name ~id)
-    (defn ~(symbol (str "feed-for-" name))
+    (def ~n ~id)
+    (defn ~(symbol (str "feed-for-" n))
       [type#]
       (map json/read-json
-           (redis/with-connection (conn (keyword (str (name type#) "-feeds")))
-             (redis/zrange (key/user-feed ~id type#) 0 100000))))))
+           (redis/with-jedis* (conn (keyword (str (name type#) "-feeds")))
+             (fn [jedis#]
+               (.zrange jedis# (key/user-feed ~id type#) 0 100000)))))))
 
 (defuser jim 1)
 (defuser jon 2)
@@ -66,8 +67,9 @@
 (defn everything-feed
   []
   (map json/read-json
-       (redis/with-connection (:card-feeds conn)
-         (redis/zrange (key/everything-feed) 0 1000000000))))
+       (redis/with-jedis* (:card-feeds conn)
+         (fn [jedis]
+          (.zrange jedis (key/everything-feed) 0 1000000000)))))
 
 (def empty-feed [])
 
@@ -124,10 +126,10 @@
   []
   (if (= env :test)
     (doseq [redis [:card-feeds :network-feeds :interests :stories]]
-      (let [keys (redis/with-connection (redis conn) (redis/keys (key/format-key "*")))]
+      (let [keys (redis/with-jedis* (redis conn) (fn [jedis] (.keys jedis (key/format-key "*"))))]
         (when (not (empty? keys))
-          (redis/with-connection (redis conn)
-            (apply redis/del keys)))))
+          (redis/with-jedis* (redis conn)
+            (fn [jedis] (.del jedis (into-array String keys)))))))
     (prn "clearing redis in" env "is a super bad idea. let's not.")))
 
 (defn clear-digest-cache!

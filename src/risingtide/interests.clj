@@ -28,7 +28,7 @@ to sets of user ids like:
 #{47, 34, 15}
 "
   (:use risingtide.core)
-  (:require [accession.core :as redis]
+  (:require [risingtide.redis :as redis]
             [risingtide.key :as key]
             [clojure.tools.logging :as log]))
 
@@ -36,33 +36,33 @@ to sets of user ids like:
   [type object-id]
   (str type ":" object-id))
 
-(defn- add-interest
+(defn- add-interest!
   "Generate redis commands for registering a user's interest in an object of a given type."
-  [interested-user-id type object-id]
-  [(redis/multi)
-   (redis/sadd (key/watchers type object-id) interested-user-id)
-   (redis/sadd (key/interest interested-user-id type) (interest-token type object-id))
-   (redis/exec)])
+  [redis interested-user-id type object-id]
+  (redis/with-transaction* redis
+    (fn [jedis]
+      (.sadd jedis (key/watchers type object-id) (str interested-user-id))
+      (.sadd jedis (key/interest interested-user-id type) (interest-token type object-id)))))
 
-(defn- remove-interest
+(defn- remove-interest!
   "Generate redis commands for deregistering a user's interest in an object of a given type."
-  [interested-user-id type object-id]
-  [(redis/multi)
-   (redis/srem (key/watchers type object-id) interested-user-id)
-   (redis/srem (key/interest interested-user-id type) (interest-token type object-id))
-   (redis/exec)])
+  [redis interested-user-id type object-id]
+  (redis/with-transaction* redis
+    (fn [jedis]
+      (.srem jedis (key/watchers type object-id) (str interested-user-id))
+      (.srem jedis (key/interest interested-user-id type) (interest-token type object-id)))))
 
 (defn add!
   "Given a redis connection map, a user id, a type and an object, connects to redis and registers
 the user's interest in the specified object."
   [redii interested-user-id type object-id]
-  (apply redis/with-connection (:interests redii) (add-interest interested-user-id (first-char type) object-id)))
+  (add-interest! (:interests redii) interested-user-id (first-char type) object-id))
 
 (defn remove!
   "Given a redis connection map, a user id, a type and an object, connects to redis and registers
 the user's interest in the specified object."
   [redii interested-user-id type object-id]
-  (apply redis/with-connection (:interests redii) (remove-interest interested-user-id (first-char type) object-id)))
+  (remove-interest! (:interests redii) interested-user-id (first-char type) object-id))
 
 (def interests-for-feed-type
   {:card (map first-char [:actor :listing :tag])
@@ -78,13 +78,7 @@ interest keys for card feeds"
   (map #(key/interest user-id %)
        (interests-for-feed-type feed-type)))
 
-(defn interesting-key-query
-  [feed-type user-id]
-  (apply redis/sunion (feed-source-interest-keys feed-type user-id)))
-
 (defn feed-stories
   [redii user-id feed-type]
-  (redis/with-connection (:interests redii) (interesting-key-query feed-type user-id)))
-
-
-
+  (redis/with-jedis* (:interests redii)
+    (fn [jedis] (.sunion jedis (into-array String (feed-source-interest-keys feed-type user-id))))))

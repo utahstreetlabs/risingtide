@@ -154,6 +154,6 @@
 (fact "expiration works"
   (let [index (index-predigested-feed [(ssa jim-shared-hams 90) (ssa jim-activated-hams 60) (ssa jon-shared-bacon 30)])]
     (map us (feed-from-index index)) => (map us [(story/multi-action-digest hams jim ["listing_shared" "listing_activated"]) jon-shared-bacon])
-    (map us (feed-from-index (binding [*cache-ttl* 45] (expire-feed-indexes index)))) =>
+    (map us (feed-from-index (binding [*card-cache-ttl* 45] (expire-feed-indexes "magt:f:u:47:c" index)))) =>
     (map us [jon-shared-bacon])))
 

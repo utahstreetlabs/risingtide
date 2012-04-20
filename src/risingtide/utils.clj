@@ -12,13 +12,13 @@
 
 (defn- env-connection-config
   []
-  (redis/connection-map (config/redis env)))
+  (config/redii env))
 
 ;; migrate staging keys to development.
 
 (defn convert-redis-keys-from-staging-to-dev!
   ([redii]
-     (doseq [con redii]
+     (doseq [[k con] redii]
       (if (= :development env)
         (apply redis/with-connection con
                (for [key (redis/with-connection con (redis/keys "*"))]

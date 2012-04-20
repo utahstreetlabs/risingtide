@@ -3,7 +3,7 @@
   (:use risingtide.core)
   (:require [clojure.tools.logging :as log]
             [clojure.data.json :as json]
-            [accession.core :as redis]
+            [risingtide.redis :as redis]
             [risingtide.key :as key]
             [risingtide.queries :as queries]))
 
@@ -116,7 +116,8 @@
 
 (defn interested-users
   [redii story]
-  (redis/with-connection (:interests redii) (apply redis/sunion (watcher-sets story))))
+  (redis/with-jedis* (:interests redii)
+    (fn [jedis] (.sunion jedis (into-array String (watcher-sets story))))))
 
 (defn interested-feeds
   ""
@@ -155,22 +156,11 @@
 
 (defn add!
   [redii story time]
-  (apply redis/with-connection (:stories redii)
-         (map #(redis/zadd % time (encode story))
-              (destination-story-sets story))))
-
-;; finding existing stories
-
-(defn range-with-scores
-  [redii start-score end-score]
-  (let [stories-and-scores-queries
-        (map #(redis/zrangebyscore % start-score end-score "WITHSCORES")
-             (redis/with-connection (:stories redii) (queries/story-keys)))]
-    (if (empty? stories-and-scores-queries)
-      []
-      (partition 2 (apply concat
-                          (apply redis/with-connection (:stories redii) stories-and-scores-queries))))))
-
+  (redis/with-jedis* (:stories redii)
+    (fn [jedis]
+      (let [encoded-story (encode story)]
+        (doseq [key (destination-story-sets story)]
+          (.zadd jedis key (double time) encoded-story))))))
 
 ;; creating new stories
 

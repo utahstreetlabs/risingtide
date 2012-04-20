@@ -3,7 +3,7 @@
   (:use risingtide.core)
   (:require [clojure.tools.logging :as log]
             [clojure.data.json :as json]
-            [accession.core :as redis]
+            [risingtide.redis :as redis]
             [risingtide.key :as key]
             [risingtide.queries :as queries]))
 
@@ -64,6 +64,7 @@
    :actor_id :aid
    :actor_ids :aids
    :listing_id :lid
+   :listing_ids :lids
    :tag_id :tid
    :buyer_id :bid
    :followee_id :fid
@@ -115,7 +116,8 @@
 
 (defn interested-users
   [redii story]
-  (redis/with-connection (:interests redii) (apply redis/sunion (watcher-sets story))))
+  (redis/with-jedis* (:interests redii)
+    (fn [jedis] (.sunion jedis (into-array String (watcher-sets story))))))
 
 (defn interested-feeds
   ""
@@ -154,41 +156,72 @@
 
 (defn add!
   [redii story time]
-  (apply redis/with-connection (:stories redii)
-         (map #(redis/zadd % time (encode story))
-              (destination-story-sets story))))
-
-;; finding existing stories
-
-(defn range-with-scores
-  [redii start-score end-score]
-  (let [stories-and-scores-queries
-        (map #(redis/zrangebyscore % start-score end-score "WITHSCORES")
-             (redis/with-connection (:stories redii) (queries/story-keys)))]
-    (if (empty? stories-and-scores-queries)
-      []
-      (partition 2 (apply concat
-                          (apply redis/with-connection (:stories redii) stories-and-scores-queries))))))
-
+  (redis/with-jedis* (:stories redii)
+    (fn [jedis]
+      (let [encoded-story (encode story)]
+        (doseq [key (destination-story-sets story)]
+          (.zadd jedis key (double time) encoded-story))))))
 
 ;; creating new stories
 
-(defn- stash-encoded
+(defn stash-encoded
   [s]
-  (assoc s :encoded (encode s)))
+  ;; (assoc s :encoded (encode s)) ;; XXX - disabled for now because
+  ;; it was causing tricky bugs where the encoded value was wrong/missing
+  s)
+
+(defn update-digest
+  [digest & args]
+  (stash-encoded (apply assoc digest args)))
+
+(def listing-digest-types
+  {:lmt "listing_multi_action"
+   :lma "listing_multi_actor"
+   :lmama "listing_multi_actor_multi_action"})
+
+(def actor-digest-types
+  {:aml "actor_multi_listing"})
+
+(def digest-types
+  (merge listing-digest-types actor-digest-types))
+
+(def listing-digest-type-names
+  (into #{} (vals listing-digest-types)))
+
+(def actor-digest-type-names
+  (into #{} (vals actor-digest-types)))
+
+(def digest-type-names
+  (into #{} (vals digest-types)))
+
+(defn listing-digest-story?
+  [story]
+  (listing-digest-type-names (:type story)))
+
+(defn actor-digest-story?
+  [story]
+  (actor-digest-type-names (:type story)))
+
+(defn digest-story?
+  [story]
+  (digest-type-names (:type story)))
 
 (defn multi-action-digest
   ([listing-id actor-id actions score]
-     (stash-encoded {:type :listing_multi_action :actor_id actor-id :listing_id listing-id :types actions :score score}))
+     (stash-encoded {:type (digest-types :lmt) :actor_id actor-id :listing_id listing-id :types actions :score score}))
   ([listing-id actor-id actions] (multi-action-digest listing-id actor-id actions nil)))
 
 (defn multi-actor-digest
   ([listing-id action actor-ids score]
-     (stash-encoded {:type :listing_multi_actor :listing_id listing-id :action action :actor_ids actor-ids :score score}))
+     (stash-encoded {:type (digest-types :lma) :listing_id listing-id :action action :actor_ids actor-ids :score score}))
   ([listing-id action actor-ids] (multi-actor-digest listing-id action actor-ids nil)))
 
 (defn multi-actor-multi-action-digest
   ([listing-id actions score]
-     (stash-encoded {:type :listing_multi_actor_multi_action :listing_id listing-id :types actions :score score}))
+     (stash-encoded {:type (digest-types :lmama) :listing_id listing-id :types actions :score score}))
   ([listing-id actions] (multi-actor-multi-action-digest listing-id actions nil)))
 
+(defn multi-listing-digest
+  ([actor-id action listing-ids score]
+     (stash-encoded {:type (digest-types :aml) :actor_id actor-id :action action :listing_ids listing-ids :score score}))
+  ([actor-id action listing-ids] (multi-listing-digest actor-id action listing-ids nil)))

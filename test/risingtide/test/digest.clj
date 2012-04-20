@@ -1,89 +1,159 @@
-(ns risingtide.test.stories
+(ns risingtide.test.digest
   (:use risingtide.digest
         risingtide.test
-        [risingtide.core :only [env]])
+        [risingtide.core :only [env now]])
+  (:require
+   [risingtide.stories :as story])
   (:use [midje.sweet]))
 
-(let [;; user ids
-      jim 1 jon 2
+(defmacro defmany
+  [& forms]
+  `(do
+     ~@(for [[name body] (partition 2 forms)]
+         `(def ~name ~body))))
 
-      ;; listing ids
-      hams 11 bacon 12
+(defn- us
+  "remove scores, encodings to make it easier to test for equality"
+  [story]
+  (dissoc story :score :encoded))
 
-      ;; stories
-      jim-activated-hams (listing-activated jim hams) jim-liked-hams (listing-liked jim hams)
-      jim-shared-hams (listing-shared jim hams) jim-sold-hams (listing-sold jim hams)
-      jim-commented-hams (listing-commented jim hams)
+(defn us-stories
+  "remove scores, encodings from second element in a tuple to make it easier to test for equality"
+  [[a b]]
+  [a (map us b)])
 
-      jon-activated-hams (listing-activated jon hams) jon-liked-hams (listing-liked jon hams)
-      jon-shared-hams (listing-shared jon hams) jon-sold-hams (listing-sold jon hams)
-      jon-commented-hams (listing-commented jon hams)
+(defmany
+  jim 1 jon 2 rob 3
 
-      jim-activated-bacon (listing-activated jim bacon) jim-liked-bacon (listing-liked jim bacon)
-      jim-shared-bacon (listing-shared jim bacon) jim-sold-bacon (listing-sold jim bacon)
-      jim-commented-bacon (listing-commented jim bacon)
+  ;; listing ids
+  hams 11 bacon 12
 
-      jon-activated-bacon (listing-activated jon bacon) jon-liked-bacon (listing-liked jon bacon)
-      jon-shared-bacon (listing-shared jon bacon) jon-sold-bacon (listing-sold jon bacon)
-      jon-commented-bacon (listing-commented jon bacon)
-      ]
+  ;; stories
+  jim-activated-hams (listing-activated jim hams) jim-liked-hams (listing-liked jim hams)
+  jim-shared-hams (listing-shared jim hams) jim-sold-hams (listing-sold jim hams)
+  jim-commented-hams (listing-commented jim hams)
 
-  (fact
-    (let [story {:type :made-bacon :listing_id 1 :actor_id 2}]
-      (digest-story {} story) => {:listings {1 {:made-bacon {2 story}}}}))
+  jon-activated-hams (listing-activated jon hams) jon-liked-hams (listing-liked jon hams)
+  jon-shared-hams (listing-shared jon hams) jon-sold-hams (listing-sold jon hams)
+  jon-commented-hams (listing-commented jon hams)
 
-  (fact
-    (single-listing-digest-story [1 {:made-bacon {2 :a}}]) => :a
+  rob-activated-hams (listing-activated rob hams) rob-liked-hams (listing-liked rob hams)
+  rob-shared-hams (listing-shared rob hams) rob-sold-hams (listing-sold rob hams)
+  rob-commented-hams (listing-commented rob hams)
 
-    (single-listing-digest-story [1 {:made-bacon {2 :a 3 :b}}]) =>
-    (multi-actor-digest-story 1 :made-bacon [2 3])
+  jim-activated-bacon (listing-activated jim bacon) jim-liked-bacon (listing-liked jim bacon)
+  jim-shared-bacon (listing-shared jim bacon) jim-sold-bacon (listing-sold jim bacon)
+  jim-commented-bacon (listing-commented jim bacon)
 
-    (single-listing-digest-story [1 {:made-bacon {2 :a} :made-donuts {2 :b}}]) =>
-    (multi-action-digest-story 1 2 [:made-bacon :made-donuts])
+  jon-activated-bacon (listing-activated jon bacon) jon-liked-bacon (listing-liked jon bacon)
+  jon-shared-bacon (listing-shared jon bacon) jon-sold-bacon (listing-sold jon bacon)
+  jon-commented-bacon (listing-commented jon bacon))
 
+(tabular
+ (fact "add-to-listing-digest adds stories to multi-action digest properly"
+   (us (add-to-listing-digest
+        (story/multi-action-digest hams jim ["listing_liked" "listing_shared"])
+        ?story)) => (us ?digest))
+ ?story ?digest
 
-    (single-listing-digest-story [1 {:made-bacon {2 :a 3 :b} :made-donuts {2 :d} :made-eggs {4 :e}}]) =>
-    (multi-actor-multi-action-digest-story 1 {:made-bacon [2 3] :made-donuts [2] :made-eggs [4]}))
+ jim-commented-hams (story/multi-action-digest hams jim ["listing_liked" "listing_shared" "listing_commented"])
 
-  (fact
-    (reduce digest-story {} [jim-activated-hams jim-liked-hams jim-shared-hams]) =>
-    {:listings
-     {hams {"listing_activated" {jim jim-activated-hams}
-            "listing_liked" {jim jim-liked-hams}
-            "listing_shared" {jim jim-shared-hams}}}})
+ jon-liked-hams (story/multi-actor-multi-action-digest hams {"listing_liked" [jon jim] "listing_shared" [jim]})
 
-  (tabular
-   (fact (digest ?feed) => ?digested)
-   ?feed ?digested
+ jon-commented-hams (story/multi-actor-multi-action-digest hams {"listing_liked" [jim] "listing_shared" [jim] "listing_commented" [jon]}))
 
+(tabular
+ (fact "add-to-listing-digest adds stories to multi-actor digest properly"
+   (us (add-to-listing-digest
+        (story/multi-actor-digest hams "listing_liked" [jim jon])
+        ?story)) => (us ?digest))
 
-   ;; one user - one listing - multiple actions
-   [jim-activated-hams jim-liked-hams jim-shared-hams]
-   ;; digests to
-   [(multi-action-digest-story hams jim ["listing_shared" "listing_liked" "listing_activated"])]
+ ?story ?digest
 
-   [jim-activated-hams jim-liked-hams jim-shared-hams jim-liked-bacon]
-   ;; digests to
-   [jim-liked-bacon (multi-action-digest-story hams jim ["listing_shared" "listing_liked" "listing_activated"])]
+ rob-liked-hams (story/multi-actor-digest hams "listing_liked" [jim jon rob])
 
+ jim-shared-hams (story/multi-actor-multi-action-digest hams {"listing_liked" [jim jon] "listing_shared" [jim]})
 
-   ;; multiple users - one listing - one action
-   [jon-activated-hams jim-shared-bacon jim-activated-hams]
-   ;; digests to
-   [jim-shared-bacon (multi-actor-digest-story hams "listing_activated" [jim jon])]
+ rob-shared-hams (story/multi-actor-multi-action-digest hams {"listing_liked" [jim jon] "listing_shared" [rob]})
+ )
 
+(tabular
+ (fact "add-to-listing-digest adds stories to multi-actor-multi-listing digest properly"
+   (us (add-to-listing-digest
+        (story/multi-actor-multi-action-digest hams {"listing_liked" [jim] "listing_shared" [jon]}) ?story)) =>
+        (us (story/multi-actor-multi-action-digest hams ?digest-types)))
 
-   ;; multiple users - one listing - multiple actions
-   [jon-activated-hams jim-shared-hams jim-activated-hams jon-shared-hams]
-   ;; digests to
-   [(multi-actor-multi-action-digest-story hams {"listing_activated" [jim jon] "listing_shared" [jon jim]})]
+ ?story ?digest-types
 
-   ;;TODO: one user - multiple listings - same action
-   ;; [jim-activated-hams jim-activated-bacon]
-   ;; ;; digests to
-   ;; [(multi-listing-digest-story jim "listing_activated" hams bacon)]
+ rob-shared-hams {"listing_liked" [jim] "listing_shared" [jon rob]}
 
-   ;;TODO: network feed 1 user - multiple other users - same action
-   )
-  )
+ rob-commented-hams {"listing_liked" [jim] "listing_shared" [jon] "listing_commented" [rob]}
+
+ jim-liked-hams {"listing_liked" [jim] "listing_shared" [jon]})
+
+(tabular
+ (fact "maybe-create-new-listing-digest"
+   (us (maybe-create-new-listing-digest ?stories ?new)) => (us ?digest))
+
+ ?stories ?new ?digest
+
+ #{jim-liked-hams} rob-liked-hams (story/multi-actor-digest hams "listing_liked" [jim rob])
+ #{jim-liked-hams} jim-shared-hams (story/multi-action-digest hams jim ["listing_shared" "listing_liked"])
+ #{jim-liked-hams} rob-shared-hams (story/multi-actor-multi-action-digest hams {"listing_liked" [jim] "listing_shared" [rob]}))
+
+(tabular
+ (fact "add-to-actor-digest adds stories to actor-digest stories"
+   (us (add-to-actor-digest
+        (story/multi-listing-digest jim "listing_liked" [hams]) ?story)) =>
+        (us ?digest))
+
+ ?story ?digest
+
+ jim-liked-bacon (story/multi-listing-digest jim "listing_liked" [hams bacon]))
+
+(tabular
+ (fact "feed generation works"
+   (map us (feed-from-index (index-predigested-feed ?undigested))) => (map us ?digested))
+ ?undigested ?digested
+ [jim-liked-hams]
+  ;; digests to
+ [jim-liked-hams]
+
+ [jim-liked-hams rob-shared-hams]
+ ;; digests to
+ [(story/multi-actor-multi-action-digest hams {"listing_liked" [jim] "listing_shared" [rob]})]
+
+ [jim-activated-hams jim-liked-hams jim-shared-hams]
+ ;; digests to
+ [(story/multi-action-digest hams jim ["listing_liked" "listing_activated" "listing_shared" ])]
+
+ [jim-activated-hams jim-liked-hams jim-shared-hams jim-liked-bacon]
+ ;; digests to
+ [(story/multi-action-digest hams jim ["listing_liked" "listing_activated" "listing_shared"]) jim-liked-bacon]
+
+ ;; multiple users - one listing - one action
+ [jon-activated-hams jim-shared-bacon jim-activated-hams]
+ ;; digests to
+ [(story/multi-actor-digest hams "listing_activated" [jim jon]) jim-shared-bacon]
+
+ ;; multiple users - one listing - multiple actions
+ [jon-activated-hams jim-shared-hams jim-activated-hams jon-shared-hams]
+ ;; digests to
+ [(story/multi-actor-multi-action-digest hams {"listing_activated" [jim jon] "listing_shared" [jon jim]})]
+
+ (map #(listing-activated jim %) (range 0 16))
+ ;; ;; digests to
+ [(story/multi-listing-digest jim "listing_activated" (range 0 16))])
+
+(defn scored-seconds-ago
+  [story seconds]
+  (assoc story :score (- (now) seconds)))
+
+(def ssa scored-seconds-ago)
+
+(fact "expiration works"
+  (let [index (index-predigested-feed [(ssa jim-shared-hams 90) (ssa jim-activated-hams 60) (ssa jon-shared-bacon 30)])]
+    (map us (feed-from-index index)) => (map us [(story/multi-action-digest hams jim ["listing_shared" "listing_activated"]) jon-shared-bacon])
+    (map us (feed-from-index (binding [*card-cache-ttl* 45] (expire-feed-indexes "magt:f:u:47:c" index)))) =>
+    (map us [jon-shared-bacon])))
 

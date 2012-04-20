@@ -4,7 +4,6 @@
         [ring.middleware.file-info :only [wrap-file-info]]
         risingtide.core)
   (:require [clojure.tools.logging :as log]
-            [risingtide.digesting-cache :as dc]
             [risingtide.version :as version]
             [risingtide.config :as config]
             [net.cgrand.enlive-html :as html]))
@@ -27,7 +26,7 @@
    "version" version/version
    "environment" env
    "connections" (:connections processor)
-   "cache size" (count (dc/all-stories @(:cache processor)))
+   "cache size" (count @(:cache processor))
    "processor running" @(:run-processor processor)))
 
 (defn handler

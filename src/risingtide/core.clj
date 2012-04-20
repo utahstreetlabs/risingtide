@@ -25,3 +25,29 @@
          result# (do ~@forms)]
      (log/info ~msg "in" (- (.getTime (java.util.Date.)) start#) "ms")
      result#))
+
+(defn pmap-in-batches
+  ([f coll n]
+     (pmap #(doall (map f %)) (partition-all n coll)))
+  ([f coll]
+     (pmap-in-batches f coll 1000)))
+
+(comment
+  (redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:stories" "{\"class\":\"Stories::AddInterestInActor\",\"args\":[47,634],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-aef04660348f5f018d1f\"}}"))
+
+(redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:stories" "{\"class\":\"Stories::RemoveInterestInActor\",\"args\":[47,634],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-aef04660348f5f018d1f\"}}"))
+  (redis/with-connection (redis/connection-map {}) (redis/lpop "resque:queue:stories"))
+
+
+(dotimes [n 10000]  (redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:rising_tide_stories" (str "{\"class\":\"Stories::Create\",\"args\":[{\"listing_id\":799,\"tag_ids\":[1],\"type\":\"listing_activated\",\"actor_id\":" 1 "}],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}"))))
+
+(redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:stories" (str "{\"class\":\"Stories::Create\",\"args\":[{\"listing_id\":799,\"tag_ids\":[1],\"type\":\"listing_activated\",\"actor_id\":" 1 "}],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}")))
+
+(redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:rising_tide_stories" (str "{\"class\":\"Stories::Create\",\"args\":[{\"listing_id\":799,\"tag_ids\":[1],\"type\":\"listing_activated\",\"actor_id\":" 48215 "}],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}")))
+
+(redis/with-connection (redis/connection-map {}) (redis/rpush "resque:queue:stories" (str "{\"class\":\"Stories::Create\",\"args\":[{\"type\":\"user_joined\",\"actor_id\":47}],\"context\":{\"log_weasel_id\":\"BROOKLYN-RESQUE-52023d69d3bda45328d5\"}}")))
+
+
+  "{\"class\":\"Stories::AddInterestsInListing\",\"args\":[799],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-3114fc3c8086dccb505e\"}}"
+
+  "{\"class\":\"Stories::AddInterestInListing\",\"args\":[47,655],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-4124458a124264522a02\"}}")

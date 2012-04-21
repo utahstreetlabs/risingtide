@@ -250,13 +250,14 @@
 
 (defn write-feed-index!
   [redii feed-key feed-atom]
-  (let [stories (feed-from-index feed-atom)
-        scores (map :score stories)
-        low-score (apply min scores)
-        high-score (apply max scores)]
-    (feed/with-connection-for-feed redii feed-key
-      [connection]
-      (feed/replace-feed-head! connection feed-key stories low-score high-score))))
+  (let [stories (feed-from-index feed-atom)]
+    (when (not (empty? stories))
+      (let [scores (map :score stories)
+            low-score (apply min scores)
+            high-score (apply max scores)]
+        (feed/with-connection-for-feed redii feed-key
+          [connection]
+          (feed/replace-feed-head! connection feed-key stories low-score high-score))))))
 
 (defn expired?
   [feed-key story]

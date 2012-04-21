@@ -263,19 +263,29 @@
   [feed-key story]
   (< (:score story) (- (now) (cache-ttl feed-key))))
 
+(defn filter-expired-stories-from-set
+  [feed-key s]
+  (let [s (filter #(not (expired? feed-key %)) s)]
+    (when (not (empty? s)) (apply hash-set s))))
+
 (defn expire-feed-index
   [feed-key feed-index]
   (reduce (fn [f [key value]]
             (assoc f key
                    (if (map? value)
                      (when (not (expired? feed-key value)) value)
-                     (let [s (filter #(not (expired? feed-key %)) value)]
-                       (when (not (empty? s)) (apply hash-set s))))))
+                     (filter-expired-stories-from-set feed-key value))))
           {} feed-index))
+
+(defn expire-nodigest
+  [feed-key feed-indexes]
+  (assoc feed-indexes :nodigest (filter-expired-stories-from-set feed-key (:nodigest feed-indexes))))
 
 (defn expire-feed-indexes
   [feed-key feed-indexes]
-  (reduce (fn [f key] (assoc f key (expire-feed-index feed-key (f key)))) feed-indexes [:listings :actors]))
+  (expire-nodigest
+   feed-key
+   (reduce (fn [f key] (assoc f key (expire-feed-index feed-key (f key)))) feed-indexes [:listings :actors])))
 
 (defn clean-feed-index
   [feed-key feed-index]

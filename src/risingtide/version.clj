@@ -1,3 +1,3 @@
 (ns risingtide.version)
 
-(def version "1.0.1")
+(def version "2.0.0")

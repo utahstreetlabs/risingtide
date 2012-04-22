@@ -270,11 +270,11 @@
 
 (defn expire-feed-index
   [feed-key feed-index]
-  (reduce (fn [f [key value]]
-            (assoc f key
-                   (if (map? value)
-                     (when (not (expired? feed-key value)) value)
-                     (filter-expired-stories-from-set feed-key value))))
+  (reduce (fn [m [key value]]
+            (let [new-value (if (map? value)
+                              (when (not (expired? feed-key value)) value)
+                              (filter-expired-stories-from-set feed-key value))]
+              (if new-value (assoc m key new-value) (dissoc m key))))
           {} feed-index))
 
 (defn expire-nodigest

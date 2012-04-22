@@ -266,7 +266,7 @@
 (defn filter-expired-stories-from-set
   [feed-key s]
   (let [s (filter #(not (expired? feed-key %)) s)]
-    (when (not (empty? s)) (apply hash-set s))))
+    (when (not (empty? s)) (into #{} s))))
 
 (defn expire-feed-index
   [feed-key feed-index]

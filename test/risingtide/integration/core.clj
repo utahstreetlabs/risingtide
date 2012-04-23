@@ -219,7 +219,7 @@
                                 (user-followed jim kaitlyn)
                                 (user-followed jim courtney))))
 
-(fact "digest cards aren't duplicated they are the oldest thing in the feed"
+(fact "digest cards aren't duplicated when they are the oldest thing in the feed"
   (on-copious
    (rob interested-in-user jim)
    (jim activates-many-listings (range 0 16))

@@ -173,21 +173,60 @@
                 (actor-story-aggregator (get-in digesting-index path) story)))
     digesting-index))
 
+;;; creating a feed from the digesting index
+
+(defn- bucket-story
+  [m story]
+  (if (map? story)
+    (assoc m :digest (conj (:digest m) story))
+    (assoc m :single (set/union (:single m) story))))
+
+(defn feed-from-index
+  [digesting-index]
+  (let [bucketed-stories
+        [(reduce bucket-story {} (vals (:listings digesting-index)))
+         (reduce bucket-story {} (vals (:actors digesting-index)))]]
+    (concat (:nodigest digesting-index)
+     (apply set/union (map :digest bucketed-stories))
+     (apply set/intersection (map :single bucketed-stories)))))
+
+(defn min-story-score
+  [feed-indexes]
+  (let [stories (feed-from-index feed-indexes)]
+    (when (not (empty? stories))
+      (apply min (map :score stories)))))
+
+(defn min-score
+  [feed-indexes]
+  ;; try really hard to find a min score in the indexes - theoretically there
+  ;; should always be a :min key, but in case there isn't, look
+  ;; through the stories we'd generate
+  (or (:min feed-indexes) (min-story-score feed-indexes) (now)))
+
+(defn update-min-score
+  [feed-indexes story]
+  (let [score (:score story)]
+    (assoc feed-indexes :min (min score (min-score feed-indexes)))))
+
 (defn add-story
   [digesting-index story]
-  (if (and (:listing_id story) (:actor_id story))
-    (-> digesting-index
-        (add-story-to-listings-index story)
-        (add-story-to-actors-index story))
-    (assoc digesting-index :nodigest (cons story (:nodigest digesting-index)))))
+  (update-min-score
+   (if (and (:listing_id story) (:actor_id story))
+     (-> digesting-index
+         (add-story-to-listings-index story)
+         (add-story-to-actors-index story))
+     (assoc digesting-index :nodigest (cons story (:nodigest digesting-index))))
+   story))
 
 (defn add-predigested-story
   [digesting-index story]
-  (if (story/digest-story? story)
-    (if (story/listing-digest-story? story)
-      (add-story-to-listings-index digesting-index story)
-      (add-story-to-actors-index digesting-index story))
-    (add-story digesting-index story)))
+  (update-min-score
+   (if (story/digest-story? story)
+     (if (story/listing-digest-story? story)
+       (add-story-to-listings-index digesting-index story)
+       (add-story-to-actors-index digesting-index story))
+     (add-story digesting-index story))
+   story))
 
 (defn index-predigested-feed
   [feed]
@@ -229,39 +268,25 @@
   ([feed-key story] (replace-feed-index! feed-cache feed-key story)))
 
 
-;;; creating a feed from the digesting index
-
-(defn- bucket-story
-  [m story]
-  (if (map? story)
-    (assoc m :digest (conj (:digest m) story))
-    (assoc m :single (set/union (:single m) story))))
-
-(defn feed-from-index
-  [digesting-index]
-  (let [bucketed-stories
-        [(reduce bucket-story {} (vals (:listings digesting-index)))
-         (reduce bucket-story {} (vals (:actors digesting-index)))]]
-    (concat (:nodigest digesting-index)
-     (apply set/union (map :digest bucketed-stories))
-     (apply set/intersection (map :single bucketed-stories)))))
-
 ;;; writing out the cache
 
 (defn write-feed-index!
-  [redii feed-key feed-atom]
-  (let [stories (feed-from-index feed-atom)]
+  [redii feed-key feed-indexes]
+  (let [stories (feed-from-index feed-indexes)]
     (when (not (empty? stories))
-      (let [scores (map :score stories)
-            low-score (apply min scores)
-            high-score (apply max scores)]
+      (let [low-score (min-score feed-indexes)
+            high-score (now)]
         (feed/with-connection-for-feed redii feed-key
           [connection]
           (feed/replace-feed-head! connection feed-key stories low-score high-score))))))
 
+(defn expiration-threshold
+  [feed-key]
+  (- (now) (cache-ttl feed-key)))
+
 (defn expired?
   [feed-key story]
-  (< (:score story) (- (now) (cache-ttl feed-key))))
+  (< (:score story) (expiration-threshold feed-key)))
 
 (defn filter-expired-stories-from-set
   [feed-key s]
@@ -283,9 +308,11 @@
 
 (defn expire-feed-indexes
   [feed-key feed-indexes]
-  (expire-nodigest
-   feed-key
-   (reduce (fn [f key] (assoc f key (expire-feed-index feed-key (f key)))) feed-indexes [:listings :actors])))
+  (assoc
+   (expire-nodigest
+    feed-key
+    (reduce (fn [f key] (assoc f key (expire-feed-index feed-key (f key)))) feed-indexes [:listings :actors]))
+   :min (expiration-threshold feed-key)))
 
 (defn clean-feed-index
   [feed-key feed-index]

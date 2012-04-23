@@ -176,3 +176,5 @@ usable in backgrounds yet.
   `(with-increasing-seconds-timeline
      ~@(map swap-subject-action statements)
      (digest/write-cache! conn)))
+
+(def write! digest/write-cache!)

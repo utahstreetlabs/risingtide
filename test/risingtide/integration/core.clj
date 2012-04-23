@@ -18,9 +18,8 @@
    (jim shares toast)
    (jim likes omelettes {:feed ["ev"]})
    (jim joins)
-   (jim follows jon))
-  ;; implicit write here
-  (on-copious
+   (jim follows jon)
+   (conn write!)
    (rob interested-in-user jim)
    (rob builds-feeds))
 
@@ -220,3 +219,12 @@
                                 (user-followed jim kaitlyn)
                                 (user-followed jim courtney))))
 
+(fact "digest cards aren't duplicated they are the oldest thing in the feed"
+  (on-copious
+   (rob interested-in-user jim)
+   (jim activates-many-listings (range 0 16))
+   (conn write!)
+   (jim activates 16))
+
+  (feed-for-rob :card) =>
+  (encoded-feed (story/multi-listing-digest jim "listing_activated" (range 0 17))))

@@ -347,11 +347,12 @@ delay of interval to flush cached feeds to redis.
   [cache-atom redii interval]
   (doto (java.util.concurrent.ScheduledThreadPoolExecutor. 1)
     (.scheduleWithFixedDelay
-     #(bench "flushing cache"
-             (try (write-cache! cache-atom redii)
-                  (catch Exception e
-                    (log/error "exception flushing cache" e)
-                    (safe-print-stack-trace e))))
+     #(bench-if-longer-than
+       50 "flushing cache"
+       (try (write-cache! cache-atom redii)
+            (catch Exception e
+              (log/error "exception flushing cache" e)
+              (safe-print-stack-trace e))))
      interval interval java.util.concurrent.TimeUnit/SECONDS)))
 
 ;;;; feed building ;;;;

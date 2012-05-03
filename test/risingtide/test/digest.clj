@@ -142,8 +142,14 @@
  [(story/multi-actor-multi-action-digest hams {"listing_activated" [jim jon] "listing_shared" [jon jim]})]
 
  (map #(listing-activated jim %) (range 0 16))
- ;; ;; digests to
- [(story/multi-listing-digest jim "listing_activated" (range 0 16))])
+ ;; digests to
+ [(story/multi-listing-digest jim "listing_activated" (range 0 16))]
+
+ (concat (map #(listing-activated jim %) (range 0 16)) [(listing-liked jim 16)])
+ ;; digests to
+ [(story/multi-listing-digest jim "listing_activated" (range 0 16)) (listing-liked jim 16)]
+
+ )
 
 (defn scored-seconds-ago
   [story seconds]

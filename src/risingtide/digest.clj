@@ -168,7 +168,7 @@
 (defn add-story-to-actors-index
   [digesting-index story]
   (if (:actor_id story)
-    (let [path [:actors (:actor_id story)]]
+    (let [path [:actors (str (:actor_id story) (:type story))]]
       (assoc-in digesting-index path
                 (actor-story-aggregator (get-in digesting-index path) story)))
     digesting-index))

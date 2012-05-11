@@ -82,3 +82,9 @@ interest keys for card feeds"
   [redii user-id feed-type]
   (redis/with-jedis* (:interests redii)
     (fn [jedis] (.sunion jedis (into-array String (feed-source-interest-keys feed-type user-id))))))
+
+(defn watchers
+  [redii keys]
+  (redis/with-jedis* (:interests redii)
+    (fn [jedis] (.sunion jedis (into-array String keys)))))
+

@@ -6,6 +6,7 @@
             [risingtide.config :as config]
             [risingtide.key :as key]
             [risingtide.jobs :as jobs]
+            [risingtide.persist :as persist]
             [risingtide.stories :as story]
             [risingtide.queries :as queries]
             [risingtide.digest :as digest]))
@@ -60,9 +61,11 @@
 
 ;; feeds
 
+(expose persist/encode)
+
 (defn encoded-feed
   [& stories]
-  (map json/read-json (map story/encode stories)))
+  (map json/read-json (map encode stories)))
 
 (defn everything-feed
   []

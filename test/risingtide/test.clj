@@ -1,12 +1,10 @@
 (ns risingtide.test
   (:use risingtide.core)
-  (:require [clj-logging-config.log4j :as log-config]
-            [risingtide.stories :as stories]))
+  (:require [clj-logging-config.log4j :as log-config]))
 
 (defn listing-story
   ([type actor-id listing-id args]
-     (let [s {:type type :actor_id actor-id :listing_id listing-id}]
-       (merge (assoc s :encoded (stories/encode s)) args)))
+     (merge {:type type :actor_id actor-id :listing_id listing-id} args))
   ([type actor-id listing-id] (listing-story type actor-id listing-id nil)))
 
 (defmacro listing-story-helper
@@ -21,6 +19,11 @@
 (listing-story-helper listing-shared)
 (listing-story-helper listing-sold)
 (listing-story-helper listing-commented)
+
+(defmacro expose
+  "def a variable in the current namespace. This can be used to expose a private function."
+  [var]
+  `(def ~(symbol (name var)) (var ~var)))
 
 (defn tag-liked
   ([actor-id tag-id score]

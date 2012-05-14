@@ -1,5 +1,5 @@
-(ns risingtide.test.feed
-  (:use [risingtide.feed])
+(ns risingtide.test.shard
+  (:use [risingtide.shard])
   (:use [midje.sweet]))
 
 (fact

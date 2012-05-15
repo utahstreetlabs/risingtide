@@ -2,7 +2,6 @@
   (:use risingtide.core)
   (:require [clojure.tools.logging :as log]
             [clojure.data.json :as json]
-            [accession.core :as redis]
             [risingtide
              [interests :as interests]
              [feed :as feed]

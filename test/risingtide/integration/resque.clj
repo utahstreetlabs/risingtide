@@ -5,15 +5,15 @@
         risingtide.resque)
   (:use [midje.sweet])
   (:require [risingtide.stories :as story]
-            [accession.core :as redis]))
-
+            [risingtide.redis :as redis]))
 
 (fact
-  (redis/with-connection (redis/connection-map)
-    (redis/del "high" "low")
-    (redis/rpush "high" 1)
-    (redis/rpush "low" 2)
-    (redis/rpush "high" 3)
-    (redis/rpush "low" 4))
-  (take 4 (jobs (atom true) (redis/connection-map) ["high" "low"])) =>
+  (redis/with-jedis* (:resque (redis/redii :test))
+    (fn [jedis]
+      (.del jedis (into-array String ["high" "low"]))
+      (.rpush jedis "high" "1")
+      (.rpush jedis "low" "2")
+      (.rpush jedis "high" "3")
+      (.rpush jedis "low" "4")))
+  (take 4 (jobs (atom true) (:resque (redis/redii :test)) ["high" "low"])) =>
   ["1" "3" "2" "4"])

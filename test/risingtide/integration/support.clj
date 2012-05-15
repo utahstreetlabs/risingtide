@@ -8,7 +8,6 @@
             [risingtide.jobs :as jobs]
             [risingtide.persist :as persist]
             [risingtide.stories :as story]
-            [risingtide.queries :as queries]
             [risingtide.digest :as digest]))
 
 (def conn {:interests (redis/redis {})

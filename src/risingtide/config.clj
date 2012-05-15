@@ -1,8 +1,8 @@
-(ns risingtide.config
-  (:require [accession.core :as redis]))
+(ns risingtide.config)
 
 (def redis
   {:development {:resque {} :card-feeds {} :network-feeds {} :interests {} :stories {}}
+   :test {:resque {} :card-feeds {} :network-feeds {} :interests {} :stories {}}
    :staging {:resque {:host "staging3.copious.com"}
              :card-feeds {:host "staging4.copious.com"}
              :network-feeds {:host "staging4.copious.com"}
@@ -18,10 +18,6 @@
                 :network-feeds {:host "rt-network-feeds-redis.copious.com"}
                 :interests {:host "rt-interests-redis.copious.com"}
                 :stories {:host "rt-stories-redis.copious.com"}}})
-
-(def redii
-  (reduce (fn [r [env redii]] (assoc r env (reduce (fn [m [key conn]] (assoc m key (redis/connection-map conn))) {} redii)))
-          {} redis))
 
 (def digest
   {:development true

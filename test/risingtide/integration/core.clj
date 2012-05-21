@@ -4,7 +4,8 @@
         risingtide.test)
   (:use [midje.sweet])
   (:require [risingtide.stories :as story]
-            [risingtide.feed :as feed]))
+            [risingtide.feed :as feed]
+            [risingtide.persist :as persist]))
 
 (background
  (before :facts (clear-redis!))
@@ -184,7 +185,7 @@
                            (listing-liked jim toast {:feed "ylf"})))
 
 (fact "card feeds are truncated when a new card story is added"
-  (binding [feed/*max-card-feed-size* 5]
+  (binding [persist/*max-card-feed-size* 5]
     (on-copious
      (rob interested-in-user jim)
      (jim likes bacon)
@@ -202,7 +203,7 @@
                              (listing-liked jim omelettes))))
 
 (fact "network feeds are truncated when a new network story is added"
-  (binding [feed/*max-network-feed-size* 5]
+  (binding [persist/*max-network-feed-size* 5]
     (on-copious
      (rob interested-in-user jim)
      (jim follows jon)

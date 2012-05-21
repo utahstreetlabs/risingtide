@@ -2,10 +2,9 @@
   "utilities for managing stories"
   (:use risingtide.core)
   (:require [clojure.tools.logging :as log]
-            [clojure.data.json :as json]
-            [risingtide.redis :as redis]
             [risingtide.key :as key]
-            [risingtide.queries :as queries]))
+            [risingtide.interests :as interests]
+            [risingtide.persist :as persist]))
 
 (def type-info
   {:listing_activated { :group :listing :id 0 }
@@ -56,38 +55,6 @@
 
 (def listing-tag-story-types #{:listing_activated :listing_sold})
 
-(def short-key
-  {:feed :f
-   :action :a
-   :type :t
-   :types :ts
-   :actor_id :aid
-   :actor_ids :aids
-   :listing_id :lid
-   :listing_ids :lids
-   :tag_id :tid
-   :buyer_id :bid
-   :followee_id :fid
-   :invitee_profile_id :iid
-   :text :tx
-   :network :n})
-
-(def long-key (reduce (fn [hash [key val]] (assoc hash val key)) {} short-key))
-
-(defn translate-keys
-  [hash translator]
-  (reduce (fn [h [key val]] (let [s (translator key)] (if s (assoc h s val) h))) {} hash))
-
-(defn encode
-  "given a story, encode it into a short-key json format suitable for memory efficient storage in redis"
-  [story]
-  (json/json-str (translate-keys story short-key)))
-
-(defn decode
-  "given a short-key json encoded story, decode into a long keyed hash"
-  [story]
-  (translate-keys (json/read-json story) long-key))
-
 (defn listing-tag-story?
   [story]
   (listing-tag-story-types (keyword (:type story))))
@@ -114,17 +81,6 @@
    (listing-watcher-sets story)
    (followee-watcher-sets story)))
 
-(defn interested-users
-  [redii story]
-  (redis/with-jedis* (:interests redii)
-    (fn [jedis] (.sunion jedis (into-array String (watcher-sets story))))))
-
-(defn interested-feeds
-  ""
-  [redii story]
-  (map #(key/user-feed % (feed-type-key-token story))
-       (interested-users redii story)))
-
 (defn actor-story-sets
   [story]
   [(key/format-key (feed-type-key-token story) "a" (:actor_id story))])
@@ -146,21 +102,6 @@
    (actor-story-sets story)
    (listing-story-sets story)
    (followee-story-sets story)))
-
-(defn destination-sets
-  [redii story]
-  (concat
-   (destination-story-sets story)
-   (when (= :card (feed-type story)) [(key/everything-feed)])
-   (interested-feeds redii story)))
-
-(defn add!
-  [redii story time]
-  (redis/with-jedis* (:stories redii)
-    (fn [jedis]
-      (let [encoded-story (encode story)]
-        (doseq [key (destination-story-sets story)]
-          (.zadd jedis key (double time) encoded-story))))))
 
 ;; creating new stories
 
@@ -225,3 +166,23 @@
   ([actor-id action listing-ids score]
      (stash-encoded {:type (digest-types :aml) :actor_id actor-id :action action :listing_ids listing-ids :score score}))
   ([actor-id action listing-ids] (multi-listing-digest actor-id action listing-ids nil)))
+
+;; functions involving persisted data ;;
+
+(defn interested-feeds
+  ""
+  [conn-spec story]
+  (map #(key/user-feed % (feed-type-key-token story))
+       (interests/watchers conn-spec (watcher-sets story))))
+
+(defn destination-sets
+  [conn-spec story]
+  (concat
+   (destination-story-sets story)
+   (when (= :card (feed-type story)) [(key/everything-feed)])
+   (interested-feeds conn-spec story)))
+
+(defn add!
+  [conn-spec story time]
+  (persist/add-story! conn-spec story (destination-story-sets story) time))
+

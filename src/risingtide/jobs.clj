@@ -2,14 +2,14 @@
   (:use risingtide.core)
   (:require [clojure.tools.logging :as log]
             [clojure.data.json :as json]
-            [accession.core :as redis]
             [risingtide
              [interests :as interests]
              [feed :as feed]
              [resque :as resque]
              [stories :as stories]
              [key :as key]
-             [digest :as digest]]))
+             [digest :as digest]
+             [persist :as persisted]]))
 
 (defn- add-interest-and-backfill!
   [redii type user-id object-id]
@@ -20,7 +20,7 @@
      (let [feed-key (key/user-feed user-id feed-type)]
        (doall
         (for [story (feed/user-feed-stories
-                     (digest/load-stories (:stories redii) (key/format-key feed-type (first-char type) object-id)
+                     (persisted/stories (:stories redii) (key/format-key feed-type (first-char type) object-id)
                        (- (now) (* 24 60 60)) (now)))]
           (digest/add-story-to-feed-cache redii feed-key story)))
        (digest/write-feeds! redii [(key/user-feed user-id feed-type)])))))

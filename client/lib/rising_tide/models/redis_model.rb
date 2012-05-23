@@ -52,7 +52,9 @@ module RisingTide
       # XXX: this approach is not threadsafe, designed specifically for use within unicorn (or other non-threaded,
       # forked servers)
       begin
-        self.redis = Redis.new(self.config) unless self.redis && self.redis.client.connected?
+        config = self.config
+        config = config[options[:shard]] if options[:shard]
+        self.redis = Redis.new(config) unless self.redis && self.redis.client.connected?
         block.call(self.redis)
       rescue Exception => e
         handle_error('Redis Connection', e)

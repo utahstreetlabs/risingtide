@@ -1,5 +1,6 @@
 require 'ladon'
 require 'kaminari'
+require 'riak'
 
 module RisingTide
   class Feed < RedisModel
@@ -15,6 +16,11 @@ module RisingTide
         end
         parts << (options[:feed] || self.feed_token).to_s[0]
         format_key(parts)
+      end
+
+      # should be overridden by subclasses to support sharding
+      def shard(options = {})
+        nil
       end
 
       # Returns an ordered list of stories from a feed within the limits provide, both in terms of time and counts.
@@ -33,7 +39,7 @@ module RisingTide
         cnt = 0
         fkey, before, after = common_options(options)
 
-        values = with_redis(default_data: []) do |redis|
+        values = with_redis(default_data: [], shard: self.shard(options)) do |redis|
           cnt = count(options)
           benchmark("Fetch values for #{fkey} #{after} #{before} #{offset} #{limit}") do
             if (before || after)
@@ -73,6 +79,17 @@ module RisingTide
 
   class CardFeed < Feed
     def self.feed_token; :c; end
+
+    def self.shard(options = {})
+      if options[:interested_user_id]
+        client = Riak::Client.new(:protocol => "pbc")
+        key = client.bucket("card-feed-shard-config").get_or_new(options[:interested_user_id].to_s).data || "1"
+        "card_feed_#{key}".to_sym
+      else
+        :everything_card_feed
+      end
+
+    end
   end
 
   class NetworkFeed < Feed

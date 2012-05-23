@@ -7,6 +7,7 @@
             [risingtide.web :as web]
             [risingtide.digest :as digest]
             [risingtide.redis :as redis]
+            [risingtide.riak :as riak]
             [clj-logging-config.log4j :as log-config]
             [mycroft.main :as mycroft])
   (:import [sun.misc Signal SignalHandler]))
@@ -79,7 +80,8 @@
 
 (defn- connections
   []
-  (redis/redii env))
+  (merge (redis/redii env)
+         (riak/riaks env)))
 
 ;; This is where the magic happens ;;
 

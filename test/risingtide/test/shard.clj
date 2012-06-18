@@ -4,7 +4,7 @@
   (:use [midje.sweet])
   (:require [risingtide.shard.config :as shard-config]))
 
-(expose risingtide.shard/feeds-by-type
+(expose risingtide.shard/feeds-by-shard
         risingtide.shard/flatten-keys)
 
 (fact

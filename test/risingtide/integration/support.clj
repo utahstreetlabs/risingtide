@@ -3,7 +3,6 @@
         risingtide.test)
   (:require [clojure.data.json :as json]
             [risingtide.redis :as redis]
-            [risingtide.riak :as riak]
             [risingtide.config :as config]
             [risingtide.key :as key]
             [risingtide.jobs :as jobs]
@@ -17,7 +16,7 @@
            :card-feeds-1 (redis/redis {})
            :network-feeds (redis/redis {})
            :stories (redis/redis {})
-           :shard (riak/client)})
+           :shard-config (redis/redis {})})
 
 ;; users
 (defmacro defuser

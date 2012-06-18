@@ -3,7 +3,8 @@
 (def redis
   {:development {:resque {}
                  :everything-card-feed {} :card-feeds-1 {}
-                 :network-feeds {} :interests {} :stories {}}
+                 :network-feeds {} :interests {} :stories {}
+                 :shard-config {}}
    :test {:resque {}
           :everything-card-feed {} :card-feeds-1 {}
           :network-feeds {} :interests {} :stories {}}
@@ -25,13 +26,6 @@
                 :network-feeds {:host "rt-network-feeds-redis.copious.com"}
                 :interests {:host "rt-interests-redis.copious.com"}
                 :stories {:host "rt-stories-redis.copious.com"}}})
-
-(def riak
-  {:development {:shard []}
-   :test {:shard []}
-   :staging {:shard []}
-   :demo {:shard []}
-   :production {:shard []}})
 
 (def digest
   {:development true

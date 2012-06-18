@@ -57,7 +57,7 @@ on the server specified by that connection spec.
 "
   [conn-spec feeds f]
   (map #(apply f %)
-       (map (fn [[conn-key feeds]] [(conn-spec conn-key) feeds]) (feeds-by-shard (:shard conn-spec) feeds))))
+       (map (fn [[conn-key feeds]] [(conn-spec conn-key) feeds]) (feeds-by-shard (:shard-config conn-spec) feeds))))
 
 (defmacro with-connections-for-feeds
   [conn-spec feeds params & body]

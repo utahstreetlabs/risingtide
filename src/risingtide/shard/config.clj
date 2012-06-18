@@ -1,26 +1,26 @@
 (ns risingtide.shard.config
  "Sharding config server"
- (:require [risingtide.config :as config]
-           [sumo.client :as riak]
+ (:require [risingtide
+            [config :as config]
+            [redis :as redis]]
            [clojure.pprint :as pp]))
 
 (def default-shard config/default-card-shard)
 
-(defn shard-value
-  [value]
-  {:value value :content-type "text/plain"})
+(def shard-value identity)
 
 (defn get-or-create-shard-key
   [client bucket user-id]
-  (let [values (riak/get client bucket user-id)]
-    (if (empty? values)
-      (do (riak/put client bucket user-id (shard-value default-shard))
-          default-shard)
-      (:value (first values)))))
+  (redis/with-jedis* client
+    (fn [jedis]
+      (or (.hget jedis (str bucket) (str user-id))
+          (do (.hset jedis (str bucket) (str user-id) default-shard)
+              default-shard)))))
 
 (defn update-shard-key
   [client bucket user-id new-key]
-  (riak/put client bucket user-id (shard-value new-key)))
+  (redis/with-jedis* client
+    (fn [jedis] (.hset jedis (str bucket) (str user-id) new-key))))
 
 (defn card-feed-shard-key
   "Given a connection and a user id, return the shard key for that user"
@@ -28,6 +28,7 @@
   (get-or-create-shard-key client "card-feed-shard-config" user-id))
 
 (comment
-  (card-feed-key (riak/connect-pb) "50")
-  (update-shard-key (riak/connect-pb) "card-feed-shard-config" "47" "3")
+  (card-feed-key nil "50")
+  (get-or-create-shard-key (:shard-config (redis/redii :development)) "card-feed-shard-config" "47")
+  (update-shard-key (:shard-config (redis/redii :development)) "card-feed-shard-config" "47" "3")
   )

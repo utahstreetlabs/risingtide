@@ -7,11 +7,18 @@ module RisingTide
 
     class << self
       attr_accessor :config
-      attr_accessor :redis
       attr_accessor :environment
       @environment ||= 'development'
       def namespace
         @namespace ||= :"mag#{(self.environment)[0]}"
+      end
+
+      def redii
+        @redii ||= {}
+      end
+
+      def reset_redii
+        @redii = {}
       end
     end
 
@@ -53,9 +60,11 @@ module RisingTide
       # forked servers)
       begin
         config = self.config
-        config = config[options[:shard]] if options[:shard]
-        self.redis = Redis.new(config) unless self.redis && self.redis.client.connected?
-        block.call(self.redis)
+        shard_key = options[:shard]
+        config = config[shard_key] if shard_key
+        redii[shard_key] = Redis.new(config) unless redii[shard_key] && redii[shard_key].client.connected?
+
+        block.call(redii[shard_key])
       rescue Exception => e
         handle_error('Redis Connection', e)
         options[:default_data] or nil

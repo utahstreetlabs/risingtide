@@ -1,6 +1,5 @@
 require 'ladon'
 require 'kaminari'
-require 'riak'
 
 module RisingTide
   class Feed < RedisModel
@@ -80,11 +79,13 @@ module RisingTide
   class CardFeed < Feed
     def self.feed_token; :c; end
 
+    def self.shard_key(user_id)
+      RisingTide::ShardConfig.shard_key(user_id)
+    end
+
     def self.shard(options = {})
       if options[:interested_user_id]
-        client = Riak::Client.new(:protocol => "pbc")
-        key = client.bucket("card-feed-shard-config").get_or_new(options[:interested_user_id].to_s).data || "1"
-        "card_feed_#{key}".to_sym
+        "card_feed_#{shard_key(options[:interested_user_id])}".to_sym
       else
         :everything_card_feed
       end

@@ -30,5 +30,5 @@
 (comment
   (card-feed-key nil "50")
   (get-or-create-shard-key (:shard-config (redis/redii :development)) "card-feed-shard-config" "47")
-  (update-shard-key (:shard-config (redis/redii :development)) "card-feed-shard-config" "47" "3")
+  (update-shard-key (:shard-config (redis/redii :development)) "card-feed-shard-config" "47" "1")
   )

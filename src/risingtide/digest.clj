@@ -230,6 +230,16 @@
   [feed-index]
   (assoc feed-index :dirty true))
 
+(defn mark-atom-dirty!
+  [feed-index-atom]
+  (swap! feed-index-atom (fn [feed-index] (mark-dirty feed-index))))
+
+(defn mark-feed-dirty!
+  ([cache-atom feed-key]
+     (when-let [feed-index-atom (@cache-atom feed-key)]
+       (mark-atom-dirty! feed-index-atom)))
+  ([feed-key] (mark-feed-dirty! feed-cache feed-key)))
+
 (defn add-story-to-feed-index
   [feed-index-atom story]
   (swap! feed-index-atom (fn [feed-index] (mark-dirty (add-story feed-index story)))))
@@ -357,3 +367,8 @@ delay of interval to flush cached feeds to redis.
   (let [keys [(key/user-card-feed user-id) (key/user-network-feed user-id)]]
     (build! redii keys)
     (write-feeds! redii keys)))
+
+(defn add-migration!
+  [feed-key destination-shard]
+  (shard/add-migration! feed-key "2")
+  (mark-feed-dirty! feed-key))

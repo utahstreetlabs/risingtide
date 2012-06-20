@@ -29,6 +29,12 @@ http://blog.jayfields.com/2010/09/clojure-flatten-keys.html"
      (flatten-keys {} [] m key-separator))
   ([m] (flatten-keys m "")))
 
+(defn- add-feed-to-card-shards
+  "find the shards the given feed should be stored on "
+  [shard-feed-aggregator shard-config-conn user-id feed]
+  (reduce (fn [m shard-key] (update-in m [:card-feeds shard-key] #(cons feed %)))
+          shard-feed-aggregator (shard-config/card-feed-shard-keys shard-config-conn user-id)))
+
 (defn- feeds-by-shard
   "Return a map from keys matching redis config keys in risingtide.config/redis
 to feeds that should be stored on the corresponding redis instance.
@@ -40,8 +46,7 @@ to feeds that should be stored on the corresponding redis instance.
            (assoc-in m [:everything-card-feed] [feed])
            (let [[type user-id] (key/type-user-id-from-feed-key feed)]
              (case type
-               :card (update-in m [:card-feeds (shard-config/card-feed-shard-key shard-config-conn user-id)]
-                                #(cons feed %))
+               :card (add-feed-to-card-shards m shard-config-conn user-id feed)
                :network (update-in m [:network-feeds] #(cons feed %))))))
        {} feeds)
       (flatten-keys "-")))
@@ -56,8 +61,9 @@ will be passed the connection spec for the server to use and the set of feeds th
 on the server specified by that connection spec.
 "
   [conn-spec feeds f]
-  (map #(apply f %)
-       (map (fn [[conn-key feeds]] [(conn-spec conn-key) feeds]) (feeds-by-shard (:shard-config conn-spec) feeds))))
+  (let [fbs (feeds-by-shard (:shard-config conn-spec) feeds)]
+   (map #(apply f %)
+        (map (fn [[conn-key feeds]] [(conn-spec conn-key) feeds]) fbs))))
 
 (defmacro with-connections-for-feeds
   [conn-spec feeds params & body]
@@ -67,4 +73,7 @@ on the server specified by that connection spec.
   [conn-spec feed-key connection-vec & body]
   `(first (with-connections-for-feeds ~conn-spec [~feed-key] [~(first connection-vec) _#] ~@body)))
 
-
+(defn add-migration!
+  [feed-key destination-shard]
+  (let [[type user-id] (key/type-user-id-from-feed-key feed-key)]
+    (shard-config/add-migration! type user-id destination-shard)))

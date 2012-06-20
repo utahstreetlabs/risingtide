@@ -9,6 +9,18 @@
 
 (def shard-value identity)
 
+(def default-migrations-value {:card {}})
+
+(def migrations (atom default-migrations-value))
+
+(defn clear-migrations!
+  []
+  (swap! migrations (constantly default-migrations-value)))
+
+(defn add-migration!
+  [type id destination-shard]
+  (swap! migrations #(assoc-in % [type id] destination-shard)))
+
 (defn get-or-create-shard-key
   [client bucket user-id]
   (redis/with-jedis* client
@@ -26,6 +38,13 @@
   "Given a connection and a user id, return the shard key for that user"
   [client user-id]
   (get-or-create-shard-key client "card-feed-shard-config" user-id))
+
+(defn card-feed-shard-keys
+  "Given a connection and a user id, return the shard key for that user"
+  [client user-id]
+  (let [stored-key (card-feed-shard-key client user-id)
+        new-shard-key (get (:card @migrations) user-id)]
+    (if new-shard-key [stored-key new-shard-key] [stored-key])))
 
 (comment
   (card-feed-key nil "50")

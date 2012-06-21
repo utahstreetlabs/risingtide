@@ -83,6 +83,21 @@ object.
    (redis/with-jedis* conn
      (fn [jedis] (.zrangeByScoreWithScores jedis key (double since) (double until))))))
 
+(defn replace-feed-head!
+  [conn feed stories low-score high-score]
+  (when-not (empty? stories)
+    (redis/with-transaction* conn
+      (fn [jedis]
+        (.zremrangeByScore jedis feed (double low-score) (double high-score))
+        (doseq [story stories]
+          (.zadd jedis feed (double (:score story)) (encode story)))
+        (.zremrangeByRank jedis feed 0 (max-feed-size feed))))))
+
+(defn delete!
+  [conn feed-key]
+  (redis/with-jedis* conn
+      (fn [jedis] (.del jedis (into-array String [feed-key])))))
+
 (defn union-story-sets
   "Load stories from N story sets"
   [conn-spec keys limit]
@@ -96,16 +111,6 @@ object.
       [connection] (stories connection feed-key since until))
    (catch Throwable e
      (throw (Throwable. (str "exception loading" feed-key) e)))))
-
-(defn replace-feed-head!
-  [conn feed stories low-score high-score]
-  (when-not (empty? stories)
-    (redis/with-transaction* conn
-      (fn [jedis]
-        (.zremrangeByScore jedis feed (double low-score) (double high-score))
-        (doseq [story stories]
-          (.zadd jedis feed (double (:score story)) (encode story)))
-        (.zremrangeByRank jedis feed 0 (max-feed-size feed))))))
 
 (defn add-story!
   [conn-spec story destination-sets time]

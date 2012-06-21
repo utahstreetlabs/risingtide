@@ -144,7 +144,7 @@
 (defn clear-redis!
   []
   (if (= env :test)
-    (doseq [redis [:everything-card-feed :card-feeds-1 :card-feeds-2 :network-feeds :interests :stories]]
+    (doseq [redis [:everything-card-feed :shard-config :card-feeds-1 :card-feeds-2 :network-feeds :interests :stories]]
       (let [keys (redis/with-jedis* (redis conn) (fn [jedis] (.keys jedis (key/format-key "*"))))]
         (when (not (empty? keys))
           (redis/with-jedis* (redis conn)

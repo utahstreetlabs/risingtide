@@ -368,7 +368,20 @@ delay of interval to flush cached feeds to redis.
     (build! redii keys)
     (write-feeds! redii keys)))
 
-(defn add-migration!
+(defn initiate-migration!
   [feed-key destination-shard]
-  (shard/add-migration! feed-key "2")
+  (shard/add-migration! feed-key destination-shard)
   (mark-feed-dirty! feed-key))
+
+(defn finalize-migration!
+  [conn-spec feed-key destination-shard]
+  (shard/remove-migration! feed-key)
+  (let [old-shard-key (shard/shard-key conn-spec feed-key)]
+    (shard/update-shard-config! conn-spec feed-key destination-shard)
+    (persist/delete! (shard/shard-conn conn-spec feed-key old-shard-key) feed-key)))
+
+(defn migrate!
+  [conn-spec feed-key destination-shard]
+  (initiate-migration! feed-key destination-shard)
+  (write-feeds! conn-spec [feed-key])
+  (finalize-migration! conn-spec feed-key destination-shard))

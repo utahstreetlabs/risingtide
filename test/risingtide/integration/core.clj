@@ -235,6 +235,42 @@
   (feed-for-rob :card) =>
   (encoded-feed (story/multi-listing-digest jim "listing_activated" (range 0 17))))
 
+(fact "migration moves a feed from one redis to another"
+  (on-copious
+   (rob interested-in-user jim)
+   (jim activates bacon)
+   (jim likes ham))
+
+  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (encoded-feed
+   (listing-activated jim bacon)
+   (listing-liked jim ham))
+
+  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (encoded-feed)
+
+  (digest/migrate! conn (key/user-feed rob :card) "2")
+
+  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (encoded-feed)
+
+  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (encoded-feed
+   (listing-activated jim bacon)
+   (listing-liked jim ham))
+
+  (on-copious
+   (jim shares toast))
+
+  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (encoded-feed)
+
+  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (encoded-feed
+   (listing-activated jim bacon)
+   (listing-liked jim ham)
+   (listing-shared jim toast)))
+
 (fact "mid-migration the feed is in two places"
   (on-copious
    (rob interested-in-user jim)
@@ -249,7 +285,7 @@
   (feed-on (:card-feeds-2 conn) rob :card) =>
   (encoded-feed)
 
-  (digest/add-migration! (key/user-feed rob :card) "2")
+  (digest/initiate-migration! (key/user-feed rob :card) "2")
   (write! conn)
 
   (feed-on (:card-feeds-1 conn) rob :card) =>

@@ -2,7 +2,8 @@
  "Sharding config server"
  (:require [risingtide
             [config :as config]
-            [redis :as redis]]
+            [redis :as redis]
+            [key :as key]]
            [clojure.pprint :as pp]))
 
 (def default-shard config/default-card-shard)
@@ -25,7 +26,7 @@
 (defn card-feed-shard-key
   "Given a connection and a user id, return the shard key for that user"
   [client user-id]
-  (get-or-create-shard-key client "card-feed-shard-config" user-id))
+  (get-or-create-shard-key client (key/format-key "card-feed-shard-config") user-id))
 
 (comment
   (card-feed-key nil "50")

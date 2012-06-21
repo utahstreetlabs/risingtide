@@ -83,7 +83,7 @@ module RisingTide
   class CardFeed < Feed
     def self.feed_token; :c; end
 
-    def self.shard_config_bucket; 'card-feed-shard-config'; end
+    def self.shard_config_bucket; format_key 'card-feed-shard-config'; end
 
     def self.shard_key(user_id)
       RisingTide::ShardConfig.shard_key(shard_config_bucket, user_id)

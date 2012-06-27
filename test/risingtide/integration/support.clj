@@ -8,12 +8,15 @@
             [risingtide.jobs :as jobs]
             [risingtide.persist :as persist]
             [risingtide.stories :as story]
+            [risingtide.shard :as shard]
             [risingtide.digest :as digest]))
 
 (def conn {:interests (redis/redis {})
-           :card-feeds (redis/redis {})
+           :everything-card-feed (redis/redis {})
+           :card-feeds-1 (redis/redis {})
            :network-feeds (redis/redis {})
-           :stories (redis/redis {})})
+           :stories (redis/redis {})
+           :shard-config (redis/redis {})})
 
 ;; users
 (defmacro defuser
@@ -23,9 +26,12 @@
     (defn ~(symbol (str "feed-for-" n))
       [type#]
       (map json/read-json
-           (redis/with-jedis* (conn (keyword (str (name type#) "-feeds")))
-             (fn [jedis#]
-               (.zrange jedis# (key/user-feed ~id type#) 0 100000)))))))
+           (let [feed-key# (key/user-feed ~id type#)]
+             (shard/with-connection-for-feed conn feed-key#
+               [pool#]
+               (redis/with-jedis* pool#
+                 (fn [jedis#]
+                   (.zrange jedis# (key/user-feed ~id type#) 0 100000)))))))))
 
 (defuser jim 1)
 (defuser jon 2)
@@ -69,7 +75,7 @@
 (defn everything-feed
   []
   (map json/read-json
-       (redis/with-jedis* (:card-feeds conn)
+       (redis/with-jedis* (:everything-card-feed conn)
          (fn [jedis]
           (.zrange jedis (key/everything-feed) 0 1000000000)))))
 
@@ -127,7 +133,7 @@
 (defn clear-redis!
   []
   (if (= env :test)
-    (doseq [redis [:card-feeds :network-feeds :interests :stories]]
+    (doseq [redis [:everything-card-feed :card-feeds-1 :network-feeds :interests :stories]]
       (let [keys (redis/with-jedis* (redis conn) (fn [jedis] (.keys jedis (key/format-key "*"))))]
         (when (not (empty? keys))
           (redis/with-jedis* (redis conn)

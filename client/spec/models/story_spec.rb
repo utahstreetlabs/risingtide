@@ -21,7 +21,7 @@ describe RisingTide::Story do
     let(:responses) do
       listing_ids.map {|id| 3.times.map {|i| Yajl::Encoder.encode({t: :listing_liked, lid: id, aid: i})}}
     end
-    let(:redis) { stub_redis }
+    let(:redis) { stub_redis(RisingTide::Story, {}) }
 
     it 'should return the most recent stories for the specified listings' do
       redis.expects(:smembers).with('magt:i:u:1:l').never

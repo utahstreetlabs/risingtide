@@ -1,5 +1,3 @@
-require 'rising_tide/models/redis_model'
-
 module RisingTide
   class Story < RedisModel
     # map to uncompress keys from json storage

@@ -17,6 +17,15 @@ module RisingTide
         format_key(parts)
       end
 
+      # should be overridden by subclasses to support sharding
+      def shard(options = {})
+        nil
+      end
+
+      def with_redis(options = {})
+        super({shard: self.shard(options)}.merge(options))
+      end
+
       # Returns an ordered list of stories from a feed within the limits provide, both in terms of time and counts.
       #
       # @param [Hash] options
@@ -33,7 +42,7 @@ module RisingTide
         cnt = 0
         fkey, before, after = common_options(options)
 
-        values = with_redis(default_data: []) do |redis|
+        values = with_redis(options.merge(default_data: [])) do |redis|
           cnt = count(options)
           benchmark("Fetch values for #{fkey} #{after} #{before} #{offset} #{limit}") do
             if (before || after)
@@ -53,7 +62,7 @@ module RisingTide
       def count(options = {})
         fkey, before, after = common_options(options)
         benchmark("Get Cardinality for #{fkey} #{after} #{before}") do
-          with_redis { |r| (before || after) ? r.zcount(fkey, after, before) : r.zcard(fkey) }
+          with_redis(options) { |r| (before || after) ? r.zcount(fkey, after, before) : r.zcard(fkey) }
         end
       end
 
@@ -73,6 +82,21 @@ module RisingTide
 
   class CardFeed < Feed
     def self.feed_token; :c; end
+
+    def self.shard_config_bucket; format_key 'card-feed-shard-config'; end
+
+    def self.shard_key(user_id)
+      RisingTide::ShardConfig.shard_key(shard_config_bucket, user_id)
+    end
+
+    def self.shard(options = {})
+      if options[:interested_user_id]
+        "card_feed_#{shard_key(options[:interested_user_id])}".to_sym
+      else
+        :everything_card_feed
+      end
+
+    end
   end
 
   class NetworkFeed < Feed

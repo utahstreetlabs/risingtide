@@ -22,8 +22,10 @@
 
 (defmacro expose
   "def a variable in the current namespace. This can be used to expose a private function."
-  [var]
-  `(def ~(symbol (name var)) (var ~var)))
+  [& vars]
+  `(do
+     ~@(for [var vars]
+         `(def ~(symbol (name var)) (var ~var)))))
 
 (defn tag-liked
   ([actor-id tag-id score]

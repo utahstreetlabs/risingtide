@@ -6,7 +6,9 @@
             [key :as key]]
            [clojure.pprint :as pp]))
 
-(def buckets {:card (key/format-key "card-feed-shard-config")})
+(defn buckets [key]
+  (case key
+    :card (key/format-key "card-feed-shard-config")))
 
 (def default-shard config/default-card-shard)
 

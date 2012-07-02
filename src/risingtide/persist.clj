@@ -78,20 +78,30 @@ object.
 
 (defn stories
   "Load stories from a story or feed set"
-  [conn key since until]
-  (parse-stories-and-scores
-   (redis/with-jedis* conn
-     (fn [jedis] (.zrangeByScoreWithScores jedis key (double since) (double until))))))
+  ([conn key since until]
+     (parse-stories-and-scores
+      (redis/with-jedis* conn
+        (fn [jedis] (.zrangeByScoreWithScores jedis key (double since) (double until))))))
+  ([conn key] (stories conn key 0 (now))))
+
+(defn- add-stories-to-jedis
+  [jedis feed-key stories]
+  (doseq [story stories]
+    (.zadd jedis feed-key (double (:score story)) (encode story))))
 
 (defn replace-feed-head!
-  [conn feed stories low-score high-score]
+  [conn feed-key stories low-score high-score]
   (when-not (empty? stories)
     (redis/with-transaction* conn
       (fn [jedis]
-        (.zremrangeByScore jedis feed (double low-score) (double high-score))
-        (doseq [story stories]
-          (.zadd jedis feed (double (:score story)) (encode story)))
-        (.zremrangeByRank jedis feed 0 (max-feed-size feed))))))
+        (.zremrangeByScore jedis feed-key (double low-score) (double high-score))
+        (add-stories-to-jedis jedis feed-key stories)
+        (.zremrangeByRank jedis feed-key 0 (max-feed-size feed-key))))))
+
+(defn add-stories!
+  [conn feed-key stories]
+  (redis/with-jedis* conn
+    (fn [jedis] (add-stories-to-jedis jedis feed-key stories))))
 
 (defn delete!
   [conn feed-key]

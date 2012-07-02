@@ -380,8 +380,14 @@ delay of interval to flush cached feeds to redis.
     (shard/update-shard-config! conn-spec feed-key destination-shard)
     (persist/delete! (shard/shard-conn conn-spec feed-key old-shard-key) feed-key)))
 
+(defn copy-feed!
+  [feed-key from to]
+  (persist/add-stories! to feed-key (persist/stories from feed-key)))
+
 (defn migrate!
   [conn-spec feed-key destination-shard]
+  (copy-feed! feed-key (shard/shard-conn conn-spec feed-key)
+              (shard/shard-conn conn-spec feed-key destination-shard))
   (initiate-migration! feed-key destination-shard)
   (write-feeds! conn-spec [feed-key])
   (finalize-migration! conn-spec feed-key destination-shard))

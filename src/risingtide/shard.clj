@@ -89,15 +89,16 @@ on the server specified by that connection spec.
   (let [[type user-id] (key/type-user-id-from-feed-key feed-key)]
     (shard-config/remove-migration! type user-id)))
 
-(defn shard-conn
-  [conn-spec feed-key shard-key]
-  (let [[type _] (key/type-user-id-from-feed-key feed-key)]
-    (conn-spec (shard-config-key type shard-key))))
-
 (defn shard-key
   [conn-spec feed-key]
   (let [[type user-id] (key/type-user-id-from-feed-key feed-key)]
     (shard-config/get-shard-key conn-spec type user-id)))
+
+(defn shard-conn
+  ([conn-spec feed-key shard-key]
+     (let [[type _] (key/type-user-id-from-feed-key feed-key)]
+       (conn-spec (shard-config-key type shard-key))))
+  ([conn-spec feed-key] (shard-conn conn-spec feed-key (shard-key conn-spec feed-key))))
 
 (defn update-shard-config!
   [conn-spec feed-key destination-shard]

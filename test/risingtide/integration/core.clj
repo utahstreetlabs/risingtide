@@ -11,10 +11,11 @@
              [persist :as persist]
              [key :as key]]))
 
-(background
+(test-background
  (before :facts (clear-redis!))
  (before :facts (clear-digest-cache!))
  (before :facts (clear-migrations!)))
+
 
 (fact "initial feed builds bring in old stories"
   (on-copious

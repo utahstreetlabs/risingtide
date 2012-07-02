@@ -1,6 +1,8 @@
 (ns risingtide.test.core
-  (:use [risingtide.core])
+  (:use [risingtide core test])
   (:use [midje.sweet]))
+
+(test-background)
 
 (fact
  (first-char "hi") => \h

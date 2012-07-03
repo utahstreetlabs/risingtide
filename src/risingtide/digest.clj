@@ -385,9 +385,20 @@ delay of interval to flush cached feeds to redis.
   (persist/add-stories! to feed-key (persist/stories from feed-key)))
 
 (defn migrate!
-  [conn-spec feed-key destination-shard]
-  (copy-feed! feed-key (shard/shard-conn conn-spec feed-key)
-              (shard/shard-conn conn-spec feed-key destination-shard))
-  (initiate-migration! feed-key destination-shard)
-  (write-feeds! conn-spec [feed-key])
-  (finalize-migration! conn-spec feed-key destination-shard))
+  ([conn-spec feed-key destination-shard]
+     {:pre [(not (= (str destination-shard)
+                    (str (shard/shard-key conn-spec feed-key))))]}
+     (copy-feed! feed-key (shard/shard-conn conn-spec feed-key)
+                 (shard/shard-conn conn-spec feed-key destination-shard))
+     (initiate-migration! feed-key destination-shard)
+     (write-feeds! conn-spec [feed-key])
+     (finalize-migration! conn-spec feed-key destination-shard))
+  ([conn-spec type user-id destination-shard]
+     (migrate! conn-spec (key/user-feed user-id type) destination-shard)))
+
+(defn migrate-users!
+  [conn-spec type user-ids destination-shard]
+  {:pre [(not (empty? conn-spec))
+         (not (nil? type))]}
+  (log/info (str "migrating " type " feeds for " (seq user-ids) " to " destination-shard))
+  (pmap-in-batches #(migrate! conn-spec type % destination-shard) user-ids))

@@ -2,19 +2,40 @@
   "Generic redis utilities"
   (:use risingtide.core)
   (:require [risingtide.config :as config])
-  (:import [redis.clients.jedis JedisPool JedisPoolConfig ZParams ZParams$Aggregate]))
+  (:import [redis.clients.jedis JedisPool JedisPoolConfig ZParams ZParams$Aggregate]
+           java.util.Map))
 
 (defn redis [config]
-  (JedisPool. (JedisPoolConfig.) (or (:host config) "localhost") (or (:port config) 6379) (or (:timeout config) 60000)))
+  (let [pool
+        (JedisPool. (JedisPoolConfig.) (or (:host config) "localhost") (or (:port config) 6379) (or (:timeout config) 60000))]
+    (if (:db config)
+      (assoc config :pool pool)
+      pool)))
 
 (defn redii [env]
   (reduce (fn [m [k v]] (assoc m k (redis v))) {} (config/redis env)))
 
+(defprotocol JedisConnectionPool
+  (get-resource [pool])
+  (return-resource [pool jedis]))
+
+(extend-protocol JedisConnectionPool
+  JedisPool
+  (get-resource [pool] (.getResource pool))
+  (return-resource [pool jedis] (.returnResource pool jedis))
+  Map
+  (get-resource [pool]
+    (let [r (.getResource (:pool pool))]
+      (.select r (or (:db pool) 0))
+      r))
+  (return-resource [pool jedis]
+    (.returnResource (:pool pool) jedis)))
+
 (defn with-jedis* [pool f]
-  (let [jedis (.getResource pool)]
+  (let [jedis (get-resource pool)]
     (try
       (f jedis)
-      (finally (.returnResource pool jedis)))))
+      (finally (return-resource pool jedis)))))
 
 (defn with-transaction* [pool f]
   (with-jedis* pool

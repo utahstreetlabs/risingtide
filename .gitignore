@@ -3,7 +3,9 @@
 /lib
 /classes
 /native
+/target
 /.lein-failures
+/.lein-plugins
 /checkouts
 /.lein-deps-sum
 logs

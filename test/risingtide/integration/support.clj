@@ -9,14 +9,31 @@
             [risingtide.persist :as persist]
             [risingtide.stories :as story]
             [risingtide.shard :as shard]
+            [risingtide.shard.config :as shard-config]
             [risingtide.digest :as digest]))
 
 (def conn {:interests (redis/redis {})
            :everything-card-feed (redis/redis {})
            :card-feeds-1 (redis/redis {})
+           :card-feeds-2 (redis/redis {:db 2})
            :network-feeds (redis/redis {})
            :stories (redis/redis {})
            :shard-config (redis/redis {})})
+
+(defn feed-on
+  ([connection-pool feed-key]
+     (map json/read-json
+          (redis/with-jedis* connection-pool
+            (fn [jedis]
+              (.zrange jedis feed-key 0 100000)))))
+  ([connection-pool id type] (feed-on connection-pool (key/user-feed id type))))
+
+(defn feed-for-user*
+  [id type]
+  (let [feed-key (key/user-feed id type)]
+    (shard/with-connection-for-feed conn feed-key
+      [pool]
+      (feed-on pool feed-key))))
 
 ;; users
 (defmacro defuser
@@ -25,13 +42,7 @@
     (def ~n ~id)
     (defn ~(symbol (str "feed-for-" n))
       [type#]
-      (map json/read-json
-           (let [feed-key# (key/user-feed ~id type#)]
-             (shard/with-connection-for-feed conn feed-key#
-               [pool#]
-               (redis/with-jedis* pool#
-                 (fn [jedis#]
-                   (.zrange jedis# (key/user-feed ~id type#) 0 100000)))))))))
+      (feed-for-user* ~id type#))))
 
 (defuser jim 1)
 (defuser jon 2)
@@ -133,7 +144,7 @@
 (defn clear-redis!
   []
   (if (= env :test)
-    (doseq [redis [:everything-card-feed :card-feeds-1 :network-feeds :interests :stories]]
+    (doseq [redis [:everything-card-feed :shard-config :card-feeds-1 :card-feeds-2 :network-feeds :interests :stories]]
       (let [keys (redis/with-jedis* (redis conn) (fn [jedis] (.keys jedis (key/format-key "*"))))]
         (when (not (empty? keys))
           (redis/with-jedis* (redis conn)
@@ -144,8 +155,14 @@
   []
   (digest/reset-cache!))
 
+(defn clear-migrations!
+  []
+  (shard-config/clear-migrations!))
+
 
 ;; effing macros, how do they work
+
+(def current-time (atom 1000000))
 
 (defmacro with-increasing-seconds-timeline
   "In which we control time.
@@ -156,11 +173,10 @@ Theoretically we can use midje's =streams=> for this, but it doesn't appear to b
 usable in backgrounds yet.
 "
   [& forms]
-  `(let [current-time# (atom 1000000)
-         current-time-and-advance#
+  `(let [current-time-and-advance#
          (fn []
-           (let [n# @current-time#]
-             (swap! current-time# inc)
+           (let [n# @current-time]
+             (swap! current-time inc)
              n#))]
      (with-redefs
        [risingtide.core/now current-time-and-advance#]
@@ -170,6 +186,8 @@ usable in backgrounds yet.
   [statement]
   (let [[subject action & args] statement]
     (cons action (cons subject args))))
+
+(def write! digest/write-cache!)
 
 (defmacro on-copious
   "convenience macro for specifying user-action-subject actions like:
@@ -183,6 +201,5 @@ usable in backgrounds yet.
   [& statements]
   `(with-increasing-seconds-timeline
      ~@(map swap-subject-action statements)
-     (digest/write-cache! conn)))
+     (write! conn)))
 
-(def write! digest/write-cache!)

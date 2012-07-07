@@ -1,7 +1,9 @@
 (ns risingtide.test.key
-  (:use [risingtide.key]
+  (:use [risingtide key test]
         [risingtide.core :only [env]]
         [midje.sweet]))
+
+(test-background)
 
 (facts
   (format-key "1" "2") => "magt:1:2"

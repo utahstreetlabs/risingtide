@@ -14,10 +14,9 @@
                  [redis.clients/jedis "2.0.0"]
                  [robert/bruce "0.7.1"]]
 
-  :profiles {:dev {:dependencies [[midje "1.3.2-SNAPSHOT"]]}}
+  :profiles {:dev {:dependencies [[midje "1.4.0"]]}}
 
   :run-aliases {:convert-redis-keys-from-staging-to-dev! risingtide.utils/run-convert-redis-keys-from-staging-to-dev!}
   :main risingtide
   :min-lein-version "2.0.0"
-  :plugins [[lein-midje "2.0.0-SNAPSHOT"]
-            [lein-swank "1.4.4"]])
+  :plugins [[lein-midje "2.0.0-SNAPSHOT"]])

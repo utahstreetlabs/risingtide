@@ -2,4 +2,9 @@
 
 Rising Tide is the Copious service for processing feed stories.
 
-See [the wiki](https://github.com/utahstreetlabs/risingtide/wiki) for more information.
+
+
+## License
+
+Copyright © 2012 Utah Street Labs
+All Rights Reserved

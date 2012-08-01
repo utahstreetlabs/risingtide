@@ -3,13 +3,19 @@
         risingtide.integration.support
         risingtide.test)
   (:use [midje.sweet])
-  (:require [risingtide.stories :as story]
-            [risingtide.feed :as feed]
-            [risingtide.persist :as persist]))
+  (:require [risingtide
+             [stories :as story]
+             [feed :as feed]
+             [shard :as shard]
+             [digest :as digest]
+             [persist :as persist]
+             [key :as key]]))
 
-(background
+(test-background
  (before :facts (clear-redis!))
- (before :facts (clear-digest-cache!)))
+ (before :facts (clear-digest-cache!))
+ (before :facts (clear-migrations!)))
+
 
 (fact "initial feed builds bring in old stories"
   (on-copious
@@ -229,3 +235,106 @@
 
   (feed-for-rob :card) =>
   (encoded-feed (story/multi-listing-digest jim "listing_activated" (range 0 17))))
+
+(fact "migration moves a feed from one redis to another"
+  (on-copious
+   (rob interested-in-user jim)
+   (jim activates bacon)
+   (jim likes ham))
+
+  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (encoded-feed
+   (listing-activated jim bacon)
+   (listing-liked jim ham))
+
+  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (encoded-feed)
+
+  (digest/migrate! conn (key/user-feed rob :card) "2")
+
+  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (encoded-feed)
+
+  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (encoded-feed
+   (listing-activated jim bacon)
+   (listing-liked jim ham))
+
+  (on-copious
+   (jim shares toast))
+
+  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (encoded-feed)
+
+  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (encoded-feed
+   (listing-activated jim bacon)
+   (listing-liked jim ham)
+   (listing-shared jim toast)))
+
+(fact "mid-migration the feed is in two places"
+  (on-copious
+   (rob interested-in-user jim)
+   (jim activates bacon)
+   (jim likes ham))
+
+  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (encoded-feed
+   (listing-activated jim bacon)
+   (listing-liked jim ham))
+
+  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (encoded-feed)
+
+  (digest/initiate-migration! (key/user-feed rob :card) "2")
+  (write! conn)
+
+  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (encoded-feed
+   (listing-activated jim bacon)
+   (listing-liked jim ham))
+
+  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (encoded-feed
+   (listing-activated jim bacon)
+   (listing-liked jim ham))
+
+  (on-copious
+   (jim shares toast))
+
+  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (encoded-feed
+   (listing-activated jim bacon)
+   (listing-liked jim ham)
+   (listing-shared jim toast))
+
+  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (encoded-feed
+   (listing-activated jim bacon)
+   (listing-liked jim ham)
+   (listing-shared jim toast)))
+
+(fact "stories are migrated even though they aren't in the digest cache"
+  (on-copious
+   (rob interested-in-user jim)
+   (jim activates bacon)
+   (jim likes ham))
+
+  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (encoded-feed
+   (listing-activated jim bacon)
+   (listing-liked jim ham))
+
+  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (encoded-feed)
+
+  (clear-digest-cache!)
+  (digest/migrate! conn (key/user-feed rob :card) "2")
+
+  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (encoded-feed)
+
+  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (encoded-feed
+   (listing-activated jim bacon)
+   (listing-liked jim ham)))

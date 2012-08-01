@@ -6,6 +6,8 @@
    [risingtide.stories :as story])
   (:use [midje.sweet]))
 
+(test-background)
+
 (defmacro defmany
   [& forms]
   `(do

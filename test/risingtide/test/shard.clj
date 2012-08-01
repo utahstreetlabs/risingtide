@@ -4,6 +4,8 @@
   (:use [midje.sweet])
   (:require [risingtide.shard.config :as shard-config]))
 
+(test-background)
+
 (expose risingtide.shard/feeds-by-shard
         risingtide.shard/flatten-keys)
 
@@ -24,13 +26,14 @@
     (shard-config/card-feed-shard-key nil "1") => "1"
     (shard-config/card-feed-shard-key nil "2") => "2"))
 
-(fact
-  (map-across-connections-and-feeds
-   {:network-feeds {:hambo :clam} :card-feeds-1 {:chumba :wumba}}
-   ["magt:f:u:1:c" "magt:f:u:1:n" "magt:f:u:2:c"]
-   (fn [c feeds] [feeds c])) =>
-   [[["magt:f:u:1:n"] {:hambo :clam}] [["magt:f:u:2:c" "magt:f:u:1:c"] {:chumba :wumba}]]
-   (provided
-    (shard-config/card-feed-shard-key nil "1") => "1"
-    (shard-config/card-feed-shard-key nil "2") => "1"))
+(let [conn-spec {:network-feeds {:hambo :clam} :card-feeds-1 {:chumba :wumba}}]
+ (fact
+   (map-across-connections-and-feeds
+    conn-spec
+    ["magt:f:u:1:c" "magt:f:u:1:n" "magt:f:u:2:c"]
+    (fn [c feeds] [feeds c])) =>
+    [[["magt:f:u:1:n"] {:hambo :clam}] [["magt:f:u:2:c" "magt:f:u:1:c"] {:chumba :wumba}]]
+    (provided
+      (shard-config/card-feed-shard-keys conn-spec "1") => ["1"]
+      (shard-config/card-feed-shard-keys conn-spec "2") => ["1"])))
 

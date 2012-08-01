@@ -230,6 +230,16 @@
   [feed-index]
   (assoc feed-index :dirty true))
 
+(defn mark-atom-dirty!
+  [feed-index-atom]
+  (swap! feed-index-atom (fn [feed-index] (mark-dirty feed-index))))
+
+(defn mark-feed-dirty!
+  ([cache-atom feed-key]
+     (when-let [feed-index-atom (@cache-atom feed-key)]
+       (mark-atom-dirty! feed-index-atom)))
+  ([feed-key] (mark-feed-dirty! feed-cache feed-key)))
+
 (defn add-story-to-feed-index
   [feed-index-atom story]
   (swap! feed-index-atom (fn [feed-index] (mark-dirty (add-story feed-index story)))))
@@ -357,3 +367,38 @@ delay of interval to flush cached feeds to redis.
   (let [keys [(key/user-card-feed user-id) (key/user-network-feed user-id)]]
     (build! redii keys)
     (write-feeds! redii keys)))
+
+(defn initiate-migration!
+  [feed-key destination-shard]
+  (shard/add-migration! feed-key destination-shard)
+  (mark-feed-dirty! feed-key))
+
+(defn finalize-migration!
+  [conn-spec feed-key destination-shard]
+  (shard/remove-migration! feed-key)
+  (let [old-shard-key (shard/shard-key conn-spec feed-key)]
+    (shard/update-shard-config! conn-spec feed-key destination-shard)
+    (persist/delete! (shard/shard-conn conn-spec feed-key old-shard-key) feed-key)))
+
+(defn copy-feed!
+  [feed-key from to]
+  (persist/add-stories! to feed-key (persist/stories from feed-key)))
+
+(defn migrate!
+  ([conn-spec feed-key destination-shard]
+     {:pre [(not (= (str destination-shard)
+                    (str (shard/shard-key conn-spec feed-key))))]}
+     (copy-feed! feed-key (shard/shard-conn conn-spec feed-key)
+                 (shard/shard-conn conn-spec feed-key destination-shard))
+     (initiate-migration! feed-key destination-shard)
+     (write-feeds! conn-spec [feed-key])
+     (finalize-migration! conn-spec feed-key destination-shard))
+  ([conn-spec type user-id destination-shard]
+     (migrate! conn-spec (key/user-feed user-id type) destination-shard)))
+
+(defn migrate-users!
+  [conn-spec type user-ids destination-shard]
+  {:pre [(not (empty? conn-spec))
+         (not (nil? type))]}
+  (log/info (str "migrating " type " feeds for " (seq user-ids) " to " destination-shard))
+  (pmap-in-batches #(migrate! conn-spec type % destination-shard) user-ids))

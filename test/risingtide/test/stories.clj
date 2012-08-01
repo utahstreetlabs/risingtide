@@ -1,8 +1,10 @@
 (ns risingtide.test.stories
-  (:use [risingtide.stories]
+  (:use [risingtide stories test]
         [risingtide.core :only [env]])
   (:use [midje.sweet])
   (:require [risingtide.key :as key]))
+
+(test-background)
 
 (def nas key/network-actor-story)
 (def nus key/network-user-story)

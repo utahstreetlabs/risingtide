@@ -1,5 +1,6 @@
 (ns risingtide.test
-  (:use risingtide.core)
+  (:use risingtide.core
+        midje.sweet)
   (:require [clj-logging-config.log4j :as log-config]))
 
 (defn listing-story
@@ -51,3 +52,8 @@
   ([actor-id invitee-profile-id score]
      {:type :user_piled_on :actor_id actor-id :invitee_profile_id invitee-profile-id :score score})
   ([actor-id invitee-profile-id] (user-followed actor-id invitee-profile-id (now))))
+
+(defmacro test-background
+  [& background-forms]
+  `(background ~@background-forms
+               (around :facts (with-redefs [risingtide.core/env :test] ?form))))

@@ -2,7 +2,9 @@
 
 (def redis
   {:development {:resque {}
-                 :everything-card-feed {} :card-feeds-1 {}
+                 :everything-card-feed {}
+                 :card-feeds-1 {}
+                 :card-feeds-2 {:db 1}
                  :network-feeds {} :interests {} :stories {}
                  :shard-config {}}
    :test {:resque {}

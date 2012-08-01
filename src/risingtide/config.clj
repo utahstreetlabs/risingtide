@@ -14,6 +14,7 @@
    :staging {:resque {:host "staging3.copious.com"}
              :everything-card-feed {:host "staging4.copious.com"}
              :card-feeds-1 {:host "staging4.copious.com"}
+             :card-feeds-2 {:host "staging4.copious.com" :db 1}
              :network-feeds {:host "staging4.copious.com"}
              :interests {:host "staging4.copious.com"}
              :stories {:host "staging4.copious.com"}
@@ -21,6 +22,7 @@
    :demo {:resque {:host "demo1.copious.com"}
           :everything-card-feed {:host "demo1.copious.com"}
           :card-feeds-1 {:host "demo1.copious.com"}
+          :card-feeds-2 {:host "demo1.copious.com" :db 1}
           :network-feeds {:host "demo1.copious.com"}
           :interests {:host "demo1.copious.com"}
           :stories {:host "demo1.copious.com"}
@@ -28,7 +30,8 @@
           }
    :production {:resque {:host "resque-redis-master.copious.com"}
                 :everything-card-feed {:host "rt-card-feeds-redis.copious.com"}
-                :card-feeds-1 {:host "rt-card-feeds-redis.copious.com"}
+                :card-feeds-1 {:host "rt-card-feeds-1-redis.copious.com"}
+                :card-feeds-2 {:host "rt-card-feeds-2-redis.copious.com"}
                 :network-feeds {:host "rt-network-feeds-redis.copious.com"}
                 :interests {:host "rt-interests-redis.copious.com"}
                 :stories {:host "rt-stories-redis.copious.com"}

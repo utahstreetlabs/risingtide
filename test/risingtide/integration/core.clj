@@ -9,7 +9,8 @@
              [shard :as shard]
              [digest :as digest]
              [persist :as persist]
-             [key :as key]]))
+             [key :as key]
+             [config :as config]]))
 
 (test-background
  (before :facts (clear-redis!))
@@ -191,7 +192,7 @@
                            (listing-liked jim toast {:feed "ylf"})))
 
 (fact "card feeds are truncated when a new card story is added"
-  (binding [persist/*max-card-feed-size* 5]
+  (with-redefs [config/max-card-feed-size 5]
     (on-copious
      (rob interested-in-user jim)
      (jim likes bacon)
@@ -209,7 +210,7 @@
                              (listing-liked jim omelettes))))
 
 (fact "network feeds are truncated when a new network story is added"
-  (binding [persist/*max-network-feed-size* 5]
+  (with-redefs [config/max-network-feed-size 5]
     (on-copious
      (rob interested-in-user jim)
      (jim follows jon)
@@ -225,6 +226,20 @@
                                 (user-followed jim cutter)
                                 (user-followed jim kaitlyn)
                                 (user-followed jim courtney))))
+
+(fact "story buckets are truncated when a new card story is added"
+  (with-redefs [config/max-story-bucket-size 3]
+    (on-copious
+     (jim likes bacon)
+     (jim likes eggs)
+     (jim likes toast)
+     (jim likes muffins)
+     (jim likes ham))
+
+    (stories-about-jim :card) => (encoded-feed
+                                  (listing-liked jim toast)
+                                  (listing-liked jim muffins)
+                                  (listing-liked jim ham))))
 
 (fact "digest cards aren't duplicated when they are the oldest thing in the feed"
   (on-copious
@@ -242,20 +257,20 @@
    (jim activates bacon)
    (jim likes ham))
 
-  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (stories (:card-feeds-1 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham))
 
-  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (stories (:card-feeds-2 conn) rob :card) =>
   (encoded-feed)
 
   (digest/migrate! conn (key/user-feed rob :card) "2")
 
-  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (stories (:card-feeds-1 conn) rob :card) =>
   (encoded-feed)
 
-  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (stories (:card-feeds-2 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham))
@@ -263,10 +278,10 @@
   (on-copious
    (jim shares toast))
 
-  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (stories (:card-feeds-1 conn) rob :card) =>
   (encoded-feed)
 
-  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (stories (:card-feeds-2 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham)
@@ -278,23 +293,23 @@
    (jim activates bacon)
    (jim likes ham))
 
-  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (stories (:card-feeds-1 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham))
 
-  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (stories (:card-feeds-2 conn) rob :card) =>
   (encoded-feed)
 
   (digest/initiate-migration! (key/user-feed rob :card) "2")
   (write! conn)
 
-  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (stories (:card-feeds-1 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham))
 
-  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (stories (:card-feeds-2 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham))
@@ -302,13 +317,13 @@
   (on-copious
    (jim shares toast))
 
-  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (stories (:card-feeds-1 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham)
    (listing-shared jim toast))
 
-  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (stories (:card-feeds-2 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham)
@@ -320,21 +335,21 @@
    (jim activates bacon)
    (jim likes ham))
 
-  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (stories (:card-feeds-1 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham))
 
-  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (stories (:card-feeds-2 conn) rob :card) =>
   (encoded-feed)
 
   (clear-digest-cache!)
   (digest/migrate! conn (key/user-feed rob :card) "2")
 
-  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (stories (:card-feeds-1 conn) rob :card) =>
   (encoded-feed)
 
-  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (stories (:card-feeds-2 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham)))

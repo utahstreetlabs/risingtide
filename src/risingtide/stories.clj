@@ -81,9 +81,12 @@
    (listing-watcher-sets story)
    (followee-watcher-sets story)))
 
+(defn actor-story-set [type id]
+  (key/format-key type "a" id))
+
 (defn actor-story-sets
   [story]
-  [(key/format-key (feed-type-key-token story) "a" (:actor_id story))])
+  [(actor-story-set (feed-type-key-token story) (:actor_id story))])
 
 (defn listing-story-sets
   [story]
@@ -184,5 +187,7 @@
 
 (defn add!
   [conn-spec story time]
-  (persist/add-story! conn-spec story (destination-story-sets story) time))
+  (let [destination-sets (destination-story-sets story)]
+    (persist/add-story! conn-spec story destination-sets time)
+    (persist/truncate-story-buckets conn-spec destination-sets)))
 

@@ -20,20 +20,25 @@
            :stories (redis/redis {})
            :shard-config (redis/redis {})})
 
-(defn feed-on
-  ([connection-pool feed-key]
+(defn stories
+  ([conn key]
      (map json/read-json
-          (redis/with-jedis* connection-pool
+          (redis/with-jedis* conn
             (fn [jedis]
-              (.zrange jedis feed-key 0 100000)))))
-  ([connection-pool id type] (feed-on connection-pool (key/user-feed id type))))
+              (.zrange jedis key 0 100000000)))))
+  ([conn id type] (stories conn (key/user-feed id type))))
 
 (defn feed-for-user*
   [id type]
   (let [feed-key (key/user-feed id type)]
     (shard/with-connection-for-feed conn feed-key
       [pool]
-      (feed-on pool feed-key))))
+      (stories pool feed-key))))
+
+(defn stories-about-user
+  [id type]
+  (map #(dissoc % :score) (stories (:stories conn)
+                                   (story/actor-story-set (first-char type) id))))
 
 ;; users
 (defmacro defuser
@@ -42,7 +47,10 @@
     (def ~n ~id)
     (defn ~(symbol (str "feed-for-" n))
       [type#]
-      (feed-for-user* ~id type#))))
+      (feed-for-user* ~id type#))
+    (defn ~(symbol (str "stories-about-" n))
+      [type#]
+      (stories-about-user ~id type#))))
 
 (defuser jim 1)
 (defuser jon 2)

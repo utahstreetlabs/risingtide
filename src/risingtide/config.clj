@@ -46,6 +46,7 @@
 (def max-network-feed-size 250)
 (def max-story-bucket-size 1000)
 (def max-story-union 100)
+(def initial-feed-size 1000)
 (def single-actor-digest-story-min 15)
 (def default-card-shard "1")
 

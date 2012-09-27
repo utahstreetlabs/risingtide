@@ -2,7 +2,7 @@
 
 (defproject risingtide risingtide.version/version
   :description "He who reads the stories writes the feeds."
-  :dependencies [[org.clojure/clojure "1.3.0"]
+  :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.clojure/data.json "0.1.1"]
                  [org.clojure/tools.logging "0.2.3"]
 

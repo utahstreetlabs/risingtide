@@ -22,9 +22,9 @@
 (def default-feeds [ev-feed-token user-feed-token])
 
 (defn for-feed-with-token?
-  [story token token-set]
+  [story token token-pred]
   (let [f (get story :feed default-feeds)]
-    (or (= f nil) (= f token) (some token-set f))))
+    (or (= f nil) (= f token) (some token-pred f))))
 
 (defn for-everything-feed?
   [story]

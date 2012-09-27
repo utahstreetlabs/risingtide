@@ -1,5 +1,7 @@
 (ns risingtide.config)
 
+(def env (keyword (or (System/getenv "RISINGTIDE_ENV") (System/getenv "RT_ENV") "development")))
+
 (def redis
   {:development {:resque {}
                  :everything-card-feed {}

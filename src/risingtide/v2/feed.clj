@@ -5,6 +5,6 @@
 
 (deftype DigestFeed [stories]
   Feed
-  (add [this story] (conj stories story))
+  (add [this story] (swap! stories (fn [stories] (conj stories story))))
   clojure.lang.Seqable
-  (seq [this] stories))
+  (seq [this] @stories))

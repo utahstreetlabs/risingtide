@@ -19,6 +19,9 @@
 (defrecord ListingSoldStory [actor-id listing-id tag-ids buyer-id feed score])
 (defrecord ListingSharedStory [actor-id listing-id tag-ids network feed score])
 
+(defprotocol DigestStory
+  (add [this story] "add a new story to this digest story"))
+
 (defrecord MultiActionStory [listing-id actor-id actions score])
 (defrecord MultiActorStory [listing-id action actor-ids score])
 (defrecord MultiActorMultiActionStory [listing-id actions score])

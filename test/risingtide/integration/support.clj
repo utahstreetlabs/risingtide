@@ -12,13 +12,14 @@
             [risingtide.shard.config :as shard-config]
             [risingtide.digest :as digest]))
 
-(def conn {:interests (redis/redis {})
-           :everything-card-feed (redis/redis {})
-           :card-feeds-1 (redis/redis {})
-           :card-feeds-2 (redis/redis {:db 2})
-           :network-feeds (redis/redis {})
-           :stories (redis/redis {})
-           :shard-config (redis/redis {})})
+(def conn {:interests (redis/redis {:db 1})
+           :watchers (redis/redis {:db 2})
+           :everything-card-feed (redis/redis {:db 3})
+           :card-feeds-1 (redis/redis {:db 4})
+           :card-feeds-2 (redis/redis {:db 5})
+           :network-feeds (redis/redis {:db 6})
+           :stories (redis/redis {:db 7})
+           :shard-config (redis/redis {:db 8})})
 
 (defn stories
   ([conn key]
@@ -152,7 +153,7 @@
 (defn clear-redis!
   []
   (if (= env :test)
-    (doseq [redis [:everything-card-feed :shard-config :card-feeds-1 :card-feeds-2 :network-feeds :interests :stories]]
+    (doseq [redis [:everything-card-feed :shard-config :card-feeds-1 :card-feeds-2 :network-feeds :interests :watchers :stories]]
       (let [keys (redis/with-jedis* (redis conn) (fn [jedis] (.keys jedis (key/format-key "*"))))]
         (when (not (empty? keys))
           (redis/with-jedis* (redis conn)

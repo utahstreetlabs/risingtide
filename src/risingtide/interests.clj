@@ -38,31 +38,31 @@ to sets of user ids like:
 
 (defn- add-interest!
   "Generate redis commands for registering a user's interest in an object of a given type."
-  [redis interested-user-id type object-id]
-  (redis/with-transaction* redis
-    (fn [jedis]
-      (.sadd jedis (key/watchers type object-id) (str interested-user-id))
-      (.sadd jedis (key/interest interested-user-id type) (interest-token type object-id)))))
+  [redii interested-user-id type object-id]
+  (redis/with-jedis* (:watchers redii)
+    (fn [jedis] (.sadd jedis (key/watchers type object-id) (str interested-user-id))))
+  (redis/with-jedis* (:interests redii)
+    (fn [jedis] (.sadd jedis (key/interest interested-user-id type) (interest-token type object-id)))))
 
 (defn- remove-interest!
   "Generate redis commands for deregistering a user's interest in an object of a given type."
-  [redis interested-user-id type object-id]
-  (redis/with-transaction* redis
-    (fn [jedis]
-      (.srem jedis (key/watchers type object-id) (str interested-user-id))
-      (.srem jedis (key/interest interested-user-id type) (interest-token type object-id)))))
+  [redii interested-user-id type object-id]
+  (redis/with-jedis* (:watchers redii)
+    (fn [jedis] (.srem jedis (key/watchers type object-id) (str interested-user-id))))
+  (redis/with-jedis* (:interests redii)
+    (fn [jedis] (.srem jedis (key/interest interested-user-id type) (interest-token type object-id)))))
 
 (defn add!
   "Given a redis connection map, a user id, a type and an object, connects to redis and registers
 the user's interest in the specified object."
   [redii interested-user-id type object-id]
-  (add-interest! (:interests redii) interested-user-id (first-char type) object-id))
+  (add-interest! redii interested-user-id (first-char type) object-id))
 
 (defn remove!
   "Given a redis connection map, a user id, a type and an object, connects to redis and registers
 the user's interest in the specified object."
   [redii interested-user-id type object-id]
-  (remove-interest! (:interests redii) interested-user-id (first-char type) object-id))
+  (remove-interest! redii interested-user-id (first-char type) object-id))
 
 (def interests-for-feed-type
   {:card (map first-char [:actor :listing :tag])
@@ -85,6 +85,5 @@ interest keys for card feeds"
 
 (defn watchers
   [redii keys]
-  (redis/with-jedis* (:interests redii)
+  (redis/with-jedis* (:watchers redii)
     (fn [jedis] (.sunion jedis (into-array String keys)))))
-

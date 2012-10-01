@@ -22,7 +22,43 @@
 (defprotocol DigestStory
   (add [this story] "add a new story to this digest story"))
 
-(defrecord MultiActionStory [listing-id actor-id actions score])
-(defrecord MultiActorStory [listing-id action actor-ids score])
-(defrecord MultiActorMultiActionStory [listing-id actions score])
-(defrecord MultiListingDigestStory [actor-id action listing-ids score])
+(defrecord MultiActorMultiActionStory [listing-id actions score]
+  DigestStory
+  (add [this story]
+    (let [path [:types (:type story)]]
+      (assoc (assoc-in this path (distinct (conj (get-in this path) (:actor-id story))))
+        :score (:score story)))))
+
+(defrecord MultiActionStory [listing-id actor-id actions score]
+  DigestStory
+  (add [this story]
+    (if (= actor-id (:actor-id story))
+      (assoc this
+        :actions (distinct (conj actions (:type story)))
+        :score (:score story))
+      (->MultiActorMultiActionStory
+       listing-id
+       (reduce (fn [h type] (assoc h type (conj (h type) actor-id)))
+               {(:type story) [(:actor-id story)]}
+               actions)
+       (:score story)))))
+
+(defrecord MultiActorStory [listing-id action actor-ids score]
+  DigestStory
+  (add [this story]
+   (if (= (:type story) action)
+     (assoc this
+       :actor-ids (distinct (conj actor-ids (:actor-id story)))
+       :score (:score story))
+     (->MultiActorMultiActionStory
+      listing-id
+      {action actor-ids
+       (:type story) [(:actor-id story)]}
+      (:score story)))))
+
+(defrecord MultiListingDigestStory [actor-id action listing-ids score]
+  DigestStory
+  (add [this story]
+    (assoc this
+      :listing-ids (distinct (conj listing-ids (:listing-id story)))
+      :score (:score story))))

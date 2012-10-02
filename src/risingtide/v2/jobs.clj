@@ -17,7 +17,9 @@
   (into {} (map (fn [[k v]] [(keyword (str/replace (name k) "_" "-")) v]) story)))
 
 (defn story-to-record [story score]
-  ((factories (:type story)) (dash-case-keys (assoc story :score score))))
+  ((factories (:type story)) (-> (assoc story :score score)
+                                 dash-case-keys
+                                 rename-keys {:type :action})))
 
 (defn add-story!
   [redii story]

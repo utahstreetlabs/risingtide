@@ -36,4 +36,5 @@
   (watcher-keys [story] (tag-listing-story-watcher-keys story)))
 
 (defn watchers [story]
+  "Given a story, return the users interested in it."
   (persist/get-watchers (watcher-keys story)))

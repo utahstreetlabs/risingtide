@@ -35,9 +35,7 @@
    "flusher active count" (.getActiveCount (:flusher processor))
    "flusher completed count" (.getCompletedTaskCount (:flusher processor))
    "flusher terminating" (.isTerminating (:flusher processor))
-   "flusher terminated" (.isTerminated (:flusher processor))
-   "processor" processor
-   ))
+   "flusher terminated" (.isTerminated (:flusher processor))))
 
 (defn migrate!
   [conn-spec type user-ids destination-shard]

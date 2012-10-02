@@ -13,17 +13,22 @@
 
 (defn- add-interest-and-backfill!
   [redii type user-id object-id]
-  (interests/add! redii user-id type object-id)
-  ;; update and write feeds with last 24 hours of stories about this object
-  (doall
-   (for [feed-type ["c" "n"]]
-     (let [feed-key (key/user-feed user-id feed-type)]
-       (doall
-        (for [story (feed/user-feed-stories
-                     (persisted/stories (:stories redii) (key/format-key feed-type (first-char type) object-id)
-                       (- (now) (* 24 60 60)) (now)))]
-          (digest/add-story-to-feed-cache redii feed-key story)))
-       (digest/write-feeds! redii [(key/user-feed user-id feed-type)])))))
+  (bench "added interest"
+         (interests/add! redii user-id type object-id))
+  ;; update and write feeds with last 24 hours of stories about this
+  ;; object
+  (bench "backfilling stories"
+   (doall
+    (for [feed-type ["c" "n"]]
+      (let [feed-key (key/user-feed user-id feed-type)]
+        (doall
+         (for [story (bench "fetching stories"
+                      (doall
+                       (feed/user-feed-stories
+                        (persisted/stories (:stories redii) (key/format-key feed-type (first-char type) object-id)
+                                           (- (now) (* 24 60 60)) (now)))))]
+           (digest/add-story-to-feed-cache redii feed-key story)))
+        (digest/write-feeds! redii [(key/user-feed user-id feed-type)]))))))
 
 (defn add-interest!
   [redii type [user-id object-id]]

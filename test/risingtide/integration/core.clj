@@ -18,7 +18,7 @@
  (before :facts (clear-migrations!)))
 
 
-(fact "initial feed builds bring in old stories"
+#_(fact "initial feed builds bring in old stories"
   (on-copious
    (jim activates bacon)
    (jim likes ham)
@@ -46,7 +46,7 @@
                         (story/multi-action-digest toast jim ["listing_shared" "listing_liked"])
                         (listing-liked jim omelettes {:feed ["ev"]})))
 
-(fact "adding interests backfills the feed"
+#_(fact "adding interests backfills the feed"
   (on-copious
    (jim activates bacon)
    (jim likes ham)
@@ -72,7 +72,7 @@
                         (story/multi-action-digest toast jim ["listing_shared" "listing_liked"])
                         (listing-liked jim omelettes {:feed ["ev"]})))
 
-(fact "network feeds are generated correctly"
+#_(fact "network feeds are generated correctly"
     (on-copious
      (rob interested-in-user jim)
      (rob interested-in-user jon)
@@ -209,7 +209,7 @@
                              (listing-liked jim ham)
                              (listing-liked jim omelettes))))
 
-(fact "network feeds are truncated when a new network story is added"
+#_(fact "network feeds are truncated when a new network story is added"
   (with-redefs [config/max-network-feed-size 5]
     (on-copious
      (rob interested-in-user jim)

@@ -13,22 +13,17 @@
 
 (defn- add-interest-and-backfill!
   [redii type user-id object-id]
-  (bench "added interest"
-         (interests/add! redii user-id type object-id))
+  (interests/add! redii user-id type object-id)
   ;; update and write feeds with last 24 hours of stories about this
   ;; object
-  (bench "backfilling stories"
-   (doall
-    (for [feed-type ["c" "n"]]
-      (let [feed-key (key/user-feed user-id feed-type)]
-        (doall
-         (for [story (bench (str "fetching stories for " (key/format-key feed-type (first-char type) object-id))
-                      (doall
-                       (feed/user-feed-stories
-                        (persisted/stories (:stories redii) (key/format-key feed-type (first-char type) object-id)
-                                           (- (now) (* 24 60 60)) (now)))))]
-           (digest/add-story-to-feed-cache redii feed-key story)))
-        (digest/write-feeds! redii [(key/user-feed user-id feed-type)]))))))
+  (doseq [feed-type ["c" "n"]]
+    (let [feed-key (key/user-feed user-id feed-type)]
+      (doseq [story
+              (feed/user-feed-stories
+               (persisted/stories (:stories redii) (key/format-key feed-type (first-char type) object-id)
+                                  (- (now) (* 24 60 60)) (now)))]
+        (digest/add-story-to-feed-cache redii feed-key story))
+      (digest/write-feeds! redii [(key/user-feed user-id feed-type)]))))
 
 (defn add-interest!
   [redii type [user-id object-id]]
@@ -58,10 +53,6 @@
          (when (feed/for-everything-feed? story)
            (digest/add-story-to-feed-cache redii (key/everything-feed) story))))
 
-(defn- add-network-story!
-  [redii story]
-  (bench (str "add network story " story) (add-story-to-interested-feeds! redii story)))
-
 (defn add-story!
   [redii story]
   (let [score (now)
@@ -70,7 +61,7 @@
       :card (do
               (stories/add! redii story score)
               (add-card-story! redii scored-story))
-      :network nil #_(add-network-story! redii scored-story))))
+      :network nil)))
 
 (defn build-feeds!
   [redii [user-id]]

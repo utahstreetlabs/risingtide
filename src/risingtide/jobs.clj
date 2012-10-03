@@ -66,10 +66,11 @@
   [redii story]
   (let [score (now)
         scored-story (assoc story :score score)]
-    (stories/add! redii story score)
     (case (stories/feed-type story)
-      :card (add-card-story! redii scored-story)
-      :network (add-network-story! redii scored-story))))
+      :card (do
+              (stories/add! redii story score)
+              (add-card-story! redii scored-story))
+      :network nil #_(add-network-story! redii scored-story))))
 
 (defn build-feeds!
   [redii [user-id]]

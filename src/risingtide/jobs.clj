@@ -22,7 +22,7 @@
     (for [feed-type ["c" "n"]]
       (let [feed-key (key/user-feed user-id feed-type)]
         (doall
-         (for [story (bench "fetching stories"
+         (for [story (bench (str "fetching stories for " (key/format-key feed-type (first-char type) object-id))
                       (doall
                        (feed/user-feed-stories
                         (persisted/stories (:stories redii) (key/format-key feed-type (first-char type) object-id)

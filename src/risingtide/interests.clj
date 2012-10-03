@@ -39,12 +39,10 @@ to sets of user ids like:
 (defn- add-interest!
   "Generate redis commands for registering a user's interest in an object of a given type."
   [redii interested-user-id type object-id]
-  (let [updates
-        [(future (redis/with-jedis* (:watchers redii)
-                   (fn [jedis] (.sadd jedis (key/watchers type object-id) (str interested-user-id)))))
-         (future (redis/with-jedis* (:interests redii)
-                   (fn [jedis] (.sadd jedis (key/interest interested-user-id type) (interest-token type object-id)))))]]
-    (map deref updates)))
+  (redis/with-jedis* (:watchers redii)
+    (fn [jedis] (.sadd jedis (key/watchers type object-id) (str interested-user-id))))
+  (redis/with-jedis* (:interests redii)
+    (fn [jedis] (.sadd jedis (key/interest interested-user-id type) (interest-token type object-id)))))
 
 (defn- remove-interest!
   "Generate redis commands for deregistering a user's interest in an object of a given type."

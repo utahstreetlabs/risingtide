@@ -98,8 +98,8 @@
     [nil true] story
 
     ;; pathological states, try to repair
-    [:digest true] (do (log/warn "duplicate listing digest stories! " current story "using newer") story)
-    [:set true] (do (log/warn "undigested and digested listing coexist! " current story "using digest") story)))
+    [:digest true] story #_(do (log/warn "duplicate listing digest stories! " current story "using newer") story)
+    [:set true] story #_(do (log/warn "undigested and digested listing coexist! " current story "using digest") story)))
 
 (defn add-story-to-listings-index
   [digesting-index story]
@@ -143,8 +143,8 @@
     [nil true] story
 
     ;; pathological states, try to repair
-    [:digest true] (do (log/warn "duplicate actor digest stories! " current story "using newer") story)
-    [:set true] (do (log/warn "undigested and digested actor stories coexist! " current story "using digest") story)))
+    [:digest true] story #_(do (log/warn "duplicate actor digest stories! " current story "using newer") story)
+    [:set true] story #_(do (log/warn "undigested and digested actor stories coexist! " current story "using digest") story)))
 
 (defn add-story-to-actors-index
   [digesting-index story]

@@ -79,6 +79,7 @@
 (def croissants :croissants)
 (def danishes :danishes)
 (def omelettes :omelettes)
+(def nail-polish :nail-polish)
 
 ;; tags
 
@@ -102,9 +103,14 @@
 (def empty-feed [])
 
 ;; actions
-(defn interested-in-user
-  [actor-one-id actor-two-id]
+(defn interested-in-user [actor-one-id actor-two-id]
   (jobs/add-interest! conn :actor [actor-one-id actor-two-id]))
+
+(defn interested-in-listing [actor-id listing-id]
+  (jobs/add-interest! conn :listing [actor-id listing-id]))
+
+(defn removes-interest-in-listings [actor-id & listing-ids]
+  (jobs/batch-remove-user-interests! conn :listing [actor-id listing-ids]))
 
 (defmacro listing-action-helper
   [name action]

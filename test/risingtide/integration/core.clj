@@ -304,3 +304,16 @@
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham)))
+
+(fact "users can bulk remove interests when, eg, they unfollow a user and no longer want to follow their listings"
+  (on-copious
+   (cutter interested-in-listing nail-polish)
+   (cutter interested-in-listing ham)
+   (cutter interested-in-listing eggs)
+   (jim likes nail-polish)
+   (jim likes ham)
+   (cutter removes-interest-in-listings nail-polish ham)
+   (jim comments-on nail-polish))
+
+  (feed-for-cutter :card) =>
+  (encoded-feed (listing-liked jim nail-polish) (listing-liked jim ham)))

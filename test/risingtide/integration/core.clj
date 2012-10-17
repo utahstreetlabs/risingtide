@@ -17,8 +17,28 @@
  (before :facts (clear-digest-cache!))
  (before :facts (clear-migrations!)))
 
+(fact "initial feed builds get stories"
+  (on-copious
+   (rob is-a-user)
+   (jim is-a-user)
+   (rob creates-brooklyn-follow jim)
+   (rob creates-listing-like breakfast-tacos)
+   (jim activates bacon)
+   (jim likes ham)
+   (jim likes toast)
+   (jim shares toast)
+   (cutter likes breakfast-tacos)
+   (rob truncates-feed)
+   (rob builds-feeds))
 
-(fact "initial feed builds bring in old stories"
+  (feed-for-rob :card) => (encoded-feed
+                           (listing-activated jim bacon)
+                           (listing-liked jim ham)
+                           (story/multi-action-digest toast jim ["listing_shared" "listing_liked"])
+                           (listing-liked cutter breakfast-tacos))
+  (clear-mysql-dbs!))
+
+(fact "adding an interest brings in old stories"
   (on-copious
    (jim activates bacon)
    (jim likes ham)
@@ -26,8 +46,7 @@
    (jim shares toast)
    (jim likes omelettes {:feed ["ev"]})
    (conn write!)
-   (rob interested-in-user jim)
-   (rob builds-feeds))
+   (rob interested-in-user jim))
 
   (feed-for-rob :card) => (encoded-feed
                            (listing-activated jim bacon)

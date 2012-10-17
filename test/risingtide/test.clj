@@ -3,6 +3,9 @@
         midje.sweet)
   (:require [clj-logging-config.log4j :as log-config]))
 
+(log-config/set-logger! :level :debug)
+(alter-var-root #'risingtide.core/env (constantly :test))
+
 (defn listing-story
   ([type actor-id listing-id args]
      (merge {:type type :actor_id actor-id :listing_id listing-id} args))

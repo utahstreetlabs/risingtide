@@ -12,7 +12,9 @@
                  [ring/ring-jetty-adapter "1.1.0"]
                  [enlive "1.0.0"]
                  [redis.clients/jedis "2.0.0"]
-                 [robert/bruce "0.7.1"]]
+                 [robert/bruce "0.7.1"]
+                 [korma "0.3.0-beta11"]
+                 [mysql/mysql-connector-java "5.1.20"]]
 
   :profiles {:dev {:dependencies [[midje "1.4.0"]]}}
 

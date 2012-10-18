@@ -78,8 +78,9 @@ interest keys for card feeds"
        (interests-for-feed-type feed-type)))
 
 (defn user-interests [user-id]
-  (concat (brooklyn/user-follows user-id)
-          (pyramid/user-likes user-id)))
+  (distinct
+   (concat (brooklyn/user-follows user-id)
+           (pyramid/user-likes user-id))))
 
 (defn feed-stories
   [user-id]

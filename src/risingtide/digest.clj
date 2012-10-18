@@ -265,10 +265,11 @@
   (let [[feed-type user-id] (key/type-user-id-from-feed-key feed-key)]
     (index-predigested-feed
      (feed/user-feed-stories
-      (persist/union-story-sets
-       redii
-       (take config/max-story-union
-             (feed/interesting-story-keys feed-type user-id)) config/initial-feed-size)))))
+      (distinct
+       (persist/union-story-sets
+        redii
+        (take config/max-story-union
+              (feed/interesting-story-keys feed-type user-id)) config/initial-feed-size))))))
 
 (defn build! [redii feeds-to-build]
   (doall

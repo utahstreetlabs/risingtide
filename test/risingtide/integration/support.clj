@@ -20,7 +20,6 @@
            :everything-card-feed (redis/redis {:db 3})
            :card-feeds-1 (redis/redis {:db 4})
            :card-feeds-2 (redis/redis {:db 5})
-           :network-feeds (redis/redis {:db 6})
            :stories (redis/redis {:db 7})
            :shard-config (redis/redis {:db 8})})
 
@@ -183,7 +182,7 @@
 (defn clear-redis!
   []
   (if (= env :test)
-    (doseq [redis [:everything-card-feed :shard-config :card-feeds-1 :card-feeds-2 :network-feeds :watchers :stories]]
+    (doseq [redis [:everything-card-feed :shard-config :card-feeds-1 :card-feeds-2 :watchers :stories]]
       (let [keys (redis/with-jedis* (redis conn) (fn [jedis] (.keys jedis (key/format-key "*"))))]
         (when (not (empty? keys))
           (redis/with-jedis* (redis conn)

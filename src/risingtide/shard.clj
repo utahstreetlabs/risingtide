@@ -14,7 +14,7 @@ Shards are configured as different redis configs in risingtide.config/redis.
 ;; not all feeds live on the same redis. these utilities make it
 ;; easier to live in this world.
 
-(def shard-type-keys {:card :card-feeds :network :network-feeds})
+(def shard-type-keys {:card :card-feeds})
 
 (defn shard-config-key
   [type shard-key]

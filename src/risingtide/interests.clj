@@ -29,6 +29,9 @@ to sets of user ids like:
 "
   (:use risingtide.core)
   (:require [risingtide.redis :as redis]
+            [risingtide.interests
+             [brooklyn :as brooklyn]
+             [pyramid :as pyramid]]
             [risingtide.key :as key]
             [clojure.tools.logging :as log]))
 
@@ -40,17 +43,13 @@ to sets of user ids like:
   "Generate redis commands for registering a user's interest in an object of a given type."
   [redii interested-user-id type object-id]
   (redis/with-jedis* (:watchers redii)
-    (fn [jedis] (.sadd jedis (key/watchers type object-id) (str interested-user-id))))
-  (redis/with-jedis* (:interests redii)
-    (fn [jedis] (.sadd jedis (key/interest interested-user-id type) (interest-token type object-id)))))
+    (fn [jedis] (.sadd jedis (key/watchers type object-id) (str interested-user-id)))))
 
 (defn- remove-interest!
   "Generate redis commands for deregistering a user's interest in an object of a given type."
   [redii interested-user-id type object-id]
   (redis/with-jedis* (:watchers redii)
-    (fn [jedis] (.srem jedis (key/watchers type object-id) (str interested-user-id))))
-  (redis/with-jedis* (:interests redii)
-    (fn [jedis] (.srem jedis (key/interest interested-user-id type) (interest-token type object-id)))))
+    (fn [jedis] (.srem jedis (key/watchers type object-id) (str interested-user-id)))))
 
 (defn add!
   "Given a redis connection map, a user id, a type and an object, connects to redis and registers
@@ -78,10 +77,13 @@ interest keys for card feeds"
   (map #(key/interest user-id %)
        (interests-for-feed-type feed-type)))
 
+(defn user-interests [user-id]
+  (concat (brooklyn/user-follows user-id)
+          (pyramid/user-likes user-id)))
+
 (defn feed-stories
-  [redii user-id feed-type]
-  (redis/with-jedis* (:interests redii)
-    (fn [jedis] (.sunion jedis (into-array String (feed-source-interest-keys feed-type user-id))))))
+  [user-id]
+  (user-interests user-id))
 
 (defn watchers
   [redii keys]

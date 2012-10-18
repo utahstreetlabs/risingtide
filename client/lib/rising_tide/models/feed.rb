@@ -98,8 +98,4 @@ module RisingTide
 
     end
   end
-
-  class NetworkFeed < Feed
-    def self.feed_token; :n; end
-  end
 end

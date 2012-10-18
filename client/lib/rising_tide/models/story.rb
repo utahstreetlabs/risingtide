@@ -13,8 +13,7 @@ module RisingTide
       bid: :buyer_id,
       fid: :followee_id,
       iid: :invitee_profile_id,
-      tx: :text,
-      n: :network
+      tx: :text
     }
     # created_at is stored separately as the 'score'
     attr_accessor *([:created_at].concat(REVERSE_ATTRIBUTE_MAP.values))

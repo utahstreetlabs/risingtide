@@ -45,7 +45,7 @@
 (defn db [& {:as params}]
   (merge mysql-creds params))
 
-(def brooklyn-slave-db
+(def brooklyn-db
   {:development (db :db "utah_development")
    :test (db :db "utah_test")
    :staging (db :db "utah_staging" :host "staging.copious.com")
@@ -54,7 +54,7 @@
                    :user "utah_ro"
                    :host "db2.copious.com")})
 
-(def pyramid-slave-db
+(def pyramid-db
   {:development (db :db "pyramid_development")
    :test (db :db "pyramid_test")
    :staging (db :db "pyramid_staging" :host "staging.copious.com")
@@ -63,8 +63,8 @@
                    :user "utah_ro"
                    :host "db4.copous.com")})
 
-(defn brooklyn-slave [] (brooklyn-slave-db  core/env))
-(defn pyramid-slave [] (pyramid-slave-db  core/env))
+(defn brooklyn [] (brooklyn-db  core/env))
+(defn pyramid [] (pyramid-db  core/env))
 
 (def digest
   {:development true

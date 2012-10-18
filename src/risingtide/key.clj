@@ -90,10 +90,6 @@
   [id]
   (user-feed id "c"))
 
-(defn user-network-feed
-  [id]
-  (user-feed id "n"))
-
 (defn everything-feed
   []
   (feed "c"))

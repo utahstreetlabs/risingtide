@@ -27,8 +27,7 @@ object.
 (defn- max-feed-size
   [feed]
   (case (last feed)
-    \c (- 0 config/max-card-feed-size 1)
-    \n (- 0 config/max-network-feed-size 1)))
+    \c (- 0 config/max-card-feed-size 1)))
 
 ;; key compression
 ;;

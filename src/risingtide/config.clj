@@ -52,7 +52,7 @@
    :demo (db :db "utah_demo" :host "demo1.copious.com")
    :production (db :db "utah_production"
                    :user "utah_ro"
-                   :host "db2.copious.com")})
+                   :host "db1.copious.com")})
 
 (def pyramid-db
   {:development (db :db "pyramid_development")
@@ -61,7 +61,7 @@
    :demo (db :db "pyramid_demo" :host "demo1.copious.com")
    :production (db :db "pyramid_production"
                    :user "utah_ro"
-                   :host "db4.copous.com")})
+                   :host "db3.copous.com")})
 
 (defn brooklyn [] (brooklyn-db  core/env))
 (defn pyramid [] (pyramid-db  core/env))

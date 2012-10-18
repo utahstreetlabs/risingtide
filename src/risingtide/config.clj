@@ -61,7 +61,7 @@
    :demo (db :db "pyramid_demo" :host "demo1.copious.com")
    :production (db :db "pyramid_production"
                    :user "utah_ro"
-                   :host "db3.copous.com")})
+                   :host "db3.copious.com")})
 
 (defn brooklyn [] (brooklyn-db  core/env))
 (defn pyramid [] (pyramid-db  core/env))

@@ -13,7 +13,8 @@
                  [enlive "1.0.0"]
                  [redis.clients/jedis "2.0.0"]
                  [robert/bruce "0.7.1"]
-                 [storm "0.8.1"]]
+                 [storm "0.8.1"]
+                 [storm-test "0.2.0"]]
 
   :profiles {:dev {:dependencies [[midje "1.4.0"]]}}
 

@@ -5,7 +5,8 @@
             [risingtide.v2.feed :refer [new-digest-feed add]]
             [backtype.storm [clojure :refer :all] [config :refer :all]])
   (:import [redis.clients.jedis Jedis JedisPool JedisPoolConfig]
-           [backtype.storm StormSubmitter LocalCluster]))
+           [backtype.storm StormSubmitter LocalCluster]
+           [risingtide.v2.story ListingLikedStory]))
 
 (def pool (JedisPool. (JedisPoolConfig.) "localhost"))
 
@@ -25,63 +26,140 @@
         ;; This is an unreliable spout, so it does nothing here
         )))
 
+(def stories (atom []))
+(defn push-story! [story]
+  (swap! stories (fn [stories-queue] (conj stories-queue story))))
+
 (defspout story-spout ["story"]
   [conf context collector]
-  (let [sentences [(->ListingLikedStory :listing_liked 1 2 [3, 4] [:ev] 1)
-                   (->ListingCommentedStory :listing_commented 1 2 [3, 4] "HI" [:ev] 1)
-                   (->ListingActivatedStory :listing_activated 1 2 [3, 4] [:ev] 1)]]
-    (spout
-     (nextTuple []
-                (Thread/sleep 1000)
-                (emit-spout! collector [(rand-nth sentences)])
-                )
-     (ack [id]
-          ;; You only need to define this method for reliable spouts
-          ;; (such as one that reads off of a queue like Kestrel)
-          ;; This is an unreliable spout, so it does nothing here
-          ))))
+  (spout
+   (nextTuple []
+              (Thread/sleep 100)
+              (swap! stories
+                     (fn [s]
+                       (if (empty? s)
+                         s
+                         (do
+                           (emit-spout! collector [(peek s)])
+                           (pop s))))))
+   (ack [id]
+        ;; You only need to define this method for reliable spouts
+        ;; (such as one that reads off of a queue like Kestrel)
+        ;; This is an unreliable spout, so it does nothing here
+        )))
 
-(defbolt distribute-to-feeds ["user-id" "story"] [tuple collector]
-  (let [story (.getValue tuple 0)]
-    (doseq [user-id (watchers story)]
-      (prn "sending to" user-id)
-      (emit-bolt! collector [user-id story]))
-    (ack! collector tuple)))
+(defn active-users []
+  [47])
+
+(defn follow-score [user-id story]
+  1)
+
+(defn like-score [user-id story]
+  1)
+
+(defbolt active-user-bolt ["user-id" "story"] [tuple collector]
+  (let [{story "story"} tuple]
+    (doseq [user-id (active-users)]
+      (emit-bolt! collector [user-id story])))
+  (ack! collector tuple))
+
+(defbolt like-interest-scorer ["user-id" "story" "score" "type"]  [tuple collector]
+  (let [{user-id "user-id" story "story"} tuple]
+    (emit-bolt! collector [user-id story (like-score user-id story) :like]))
+  (ack! collector tuple))
+
+(defbolt follow-interest-scorer ["user-id" "story" "score" "type"]  [tuple collector]
+  (let [{user-id "user-id" story "story"} tuple]
+    (emit-bolt! collector [user-id story (follow-score user-id story) :follow]))
+  (ack! collector tuple))
+
+(defbolt interest-reducer ["user-id" "story" "score"] {:prepare true}
+  [conf context collector]
+  (let [scores (atom {})]
+    (bolt
+     (execute [tuple]
+              (let [{user-id "user-id" story "story" type "type" score "score"} tuple]
+                (swap! scores #(assoc-in % [[user-id story] type] score))
+                (let [story-scores (get @scores [user-id story])
+                      scored-types (set (keys story-scores))]
+                  (prn "HAMS" scored-types)
+                  (when (= scored-types #{:follow :like})
+                    (let [total-score (apply + (vals story-scores))]
+                      (prn "CLAMS" total-score)
+                      (when (> total-score 1) (emit-bolt! collector [user-id story total-score])))
+                    (swap! scores #(dissoc % [user-id story])))))
+              (ack! collector tuple)))))
 
 (defbolt add-to-feed [] {:prepare true}
   [conf context collector]
   (let [feed-set (atom {})]
     (bolt
      (execute [tuple]
-              (let [user-id (.getValue tuple 0)
-                    story (.getValue tuple 1)]
-                (swap! feed-set #(update-in % user-id
+              (let [{user-id "user-id" story "story" score "score"} tuple]
+                (swap! feed-set #(update-in % [user-id]
                                             (fn [v] (add (or v (new-digest-feed)) story))))
-                (prn "FOO" user-id "bar" feed-set)
+                (prn "BAR" feed-set)
+                (prn "FOO" user-id "bar" story "SCORED" score)
                 (ack! collector tuple))))))
 
-(defn mk-topology []
+(defbolt add-to-curated-feed [] {:prepare true}
+  [conf context collector]
+  (let [feed-set (atom {})]
+    (bolt
+     (execute [tuple]
+              (let [{story "story"} tuple]
+                (prn "EVERYTHING" story)
+                #_(swap! feed-set #(update-in % [user-id]
+                                              (fn [v] (add (or v (new-digest-feed)) story))))
+                (ack! collector tuple))))))
+
+(defn feed-generation-topology []
   (topology
-   {"1" (spout-spec story-spout)}
-   {"2" (bolt-spec {"1" :shuffle}
-                   distribute-to-feeds
+   {"stories" (spout-spec story-spout)}
+
+   ;; everything feed
+   
+   {"curated-feed" (bolt-spec {"stories" :global}
+                              add-to-curated-feed
+                              :p 1)
+
+    ;; user feeds
+    
+    "active-users" (bolt-spec {"stories" :shuffle}
+                   active-user-bolt
                    :p 5)
-    "3" (bolt-spec {"2" ["user-id"]}
-                    add-to-feed
-                    :p 20)}))
+    
+    "likes" (bolt-spec {"active-users" :shuffle}
+                       like-interest-scorer
+                       :p 20)
+    "follows" (bolt-spec {"active-users" :shuffle}
+                         follow-interest-scorer
+                         :p 20)
+
+    "interest-reducer" (bolt-spec {"likes" ["user-id" "story"]
+                                   "follows" ["user-id" "story"]}
+                                  interest-reducer
+                                  :p 5)
+    
+    "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]}
+                             add-to-feed
+                             :p 20)}))
 
 (defn run-local! []
   (let [cluster (LocalCluster.)]
-    (.submitTopology cluster "story" {TOPOLOGY-DEBUG true} (mk-topology))
+    (.submitTopology cluster "story" {TOPOLOGY-DEBUG true} (feed-generation-topology))
     (Thread/sleep 10000)
     (.shutdown cluster)
     ))
 
+
 (comment
-  (run-local!)
+  (.shutdown c)
+  (Thread/sleep 1000)
   (def c (LocalCluster.))
   (.submitTopology c "story" {TOPOLOGY-DEBUG true} (mk-topology))
-  (.shutdown c)
+  
+  (run-local!)
 
   (let [r (.getResource pool)]
     (try

@@ -4,8 +4,6 @@
   (:use [midje.sweet])
   (:require [risingtide.shard.config :as shard-config]))
 
-(test-background)
-
 (expose risingtide.shard/feeds-by-shard
         risingtide.shard/flatten-keys)
 

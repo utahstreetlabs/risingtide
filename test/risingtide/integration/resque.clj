@@ -7,8 +7,6 @@
   (:require [risingtide.stories :as story]
             [risingtide.redis :as redis]))
 
-(test-background)
-
 (fact
   (redis/with-jedis* (:resque (redis/redii :test))
     (fn [jedis]

@@ -1,5 +1,5 @@
 (ns risingtide.v2.feed.digest
-  (require [risingtide.v2.story :refer [StoryDigest] :as story]
+  (require [risingtide.v2.story :refer [StoryDigest action-for score with-score] :as story]
            [risingtide.v2.feed :refer [Feed] :as feed]
            [risingtide.config :as config]
            [clojure.tools.logging :as log]
@@ -10,44 +10,48 @@
   (reduce (fn [m story]
             (assoc m
               :actors (conj (:actors m) (:actor-id story))
-              :actions (conj (:actions m) (:action story))))
+              :actions (conj (:actions m) (action-for story))))
           {:actors #{} :actions #{}}
           stories))
 
 (defn- mama-actions
   [stories]
-  (reduce (fn [m story] (assoc m (:action story) (conj (m (:action story)) (:actor-id story))))
+  (reduce (fn [m story] (assoc m (action-for story) (set (conj (m (action-for story)) (:actor-id story)))))
           {} stories))
 
 (deftype ListingStorySet [stories]
   StoryDigest
   (add [this story]
-    (let [new-stories (conj stories story)
+    ;; prereqs: story must match listing id of this
+    (let [new-stories (set (conj stories story))
           index (listing-digest-index-for-stories new-stories)
           listing-id (:listing-id story)]
       (case [(> (count (:actors index)) 1) (> (count (:actions index)) 1)]
-        [true true] (story/->MultiActorMultiActionStory
-                     listing-id (mama-actions new-stories) (:score story))
-        [true false] (story/->MultiActorStory listing-id (:action story) (vec (:actors index)) (:score story))
-        [false true] (story/->MultiActionStory listing-id (:actor-id story) (vec (:actions index)) (:score story))
+        [true true] (with-score (story/->MultiActorMultiActionStory
+                                 listing-id (mama-actions new-stories))
+                       (score story))
+        [true false] (with-score (story/->MultiActorStory listing-id (action-for story) (set (:actors index))) (score story))
+        [false true] (with-score (story/->MultiActionStory listing-id (:actor-id story) (set (:actions index))) (score story))
         [false false] (ListingStorySet. new-stories)))))
 
 (deftype ActorStorySet [stories]
   StoryDigest
   (add [this story]
-    (let [new-stories (conj stories story)
-          listing-ids (map :listing-id new-stories)]
-      (if (> (count listing-ids) config/single-actor-digest-story-min)
-        (story/->MultiListingStory (:actor-id story) (:action story) listing-ids (:score story))
+    ;; prereqs: story must match actor id, action of this
+    (let [new-stories (set (conj stories story))
+          listing-ids (set (map :listing-id new-stories))]
+      (if (>= (count listing-ids) config/single-actor-digest-story-min)
+        (with-score (story/->MultiListingStory (:actor-id story) (action-for story) listing-ids)  (score story))
         (ActorStorySet. new-stories)))))
 
-;;;;;;; indexing ;;;;;;;
+;;;;;;; digest indexing ;;;;;;;
+;;; add a big ass comment here explaining digest indexing
 
 (defn- listing-index-path [story]
   [:listings (:listing-id story)])
 
 (defn- actor-index-path [story]
-  [:actors (:actor-id story) (:action story)])
+  [:actors (:actor-id story) (action-for story)])
 
 (defn- add-story [existing-digest story init-digest]
   "Given the value of an existing digest for the given story,
@@ -66,6 +70,9 @@ This should only happen when loading digest stories from disk"
 (defprotocol Indexable
   (index [story index]
     "Given a story and an index, update the index appropriately."))
+
+(defn add-to-index [idx story]
+  (index story idx))
 
 ;; extend Indexable to the story classes
 

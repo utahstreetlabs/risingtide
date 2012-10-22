@@ -12,10 +12,10 @@
              [key :as key]
              [config :as config]]))
 
-(test-background
- (before :facts (clear-redis!))
- (before :facts (clear-digest-cache!))
- (before :facts (clear-migrations!)))
+
+(before :facts (clear-redis!))
+(before :facts (clear-digest-cache!))
+(before :facts (clear-migrations!))
 
 (fact "initial feed builds get stories"
   (on-copious

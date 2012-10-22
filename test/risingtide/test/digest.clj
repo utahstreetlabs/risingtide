@@ -117,6 +117,8 @@
  (fact "feed generation works"
    (map us (feed-from-index (index-predigested-feed ?undigested))) => (map us ?digested))
  ?undigested ?digested
+
+
  [jim-liked-hams]
   ;; digests to
  [jim-liked-hams]

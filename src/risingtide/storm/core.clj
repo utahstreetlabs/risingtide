@@ -2,7 +2,8 @@
   (:require [clojure.data.json :as json]
             [risingtide.v2.story :refer [->ListingLikedStory ->ListingCommentedStory ->ListingActivatedStory]]
             [risingtide.v2.watchers :refer [watchers]]
-            [risingtide.v2.feed :refer [new-digest-feed add]]
+            [risingtide.v2.feed :refer [add]]
+            [risingtide.v2.feed.digest :refer [new-digest-feed]]
             [backtype.storm [clojure :refer :all] [config :refer :all]])
   (:import [redis.clients.jedis Jedis JedisPool JedisPoolConfig]
            [backtype.storm StormSubmitter LocalCluster]
@@ -82,10 +83,8 @@
                 (swap! scores #(assoc-in % [[user-id story] type] score))
                 (let [story-scores (get @scores [user-id story])
                       scored-types (set (keys story-scores))]
-                  (prn "HAMS" scored-types)
                   (when (= scored-types #{:follow :like})
                     (let [total-score (apply + (vals story-scores))]
-                      (prn "CLAMS" total-score)
                       (when (> total-score 1) (emit-bolt! collector [user-id story total-score])))
                     (swap! scores #(dissoc % [user-id story])))))
               (ack! collector tuple)))))
@@ -98,19 +97,17 @@
               (let [{user-id "user-id" story "story" score "score"} tuple]
                 (swap! feed-set #(update-in % [user-id]
                                             (fn [v] (add (or v (new-digest-feed)) story))))
-                (prn "BAR" feed-set)
-                (prn "FOO" user-id "bar" story "SCORED" score)
+                (prn "FEED SET:" (map (fn [[k v]] [k (seq v)]) @feed-set))
                 (ack! collector tuple))))))
 
 (defbolt add-to-curated-feed [] {:prepare true}
   [conf context collector]
-  (let [feed-set (atom {})]
+  (let [feed (atom (new-digest-feed))]
     (bolt
      (execute [tuple]
               (let [{story "story"} tuple]
-                (prn "EVERYTHING" story)
-                #_(swap! feed-set #(update-in % [user-id]
-                                              (fn [v] (add (or v (new-digest-feed)) story))))
+                (swap! feed #(add % story))
+                (prn "EVERYTHING" (seq @feed))
                 (ack! collector tuple))))))
 
 (defn feed-generation-topology []
@@ -155,11 +152,10 @@
 
 (comment
   (.shutdown c)
-  (Thread/sleep 1000)
   (def c (LocalCluster.))
-  (.submitTopology c "story" {TOPOLOGY-DEBUG true} (mk-topology))
-  
-  (run-local!)
+  (.submitTopology c "story" {TOPOLOGY-DEBUG true} (feed-generation-topology))
+
+  (push-story! (->ListingLikedStory :listing_shared 1 2 [3, 4] [:ev] 1))
 
   (let [r (.getResource pool)]
     (try

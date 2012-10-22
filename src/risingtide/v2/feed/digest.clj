@@ -1,7 +1,9 @@
 (ns risingtide.v2.feed.digest
   (require [risingtide.v2.story :refer [StoryDigest] :as story]
+           [risingtide.v2.feed :refer [Feed] :as feed]
            [risingtide.config :as config]
-           [clojure.tools.logging :as log])
+           [clojure.tools.logging :as log]
+           [clojure.set :as set])
   (import [risingtide.v2.story TagLikedStory ListingLikedStory ListingCommentedStory ListingActivatedStory ListingSoldStory ListingSharedStory MultiActorStory MultiActionStory MultiActorMultiActionStory MultiListingStory]))
 
 (defn- listing-digest-index-for-stories [stories]
@@ -39,7 +41,7 @@
         (story/->MultiListingStory (:actor-id story) (:action story) listing-ids (:score story))
         (ActorStorySet. new-stories)))))
 
-;;; indexing
+;;;;;;; indexing ;;;;;;;
 
 (defn- listing-index-path [story]
   [:listings (:listing-id story)])
@@ -61,33 +63,87 @@ This should only happen when loading digest stories from disk"
   (when existing-digest (log/warn "trying to add digest story to index but something's already here: " existing-digest " so I'll use the newer story: " new-digest))
   new-digest)
 
-(defn- index-actor-digest-story )
-
-(defn- index-with [args]
-  (doseq [type (butlast args)]
-    (extend type Indexable
-            {:index (last args)})))
-
 (defprotocol Indexable
   (index [story index]
     "Given a story and an index, update the index appropriately."))
 
-(index-with ListingLikedStory ListingCommentedStory ListingActivatedStory ListingSoldStory ListingSharedStory
-  (fn [story index]
-    (-> index
-        (update-in (listing-index-path story) add-story story ->ListingStorySet)
-        (update-in (actor-index-path story) add-story story ->ActorStorySet))))
+;; extend Indexable to the story classes
 
-(index-with TagLikedStory
-  (fn [story index]
-    (assoc index :nodigest (cons story (:nodigest index)))))
+(defn- index-with [index & args]
+  (doseq [type args]
+    (extend type Indexable
+            {:index index})))
 
-(index-with MultiActorMultiActionStory MultiActionStory MultiActorStory
-  (fn [story index]
-    (update-in (listing-index-path story) add-digest story)))
+(index-with 
+ (fn [story index]
+   (-> index
+       (update-in (listing-index-path story) add-story story ->ListingStorySet)
+       (update-in (actor-index-path story) add-story story ->ActorStorySet)))
+ ListingLikedStory ListingCommentedStory ListingActivatedStory ListingSoldStory ListingSharedStory)
 
-(index-with MultiListingStory
-  (fn [story index]
-    (update-in (actor-index-path story) add-digest story)))
+(index-with
+ (fn [story index]
+   (assoc index :nodigest (cons story (:nodigest index))))
+ TagLikedStory)
+
+(index-with 
+ (fn [story index]
+   (update-in (listing-index-path story) add-digest story))
+ MultiActorMultiActionStory MultiActionStory MultiActorStory)
+
+(index-with
+ (fn [story index]
+   (update-in (actor-index-path story) add-digest story))
+ MultiListingStory)
+
+;;;; ToStories - converting a digesting index to a feed ;;;;
+
+(defprotocol ToStories
+  (to-stories [leaf]
+    "Given a leaf in the index, return a tuple of sets of single stories and digest stories
+to be inserted into the feed."))
+
+;; extend ToStories to the story classes
+
+(defn- to-stories-with [to-stories & args]
+  (doseq [type args]
+    (extend type ToStories
+            {:to-stories to-stories})))
+
+(to-stories-with
+ (fn [leaf] [#{leaf} #{}])
+ MultiActorMultiActionStory MultiActionStory MultiActorStory MultiListingStory)
+
+(to-stories-with
+ (fn [leaf] [#{} (.stories leaf)]) 
+ ListingStorySet ActorStorySet)
+
+(defn- reduce-digests [digests]
+  "Given a set of digest index leaves, return a tuple of stories and digest stories from those leaves."
+  (reduce (fn [[digest-m single-m] [digest single]] [(set/union digest-m digest) (set/union single-m single)])
+          [] (map to-stories digests)))
+
+(defn feed-from-index
+  [digesting-index]
+  (let [[listing-digests listing-stories] (reduce-digests (vals (:listings digesting-index)))
+        [actor-digests actor-stories] (reduce-digests (apply concat (map vals (vals (:actors digesting-index)))))]
+    (concat (:nodigest digesting-index)
+            ;; union all digest stories
+            (set/union listing-digests actor-digests)
+            ;; take the intersection of single story sets to ensure we only get stories
+            ;; that are not in any digest stories
+            (set/intersection listing-stories actor-stories))))
 
 (defn new-index [] {})
+
+(deftype DigestFeed [story-index]
+  Feed
+  (add [this story] (DigestFeed. (index story story-index)))
+  clojure.lang.Seqable
+  (seq [this] (feed-from-index story-index)))
+
+(defn new-digest-feed
+  []
+  (->DigestFeed (new-index)))
+
+

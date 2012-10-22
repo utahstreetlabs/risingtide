@@ -11,19 +11,19 @@
 
 (defn- env-connection-config
   []
-  (redis/redii env))
+  (redis/redii config/env))
 
 ;; migrate staging keys to development.
 
 (defn convert-redis-keys-from-staging-to-dev!
   ([redii]
      (doseq [[k pool] redii]
-      (if (= :development env)
+      (if (= :development config/env)
         (redis/with-jedis* pool
           (fn [jedis]
             (for [key (.keys jedis "*")]
               (.rename jedis key (.replaceFirst key "mags" "magd")))))
-        (prn "holy shit. you really, really don't want to rename keys in" env))))
+        (prn "holy shit. you really, really don't want to rename keys in" config/env))))
   ([] (convert-redis-keys-from-staging-to-dev! (env-connection-config))))
 
 

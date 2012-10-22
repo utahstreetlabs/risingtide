@@ -28,7 +28,7 @@
   [processor]
   (sorted-map
    "version" version/version
-   "environment" env
+   "environment" config/env
    "connections" (:connections processor)
    "cache size" (count @(:cache processor))
    "processor running" @(:run-processor processor)

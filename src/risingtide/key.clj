@@ -1,6 +1,7 @@
 (ns risingtide.key
   "encapsulate key naming conventions for risingtide"
-  (:use [risingtide.core :only [env first-char]])
+  (:use [risingtide.core :only [first-char]]
+        [risingtide.config :only [env]])
   (:require [clojure.string :as s]))
 
 (defn env-prefix

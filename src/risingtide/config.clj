@@ -37,6 +37,8 @@
                 :stories {:host "rt-stories-redis.copious.com"}
                 :shard-config {:host "rt-shard-config-redis.copious.com"}}})
 
+(defn redis-config [] (redis env))
+
 (def mysql-creds
   {:user "utah"
    :password "Utah5tr33t"})
@@ -62,8 +64,8 @@
                    :user "utah_ro"
                    :host "db3.copious.com")})
 
-(defn brooklyn [] (brooklyn-db core/env))
-(defn pyramid [] (pyramid-db core/env))
+(defn brooklyn [] (brooklyn-db env))
+(defn pyramid [] (pyramid-db env))
 
 (def digest
   {:development true

@@ -78,7 +78,7 @@
 
 (defn- connections
   []
-  (redis/redii env))
+  (redis/redii config/env))
 
 ;; This is where the magic happens ;;
 

@@ -1,6 +1,6 @@
 (ns risingtide.test.key
   (:use [risingtide key test]
-        [risingtide.core :only [env]]
+        [risingtide.config :only [env]]
         [midje.sweet]))
 
 (facts

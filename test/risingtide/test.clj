@@ -6,7 +6,7 @@
    [midje.sweet :refer :all]))
 
 (log-config/set-logger! :level :debug)
-(alter-var-root #'risingtide.core/env (constantly :test))
+(alter-var-root #'risingtide.config/env (constantly :test))
 
 
 ;; users

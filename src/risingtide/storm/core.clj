@@ -97,7 +97,7 @@
               (let [{user-id "user-id" story "story" score "score"} tuple]
                 (swap! feed-set #(update-in % [user-id]
                                             (fn [v] (add (or v (new-digest-feed)) story))))
-                (prn "FEED SET:" (map (fn [[k v]] [k (seq v)]) @feed-set))
+                (prn "FEED SET:" (map (fn [[k v]] [k [(seq v) (map meta (seq v))]]) @feed-set))
                 (ack! collector tuple))))))
 
 (defbolt add-to-curated-feed [] {:prepare true}
@@ -155,7 +155,7 @@
   (def c (LocalCluster.))
   (.submitTopology c "story" {TOPOLOGY-DEBUG true} (feed-generation-topology))
 
-  (push-story! (->ListingLikedStory :listing_shared 1 2 [3, 4] [:ev] 1))
+  (push-story! (with-meta (->ListingLikedStory 1 3 [3, 4] [:ev]) {:score 3}))
 
   (let [r (.getResource pool)]
     (try

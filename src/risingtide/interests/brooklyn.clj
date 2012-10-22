@@ -30,6 +30,12 @@
                (where {:follower_id user-id})
                (fields :user_id))))
 
+(defn following? [follower-id followee-id]
+  (> (:cnt (first (select follows (fields (raw "count(*) cnt"))
+                          (where {:user_id followee-id
+                                  :follower_id follower-id}))))
+     0))
+
 ;;; mutating methods - should only be used in test!!!
 
 (defn create-user [user-id]

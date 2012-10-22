@@ -62,8 +62,8 @@
                    :user "utah_ro"
                    :host "db3.copious.com")})
 
-(defn brooklyn [] (brooklyn-db  core/env))
-(defn pyramid [] (pyramid-db  core/env))
+(defn brooklyn [] (brooklyn-db core/env))
+(defn pyramid [] (pyramid-db core/env))
 
 (def digest
   {:development true

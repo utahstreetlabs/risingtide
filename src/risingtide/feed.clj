@@ -46,7 +46,7 @@
 
 (defn interesting-story-keys
   "return the story keys of sets that should be included in the a user's feed of the given type"
-  [conn-spec feed-type user-id]
+  [feed-type user-id]
   (let [f (feed-type-key feed-type)]
-    (map #(key/format-key f %) (interesting/feed-stories conn-spec user-id feed-type))))
+    (map #(key/format-key f %) (interesting/feed-stories user-id))))
 

@@ -14,32 +14,38 @@
 (defn- add-interest-and-backfill!
   [redii type user-id object-id]
   (interests/add! redii user-id type object-id)
-  ;; update and write feeds with last 24 hours of stories about this object
-  (doall
-   (for [feed-type ["c" "n"]]
-     (let [feed-key (key/user-feed user-id feed-type)]
-       (doall
-        (for [story (feed/user-feed-stories
-                     (persisted/stories (:stories redii) (key/format-key feed-type (first-char type) object-id)
-                       (- (now) (* 24 60 60)) (now)))]
-          (digest/add-story-to-feed-cache redii feed-key story)))
-       (digest/write-feeds! redii [(key/user-feed user-id feed-type)])))))
+  ;; update and write feeds with last 24 hours of stories about this
+  ;; object
+  (doseq [feed-type ["c" "n"]]
+    (let [feed-key (key/user-feed user-id feed-type)]
+      (doseq [story
+              (feed/user-feed-stories
+               (persisted/stories (:stories redii) (key/format-key feed-type (first-char type) object-id)
+                                  (- (now) (* 24 60 60)) (now)))]
+        (digest/add-story-to-feed-cache redii feed-key story))
+      (digest/write-feeds! redii [(key/user-feed user-id feed-type)]))))
 
 (defn add-interest!
   [redii type [user-id object-id]]
-  (bench (str "add interest in " type object-id " to " user-id)
+  (bench (str "add interest in "type" "object-id" to "user-id)
          (add-interest-and-backfill! redii type user-id object-id)))
 
 (defn add-interests!
   [redii type [user-ids object-id]]
-  (bench (str "add interest in " type object-id " to " (count user-ids) " users ")
-         (doseq [user-id user-ids]
-           (interests/add! redii user-id type object-id))))
+  (bench (str "add interest in "type" "object-id" to "(count user-ids)" users ")
+         (doall
+          (pmap #(interests/add! redii % type object-id) user-ids))))
 
 (defn remove-interest!
   [redii type [user-id object-id]]
-  (bench (str "remove interest in " type object-id " to " user-id)
+  (bench (str "remove interest in "type" "object-id" to "user-id)
          (interests/remove! redii user-id type object-id)))
+
+(defn batch-remove-user-interests!
+  [redii type [user-id object-ids]]
+  (bench (str "removed interests in "(count object-ids)" "type"s from user "user-id)
+         (doseq [object-id object-ids]
+           (interests/remove! redii user-id type object-id))))
 
 (defn add-story-to-interested-feeds!
   [redii story]
@@ -48,28 +54,25 @@
 
 (defn- add-card-story!
   [redii story]
-  (bench (str "add card story " story)
+  (bench (str "add card story "story)
          (when (feed/for-user-feed? story) (add-story-to-interested-feeds! redii story))
          (when (feed/for-everything-feed? story)
            (digest/add-story-to-feed-cache redii (key/everything-feed) story))))
-
-(defn- add-network-story!
-  [redii story]
-  (bench (str "add network story " story) (add-story-to-interested-feeds! redii story)))
 
 (defn add-story!
   [redii story]
   (let [score (now)
         scored-story (assoc story :score score)]
-    (stories/add! redii story score)
     (case (stories/feed-type story)
-      :card (add-card-story! redii scored-story)
-      :network (add-network-story! redii scored-story))))
+      :card (do
+              (stories/add! redii story score)
+              (add-card-story! redii scored-story))
+      :network nil)))
 
 (defn build-feeds!
   [redii [user-id]]
-  (bench (str "building feeds for user " user-id)
-   (digest/build-for-user! redii user-id)))
+  (bench (str "building feeds for user "user-id)
+         (digest/build-for-user! redii user-id)))
 
 (defn- process-story-job!
   [redii json-message]
@@ -81,6 +84,7 @@
       "Stories::AddInterestInActor" (add-interest! redii :actor args)
       "Stories::AddInterestInTag" (add-interest! redii :tag args)
       "Stories::RemoveInterestInListing" (remove-interest! redii :listing args)
+      "Stories::BatchRemoveInterestInListings" (batch-remove-user-interests! redii :listing args)
       "Stories::RemoveInterestInActor" (remove-interest! redii :actor args)
       "Stories::RemoveInterestInTag" (remove-interest! redii :tag args)
       "Stories::Create" (add-story! redii (reduce merge args))

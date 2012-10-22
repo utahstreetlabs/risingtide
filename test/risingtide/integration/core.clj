@@ -9,35 +9,49 @@
              [shard :as shard]
              [digest :as digest]
              [persist :as persist]
-             [key :as key]]))
+             [key :as key]
+             [config :as config]]))
 
 (test-background
  (before :facts (clear-redis!))
  (before :facts (clear-digest-cache!))
  (before :facts (clear-migrations!)))
 
+(fact "initial feed builds get stories"
+  (on-copious
+   (rob is-a-user)
+   (jim is-a-user)
+   (rob creates-brooklyn-follow jim)
+   (rob creates-listing-like breakfast-tacos)
+   (jim activates bacon)
+   (jim likes ham)
+   (jim likes toast)
+   (jim shares toast)
+   (cutter likes breakfast-tacos)
+   (rob truncates-feed)
+   (rob builds-feeds))
 
-(fact "initial feed builds bring in old stories"
+  (feed-for-rob :card) => (encoded-feed
+                           (listing-activated jim bacon)
+                           (listing-liked jim ham)
+                           (story/multi-action-digest toast jim ["listing_shared" "listing_liked"])
+                           (listing-liked cutter breakfast-tacos))
+  (clear-mysql-dbs!))
+
+(fact "adding an interest brings in old stories"
   (on-copious
    (jim activates bacon)
    (jim likes ham)
    (jim likes toast)
    (jim shares toast)
    (jim likes omelettes {:feed ["ev"]})
-   (jim joins)
-   (jim follows jon)
    (conn write!)
-   (rob interested-in-user jim)
-   (rob builds-feeds))
+   (rob interested-in-user jim))
 
   (feed-for-rob :card) => (encoded-feed
                            (listing-activated jim bacon)
                            (listing-liked jim ham)
                            (story/multi-action-digest toast jim ["listing_shared" "listing_liked"]))
-
-  (feed-for-rob :network) => (encoded-feed
-                              (user-joined jim)
-                              (user-followed jim jon))
 
   (everything-feed) => (encoded-feed
                         (listing-activated jim bacon)
@@ -52,8 +66,6 @@
    (jim likes toast)
    (jim shares toast)
    (jim likes omelettes {:feed ["ev"]})
-   (jim joins)
-   (jim follows jon)
    (rob interested-in-user jim))
 
   (feed-for-rob :card) => (encoded-feed
@@ -61,34 +73,11 @@
                            (listing-liked jim ham)
                            (story/multi-action-digest toast jim ["listing_shared" "listing_liked"]))
 
-  (feed-for-rob :network) => (encoded-feed
-                              (user-joined jim)
-                              (user-followed jim jon))
-
   (everything-feed) => (encoded-feed
                         (listing-activated jim bacon)
                         (listing-liked jim ham)
                         (story/multi-action-digest toast jim ["listing_shared" "listing_liked"])
                         (listing-liked jim omelettes {:feed ["ev"]})))
-
-(fact "network feeds are generated correctly"
-    (on-copious
-     (rob interested-in-user jim)
-     (rob interested-in-user jon)
-     (jim joins)
-     (jim follows jon)
-     (jim invites mark-z)
-     (jon piles-on mark-z))
-
-    (feed-for-rob :network) => (encoded-feed
-                                (user-joined jim)
-                                (user-followed jim jon)
-                                (user-invited jim mark-z)
-                                (user-piled-on jon mark-z))
-
-    (feed-for-rob :card) => []
-
-    (everything-feed) => [])
 
 (fact "multiple actions by an interesting user are digested"
   (on-copious
@@ -191,7 +180,7 @@
                            (listing-liked jim toast {:feed "ylf"})))
 
 (fact "card feeds are truncated when a new card story is added"
-  (binding [persist/*max-card-feed-size* 5]
+  (with-redefs [config/max-card-feed-size 5]
     (on-copious
      (rob interested-in-user jim)
      (jim likes bacon)
@@ -208,23 +197,19 @@
                              (listing-liked jim ham)
                              (listing-liked jim omelettes))))
 
-(fact "network feeds are truncated when a new network story is added"
-  (binding [persist/*max-network-feed-size* 5]
+(fact "story buckets are truncated when a new card story is added"
+  (with-redefs [config/max-story-bucket-size 3]
     (on-copious
-     (rob interested-in-user jim)
-     (jim follows jon)
-     (jim follows bcm)
-     (jim follows dave)
-     (jim follows cutter)
-     (jim follows kaitlyn)
-     (jim follows courtney))
+     (jim likes bacon)
+     (jim likes eggs)
+     (jim likes toast)
+     (jim likes muffins)
+     (jim likes ham))
 
-    (feed-for-rob :network) => (encoded-feed
-                                (user-followed jim bcm)
-                                (user-followed jim dave)
-                                (user-followed jim cutter)
-                                (user-followed jim kaitlyn)
-                                (user-followed jim courtney))))
+    (stories-about-jim :card) => (encoded-feed
+                                  (listing-liked jim toast)
+                                  (listing-liked jim muffins)
+                                  (listing-liked jim ham))))
 
 (fact "digest cards aren't duplicated when they are the oldest thing in the feed"
   (on-copious
@@ -242,20 +227,20 @@
    (jim activates bacon)
    (jim likes ham))
 
-  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (stories (:card-feeds-1 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham))
 
-  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (stories (:card-feeds-2 conn) rob :card) =>
   (encoded-feed)
 
   (digest/migrate! conn (key/user-feed rob :card) "2")
 
-  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (stories (:card-feeds-1 conn) rob :card) =>
   (encoded-feed)
 
-  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (stories (:card-feeds-2 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham))
@@ -263,10 +248,10 @@
   (on-copious
    (jim shares toast))
 
-  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (stories (:card-feeds-1 conn) rob :card) =>
   (encoded-feed)
 
-  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (stories (:card-feeds-2 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham)
@@ -278,23 +263,23 @@
    (jim activates bacon)
    (jim likes ham))
 
-  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (stories (:card-feeds-1 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham))
 
-  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (stories (:card-feeds-2 conn) rob :card) =>
   (encoded-feed)
 
   (digest/initiate-migration! (key/user-feed rob :card) "2")
   (write! conn)
 
-  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (stories (:card-feeds-1 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham))
 
-  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (stories (:card-feeds-2 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham))
@@ -302,13 +287,13 @@
   (on-copious
    (jim shares toast))
 
-  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (stories (:card-feeds-1 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham)
    (listing-shared jim toast))
 
-  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (stories (:card-feeds-2 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham)
@@ -320,21 +305,34 @@
    (jim activates bacon)
    (jim likes ham))
 
-  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (stories (:card-feeds-1 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham))
 
-  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (stories (:card-feeds-2 conn) rob :card) =>
   (encoded-feed)
 
   (clear-digest-cache!)
   (digest/migrate! conn (key/user-feed rob :card) "2")
 
-  (feed-on (:card-feeds-1 conn) rob :card) =>
+  (stories (:card-feeds-1 conn) rob :card) =>
   (encoded-feed)
 
-  (feed-on (:card-feeds-2 conn) rob :card) =>
+  (stories (:card-feeds-2 conn) rob :card) =>
   (encoded-feed
    (listing-activated jim bacon)
    (listing-liked jim ham)))
+
+(fact "users can bulk remove interests when, eg, they unfollow a user and no longer want to follow their listings"
+  (on-copious
+   (cutter interested-in-listing nail-polish)
+   (cutter interested-in-listing ham)
+   (cutter interested-in-listing eggs)
+   (jim likes nail-polish)
+   (jim likes ham)
+   (cutter removes-interest-in-listings nail-polish ham)
+   (jim comments-on nail-polish))
+
+  (feed-for-cutter :card) =>
+  (encoded-feed (listing-liked jim nail-polish) (listing-liked jim ham)))

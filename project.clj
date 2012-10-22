@@ -14,7 +14,9 @@
                  [redis.clients/jedis "2.0.0"]
                  [robert/bruce "0.7.1"]
                  [storm "0.8.1"]
-                 [storm-test "0.2.0"]]
+                 [storm-test "0.2.0"]
+                 [korma "0.3.0-beta11"]
+                 [mysql/mysql-connector-java "5.1.20"]]
 
   :profiles {:dev {:dependencies [[midje "1.4.0"]]}}
 

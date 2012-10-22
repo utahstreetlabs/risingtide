@@ -5,9 +5,13 @@
   (:import [redis.clients.jedis JedisPool JedisPoolConfig ZParams ZParams$Aggregate]
            java.util.Map))
 
+(defn pool-config []
+  (doto (JedisPoolConfig.)
+    (.setMaxActive 30)))
+
 (defn redis [config]
   (let [pool
-        (JedisPool. (JedisPoolConfig.) (or (:host config) "localhost") (or (:port config) 6379) (or (:timeout config) 60000))]
+        (JedisPool. (pool-config) (or (:host config) "localhost") (or (:port config) 6379) (or (:timeout config) 60000))]
     (if (:db config)
       (assoc config :pool pool)
       pool)))

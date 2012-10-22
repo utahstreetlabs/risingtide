@@ -2,38 +2,46 @@
   (:use risingtide.core
         risingtide.test)
   (:require [clojure.data.json :as json]
-            [risingtide.redis :as redis]
-            [risingtide.config :as config]
-            [risingtide.key :as key]
-            [risingtide.jobs :as jobs]
-            [risingtide.persist :as persist]
-            [risingtide.stories :as story]
-            [risingtide.shard :as shard]
+            [risingtide
+             [redis :as redis]
+             [config :as config]
+             [key :as key]
+             [jobs :as jobs]
+             [persist :as persist]
+             [stories :as story]
+             [shard :as shard]
+             [digest :as digest]]
             [risingtide.shard.config :as shard-config]
-            [risingtide.digest :as digest]))
+            [risingtide.interests
+             [brooklyn :as brooklyn]
+             [pyramid :as pyramid]]))
 
-(def conn {:interests (redis/redis {})
-           :everything-card-feed (redis/redis {})
-           :card-feeds-1 (redis/redis {})
-           :card-feeds-2 (redis/redis {:db 2})
-           :network-feeds (redis/redis {})
-           :stories (redis/redis {})
-           :shard-config (redis/redis {})})
+(def conn {:watchers (redis/redis {:db 2})
+           :everything-card-feed (redis/redis {:db 3})
+           :card-feeds-1 (redis/redis {:db 4})
+           :card-feeds-2 (redis/redis {:db 5})
+           :stories (redis/redis {:db 7})
+           :shard-config (redis/redis {:db 8})})
 
-(defn feed-on
-  ([connection-pool feed-key]
+(defn stories
+  ([conn key]
      (map json/read-json
-          (redis/with-jedis* connection-pool
+          (redis/with-jedis* conn
             (fn [jedis]
-              (.zrange jedis feed-key 0 100000)))))
-  ([connection-pool id type] (feed-on connection-pool (key/user-feed id type))))
+              (.zrange jedis key 0 100000000)))))
+  ([conn id type] (stories conn (key/user-feed id type))))
 
 (defn feed-for-user*
   [id type]
   (let [feed-key (key/user-feed id type)]
     (shard/with-connection-for-feed conn feed-key
       [pool]
-      (feed-on pool feed-key))))
+      (stories pool feed-key))))
+
+(defn stories-about-user
+  [id type]
+  (map #(dissoc % :score) (stories (:stories conn)
+                                   (story/actor-story-set (first-char type) id))))
 
 ;; users
 (defmacro defuser
@@ -42,7 +50,10 @@
     (def ~n ~id)
     (defn ~(symbol (str "feed-for-" n))
       [type#]
-      (feed-for-user* ~id type#))))
+      (feed-for-user* ~id type#))
+    (defn ~(symbol (str "stories-about-" n))
+      [type#]
+      (stories-about-user ~id type#))))
 
 (defuser jim 1)
 (defuser jon 2)
@@ -60,20 +71,21 @@
 
 ;; listings
 
-(def bacon :bacon)
-(def ham :ham)
-(def eggs :eggs)
-(def muffins :muffins)
-(def breakfast-tacos :breakfast-tacos)
-(def toast :toast)
-(def scones :scones)
-(def croissants :croissants)
-(def danishes :danishes)
-(def omelettes :omelettes)
+(def bacon 100)
+(def ham 101)
+(def eggs 102)
+(def muffins 103)
+(def breakfast-tacos 104)
+(def toast 105)
+(def scones 106)
+(def croissants 107)
+(def danishes 108)
+(def omelettes 109)
+(def nail-polish 110)
 
 ;; tags
 
-(def breakfast :breakfast)
+(def breakfast 200)
 
 ;; feeds
 
@@ -93,9 +105,27 @@
 (def empty-feed [])
 
 ;; actions
-(defn interested-in-user
-  [actor-one-id actor-two-id]
+(defn interested-in-user [actor-one-id actor-two-id]
   (jobs/add-interest! conn :actor [actor-one-id actor-two-id]))
+
+(defn interested-in-listing [actor-id listing-id]
+  (jobs/add-interest! conn :listing [actor-id listing-id]))
+
+(defn removes-interest-in-listings [actor-id & listing-ids]
+  (jobs/batch-remove-user-interests! conn :listing [actor-id listing-ids]))
+
+(defn creates-brooklyn-follow [follower-id followee-id]
+  (brooklyn/create-follow follower-id followee-id))
+
+(defn creates-listing-like [liker-id listing-id]
+  (pyramid/create-like liker-id :listing listing-id))
+
+(defn is-a-user [user-id]
+  (brooklyn/create-user user-id))
+
+(defn clear-mysql-dbs! []
+  (brooklyn/clear-tables!)
+  (pyramid/clear-tables!))
 
 (defmacro listing-action-helper
   [name action]
@@ -139,12 +169,20 @@
   [actor-id]
   (jobs/build-feeds! conn [actor-id]))
 
+(defn truncates-feed
+  [actor-id]
+  (let [feed-key (key/user-card-feed actor-id)]
+    (shard/with-connection-for-feed conn feed-key
+      [pool]
+      (redis/with-jedis* pool
+        (fn [jedis] (.del jedis (into-array String [(key/user-card-feed actor-id)])))))))
+
 ;; reset
 
 (defn clear-redis!
   []
   (if (= env :test)
-    (doseq [redis [:everything-card-feed :shard-config :card-feeds-1 :card-feeds-2 :network-feeds :interests :stories]]
+    (doseq [redis [:everything-card-feed :shard-config :card-feeds-1 :card-feeds-2 :watchers :stories]]
       (let [keys (redis/with-jedis* (redis conn) (fn [jedis] (.keys jedis (key/format-key "*"))))]
         (when (not (empty? keys))
           (redis/with-jedis* (redis conn)

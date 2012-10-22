@@ -31,7 +31,11 @@
    "environment" env
    "connections" (:connections processor)
    "cache size" (count @(:cache processor))
-   "processor running" @(:run-processor processor)))
+   "processor running" @(:run-processor processor)
+   "flusher active count" (.getActiveCount (:flusher processor))
+   "flusher completed count" (.getCompletedTaskCount (:flusher processor))
+   "flusher terminating" (.isTerminating (:flusher processor))
+   "flusher terminated" (.isTerminated (:flusher processor))))
 
 (defn migrate!
   [conn-spec type user-ids destination-shard]
@@ -47,7 +51,15 @@
    (GET "/" [] (layout (key-val-table (admin-info @processor))))
    (GET "/cache" [] (str @(:cache @processor)))
    (POST "/feeds/migrate" [type user-ids destination-shard]
-         (migrate! (:connections @processor) type user-ids destination-shard))))
+         (migrate! (:connections @processor) type user-ids destination-shard))
+   (POST "/cache/flusher/stop" []
+         (.shutdownNow (:flusher @processor))
+         "Stopped")
+   (POST "/cache/flusher/start" []
+         (if (.isTerminated (:flusher @processor))
+           (do (swap! processor (fn [p] (assoc p :flusher (digest/cache-flusher (:cache p) (:connections p) (:cache-flush-frequency p)))))
+               "Started")
+           "Can not start flusher, old flusher not terminated"))))
 
 (defn run!
   [processor-atom]

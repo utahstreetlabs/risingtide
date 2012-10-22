@@ -22,16 +22,12 @@ object.
 
 ;; truncation
 ;;
-;; to save space in redis, we truncate feeds to a fixed length
-
-(def ^:dynamic *max-card-feed-size* config/max-card-feed-size)
-(def ^:dynamic *max-network-feed-size* config/max-network-feed-size)
+;; to save space in redis, we truncate feeds and story buckets to a fixed length
 
 (defn- max-feed-size
   [feed]
   (case (last feed)
-    \c (- 0 *max-card-feed-size* 1)
-    \n (- 0 *max-network-feed-size* 1)))
+    \c (- 0 config/max-card-feed-size 1)))
 
 ;; key compression
 ;;
@@ -130,3 +126,9 @@ object.
         (doseq [key destination-sets]
           (.zadd jedis key (double time) encoded-story))))))
 
+(defn truncate-story-buckets
+  [conn-spec story-bucket-keys]
+  (redis/with-jedis* (:stories conn-spec)
+    (fn [jedis]
+      (doseq [key story-bucket-keys]
+        (.zremrangeByRank jedis key 0 (- 0 config/max-story-bucket-size 1))))))

@@ -6,6 +6,7 @@
             [risingtide.key :as key]
             [risingtide.persist :as persist]
             [risingtide.shard :as shard]
+            [risingtide.config :as config]
             [clojure.set :as set]))
 
 (def ^:dynamic *card-cache-ttl* (* 6 60 60))
@@ -97,8 +98,8 @@
     [nil true] story
 
     ;; pathological states, try to repair
-    [:digest true] (do (log/warn "duplicate listing digest stories! " current story "using newer") story)
-    [:set true] (do (log/warn "undigested and digested listing coexist! " current story "using digest") story)))
+    [:digest true] story #_(do (log/warn "duplicate listing digest stories! " current story "using newer") story)
+    [:set true] story #_(do (log/warn "undigested and digested listing coexist! " current story "using digest") story)))
 
 (defn add-story-to-listings-index
   [digesting-index story]
@@ -142,8 +143,8 @@
     [nil true] story
 
     ;; pathological states, try to repair
-    [:digest true] (do (log/warn "duplicate actor digest stories! " current story "using newer") story)
-    [:set true] (do (log/warn "undigested and digested actor stories coexist! " current story "using digest") story)))
+    [:digest true] story #_(do (log/warn "duplicate actor digest stories! " current story "using newer") story)
+    [:set true] story #_(do (log/warn "undigested and digested actor stories coexist! " current story "using digest") story)))
 
 (defn add-story-to-actors-index
   [digesting-index story]
@@ -264,7 +265,11 @@
   (let [[feed-type user-id] (key/type-user-id-from-feed-key feed-key)]
     (index-predigested-feed
      (feed/user-feed-stories
-      (persist/union-story-sets redii (feed/interesting-story-keys redii feed-type user-id) 1000)))))
+      (distinct
+       (persist/union-story-sets
+        redii
+        (take config/max-story-union
+              (feed/interesting-story-keys feed-type user-id)) config/initial-feed-size))))))
 
 (defn build! [redii feeds-to-build]
   (doall
@@ -364,7 +369,7 @@ delay of interval to flush cached feeds to redis.
 
 (defn build-for-user!
   [redii user-id]
-  (let [keys [(key/user-card-feed user-id) (key/user-network-feed user-id)]]
+  (let [keys [(key/user-card-feed user-id)]]
     (build! redii keys)
     (write-feeds! redii keys)))
 

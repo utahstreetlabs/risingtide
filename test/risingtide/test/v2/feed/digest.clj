@@ -1,6 +1,6 @@
 (ns risingtide.test.v2.feed.digest
   (:require
-   [risingtide.v2.feed :as feed]
+   [risingtide.v2.feed :refer [min-timestamp max-timestamp] :as feed]
    [risingtide.v2.feed.digest :refer :all]
    [risingtide.v2.story :refer [with-score score] :as story]
    [risingtide.config :as config]
@@ -63,6 +63,24 @@
    [jim-liked-bacon jim-liked-ham jim-liked-toast jim-shared-muffins]
    ;; digests to
    [(story/->MultiListingStory jim :listing_liked #{bacon ham toast}) jim-shared-muffins]))
+
+
+(let [empty-feed (new-digest-feed)
+      one-story-feed (feed/add empty-feed (with-score jim-liked-ham 10))
+      two-story-feed (feed/add one-story-feed (with-score jim-liked-bacon 20))
+      three-story-feed (feed/add two-story-feed (with-score jim-liked-toast 30))]
+  (facts "about min/max timestamp tracking"
+    (min-timestamp empty-feed) => nil
+    (max-timestamp empty-feed) => nil
+
+    (min-timestamp one-story-feed) => 10
+    (max-timestamp one-story-feed) => 10
+    
+    (min-timestamp two-story-feed) => 10
+    (max-timestamp two-story-feed) => 20
+
+    (min-timestamp three-story-feed) => 10
+    (max-timestamp three-story-feed) => 30))
 
 (comment
 

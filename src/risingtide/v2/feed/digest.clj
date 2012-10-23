@@ -141,13 +141,40 @@ to be inserted into the feed."))
             ;; that are not in any digest stories
             (set/intersection listing-stories actor-stories))))
 
-(defn new-index [] {})
+;;;; Tracking min/max timestamps ;;;;
+
+(defn- updated-timestamp [existing-timestamp new-timestamp comparator]
+  (if existing-timestamp
+    (comparator existing-timestamp new-timestamp)
+    new-timestamp))
+
+(defn- update-timestamps [index story]
+  (let [m (meta index)]
+   (with-meta index
+     (merge m {:max-ts (updated-timestamp (:max-ts m) (story/score story) max)
+               :min-ts (updated-timestamp (:min-ts m) (story/score story) min)}))))
+
+(defn min-ts [story-index]
+  (:min-ts (meta story-index)))
+
+(defn max-ts [story-index]
+  (:max-ts (meta story-index)))
+
+;;;; Digest Feed Implementation ;;;;
+
 
 (deftype DigestFeed [story-index]
   Feed
-  (add [this story] (DigestFeed. (index story story-index)))
+  (add [this story]
+    (DigestFeed. (-> story
+                     (index story-index)
+                     (update-timestamps story))))
+  (min-timestamp [feed] (min-ts story-index))
+  (max-timestamp [feed] (max-ts story-index))
   clojure.lang.Seqable
   (seq [this] (feed-from-index story-index)))
+
+(defn new-index [] {})
 
 (defn new-digest-feed
   []

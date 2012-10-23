@@ -19,9 +19,3 @@
   
   (fact (str (type story)" should not change during encoding/decoding")
     (decode (encode story)) => story))
-
-
-
-
-
-

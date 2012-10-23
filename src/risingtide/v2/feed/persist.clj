@@ -7,7 +7,8 @@
     [redis :as redis]
     [config :as config]]
    [risingtide.v2
-    [story :as story]])
+    [story :as story]
+    [feed :as feed]])
   (:import [risingtide.v2.story TagLikedStory ListingLikedStory ListingActivatedStory ListingSoldStory ListingSharedStory ListingCommentedStory MultiActionStory MultiActorStory MultiActorMultiActionStory MultiListingStory]))
 
 (defn- max-feed-size
@@ -76,21 +77,16 @@
 
 (defn replace-feed-head!
   [conn feed-key stories low-score high-score]
-  (when-not (empty? stories)
-    (redis/with-transaction* conn
-      (fn [jedis]
-        (.zremrangeByScore jedis feed-key (double low-score) (double high-score))
-        (add-stories-to-jedis jedis feed-key stories)
-        (.zremrangeByRank jedis feed-key 0 (max-feed-size))))))
-
-(defn min-score [stories]
-  (apply min (map story/score stories)))
+  (redis/with-transaction* conn
+    (fn [jedis]
+      (.zremrangeByScore jedis feed-key (double low-score) (double high-score))
+      (add-stories-to-jedis jedis feed-key stories)
+      (.zremrangeByRank jedis feed-key 0 (max-feed-size)))))
 
 (defn write-feed!
-  [redii feed-key stories]
-  (when (not (empty? stories))
-    (let [low-score (min-score stories)
-          high-score (now)]
-      (shard/with-connection-for-feed redii feed-key
-        [connection]
-        (replace-feed-head! connection feed-key stories low-score high-score)))))
+  [redii feed-key feed]
+  (let [stories (seq feed)]
+   (when (not (empty? stories))
+     (shard/with-connection-for-feed redii feed-key
+       [connection]
+       (replace-feed-head! connection feed-key stories (feed/min-timestamp feed) (feed/max-timestamp feed))))))

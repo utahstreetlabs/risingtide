@@ -81,7 +81,7 @@ This should only happen when loading digest stories from disk"
     (extend type Indexable
             {:index index})))
 
-(index-with 
+(index-with
  (fn [story index]
    (-> index
        (update-in (listing-index-path story) add-story story ->ListingStorySet)
@@ -93,7 +93,7 @@ This should only happen when loading digest stories from disk"
    (assoc index :nodigest (cons story (:nodigest index))))
  TagLikedStory)
 
-(index-with 
+(index-with
  (fn [story index]
    (update-in (listing-index-path story) add-digest story))
  MultiActorMultiActionStory MultiActionStory MultiActorStory)
@@ -122,7 +122,7 @@ to be inserted into the feed."))
  MultiActorMultiActionStory MultiActionStory MultiActorStory MultiListingStory)
 
 (to-stories-with
- (fn [leaf] [#{} (.stories leaf)]) 
+ (fn [leaf] [#{} (.stories leaf)])
  ListingStorySet ActorStorySet)
 
 (defn- reduce-digests [digests]

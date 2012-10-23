@@ -11,10 +11,10 @@
 (defrecord ListingSharedStory [actor-id listing-id tag-ids network feed])
 
 (defn score [story]
-  (:score (meta story)))
+  (:timestamp (meta story)))
 
 (defn with-score [story score]
-  (with-meta story (assoc (meta story) :score score)))
+  (with-meta story (assoc (meta story) :timestamp score)))
 
 (defprotocol Action (action-for [story] "return the action symbol for this story"))
 (extend-protocol Action

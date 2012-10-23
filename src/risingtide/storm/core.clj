@@ -1,78 +1,45 @@
 (ns risingtide.storm.core
-  (:require [clojure.data.json :as json]
-            [risingtide.v2.story :refer [->ListingLikedStory ->ListingCommentedStory ->ListingActivatedStory]]
-            [risingtide.v2.watchers :refer [watchers]]
-            [risingtide.v2.feed :refer [add]]
-            [risingtide.v2.feed.digest :refer [new-digest-feed]]
+  (:require [risingtide.v2
+             [feed :refer [add]]]
+            [risingtide.v2.feed
+             [digest :refer [new-digest-feed]]
+             [filters :refer [for-everything-feed? for-user-feed?]]]
+            [risingtide.storm.story-spout :refer [resque-spout]]
+            [risingtide.interests
+             [brooklyn :as follows]
+             [pyramid :as likes]]
+            [risingtide.config :as config]
             [backtype.storm [clojure :refer :all] [config :refer :all]])
-  (:import [redis.clients.jedis Jedis JedisPool JedisPoolConfig]
-           [backtype.storm StormSubmitter LocalCluster]
-           [risingtide.v2.story ListingLikedStory]))
-
-(def pool (JedisPool. (JedisPoolConfig.) "localhost"))
-
-(defspout resque-spout ["resque"]
-  [conf context collector]
-  (spout
-   (nextTuple
-    []
-    (when-let [s (let [r (.getResource pool)]
-                   (try
-                     (.lpop r "resque:queue:rising_tide_stories")
-                     (finally (.returnResource pool r))))]
-      (emit-spout! collector [s])))
-   (ack [id]
-        ;; You only need to define this method for reliable spouts
-        ;; (such as one that reads off of a queue like Kestrel)
-        ;; This is an unreliable spout, so it does nothing here
-        )))
-
-(def stories (atom []))
-(defn push-story! [story]
-  (swap! stories (fn [stories-queue] (conj stories-queue story))))
-
-(defspout story-spout ["story"]
-  [conf context collector]
-  (spout
-   (nextTuple []
-              (Thread/sleep 100)
-              (swap! stories
-                     (fn [s]
-                       (if (empty? s)
-                         s
-                         (do
-                           (emit-spout! collector [(peek s)])
-                           (pop s))))))
-   (ack [id]
-        ;; You only need to define this method for reliable spouts
-        ;; (such as one that reads off of a queue like Kestrel)
-        ;; This is an unreliable spout, so it does nothing here
-        )))
+  (:import [backtype.storm StormSubmitter LocalCluster]))
 
 (defn active-users []
   [47])
 
-(defn follow-score [user-id story]
-  1)
-
-(defn like-score [user-id story]
-  1)
-
 (defbolt active-user-bolt ["user-id" "story"] [tuple collector]
   (let [{story "story"} tuple]
-    (doseq [user-id (active-users)]
-      (emit-bolt! collector [user-id story])))
+    (when (for-user-feed? story)
+     (doseq [user-id (active-users)]
+       (emit-bolt! collector [user-id story]))))
   (ack! collector tuple))
+
+
+(defn like-score [user-id story]
+  (if (likes/likes? user-id (:listing-id story)) 1 0))
 
 (defbolt like-interest-scorer ["user-id" "story" "score" "type"]  [tuple collector]
   (let [{user-id "user-id" story "story"} tuple]
     (emit-bolt! collector [user-id story (like-score user-id story) :like]))
   (ack! collector tuple))
 
+
+(defn follow-score [user-id story]
+  (if (follows/following? user-id (:actor-id story)) 1 0))
+
 (defbolt follow-interest-scorer ["user-id" "story" "score" "type"]  [tuple collector]
   (let [{user-id "user-id" story "story"} tuple]
     (emit-bolt! collector [user-id story (follow-score user-id story) :follow]))
   (ack! collector tuple))
+
 
 (defbolt interest-reducer ["user-id" "story" "score"] {:prepare true}
   [conf context collector]
@@ -85,7 +52,7 @@
                       scored-types (set (keys story-scores))]
                   (when (= scored-types #{:follow :like})
                     (let [total-score (apply + (vals story-scores))]
-                      (when (> total-score 1) (emit-bolt! collector [user-id story total-score])))
+                      (when (>= total-score 1) (emit-bolt! collector [user-id story total-score])))
                     (swap! scores #(dissoc % [user-id story])))))
               (ack! collector tuple)))))
 
@@ -106,26 +73,28 @@
     (bolt
      (execute [tuple]
               (let [{story "story"} tuple]
-                (swap! feed #(add % story))
-                (prn "EVERYTHING" (seq @feed))
+                (when (for-everything-feed? story)
+                  (swap! feed #(add % story))
+                  (prn "EVERYTHING" (seq @feed)))
                 (ack! collector tuple))))))
 
 (defn feed-generation-topology []
   (topology
-   {"stories" (spout-spec story-spout)}
+   {"stories" (spout-spec resque-spout)}
 
    ;; everything feed
-   
-   {"curated-feed" (bolt-spec {"stories" :global}
+
+   {
+    "curated-feed" (bolt-spec {"stories" :global}
                               add-to-curated-feed
                               :p 1)
 
     ;; user feeds
-    
+
     "active-users" (bolt-spec {"stories" :shuffle}
-                   active-user-bolt
-                   :p 5)
-    
+                              active-user-bolt
+                              :p 5)
+
     "likes" (bolt-spec {"active-users" :shuffle}
                        like-interest-scorer
                        :p 20)
@@ -137,33 +106,18 @@
                                    "follows" ["user-id" "story"]}
                                   interest-reducer
                                   :p 5)
-    
+
     "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]}
                              add-to-feed
                              :p 20)}))
 
 (defn run-local! []
   (let [cluster (LocalCluster.)]
-    (.submitTopology cluster "story" {TOPOLOGY-DEBUG true} (feed-generation-topology))
-    (Thread/sleep 10000)
-    (.shutdown cluster)
-    ))
+    (.submitTopology cluster "story" {TOPOLOGY-DEBUG true} (feed-generation-topology))))
 
 
 (comment
-  (.shutdown c)
-  (def c (LocalCluster.))
-  (.submitTopology c "story" {TOPOLOGY-DEBUG true} (feed-generation-topology))
-
-  (push-story! (with-meta (->ListingLikedStory 1 3 [3, 4] [:ev]) {:score 3}))
-
-  (let [r (.getResource pool)]
-    (try
-      (.lpop r "resque:queue:rising_tide_stories")
-      (finally (.returnResource pool r))))
-
-  (let [r (.getResource pool)]
-    (try
-      (.rpush r "resque:queue:rising_tide_stories" "{\"class\":\"Stories::AddInterestInActor\",\"args\":[47,634],\"context\":{\"log_weasel_id\":\"BROOKLYN-WEB-aef04660348f5f018d1f\"}}")
-      (finally (.returnResource pool r))))
+  ;; lein run -m risingtide.storm.core/run-local!
+  ;; brooklyn:
+  ;; User.inject_listing_story(:listing_liked, 2, Listing.find(23))
   )

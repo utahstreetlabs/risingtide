@@ -62,9 +62,8 @@
     (bolt
      (execute [tuple]
               (let [{user-id "user-id" story "story" score "score"} tuple]
-                (swap! feed-set #(update-in % [user-id]
-                                            (fn [v] (add (or v (new-digest-feed)) story))))
-                (prn "FEED SET:" (map (fn [[k v]] [k [(seq v) (map meta (seq v))]]) @feed-set))
+                (swap! feed-set #(update-in % [user-id] (fn [v] (add (or v (new-digest-feed)) story))))
+                (emit-bolt! collector [(seq (@feed-set user-id))])
                 (ack! collector tuple))))))
 
 (defbolt add-to-curated-feed [] {:prepare true}
@@ -75,7 +74,7 @@
               (let [{story "story"} tuple]
                 (when (for-everything-feed? story)
                   (swap! feed #(add % story))
-                  (prn "EVERYTHING" (seq @feed)))
+                  (emit-bolt! collector [(seq @feed)]))
                 (ack! collector tuple))))))
 
 (defn feed-generation-topology []

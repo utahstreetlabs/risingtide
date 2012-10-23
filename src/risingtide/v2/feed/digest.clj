@@ -1,5 +1,5 @@
 (ns risingtide.v2.feed.digest
-  (require [risingtide.v2.story :refer [StoryDigest action-for score with-score] :as story]
+  (require [risingtide.v2.story :refer [StoryDigest type-sym score with-score] :as story]
            [risingtide.v2.feed :refer [Feed] :as feed]
            [risingtide.config :as config]
            [clojure.tools.logging :as log]
@@ -10,13 +10,13 @@
   (reduce (fn [m story]
             (assoc m
               :actors (conj (:actors m) (:actor-id story))
-              :actions (conj (:actions m) (action-for story))))
+              :actions (conj (:actions m) (type-sym story))))
           {:actors #{} :actions #{}}
           stories))
 
 (defn- mama-actions
   [stories]
-  (reduce (fn [m story] (assoc m (action-for story) (set (conj (m (action-for story)) (:actor-id story)))))
+  (reduce (fn [m story] (assoc m (type-sym story) (set (conj (m (type-sym story)) (:actor-id story)))))
           {} stories))
 
 (deftype ListingStorySet [stories]
@@ -30,7 +30,7 @@
         [true true] (with-score (story/->MultiActorMultiActionStory
                                  listing-id (mama-actions new-stories))
                        (score story))
-        [true false] (with-score (story/->MultiActorStory listing-id (action-for story) (set (:actors index))) (score story))
+        [true false] (with-score (story/->MultiActorStory listing-id (type-sym story) (set (:actors index))) (score story))
         [false true] (with-score (story/->MultiActionStory listing-id (:actor-id story) (set (:actions index))) (score story))
         [false false] (ListingStorySet. new-stories)))))
 
@@ -41,7 +41,7 @@
     (let [new-stories (set (conj stories story))
           listing-ids (set (map :listing-id new-stories))]
       (if (>= (count listing-ids) config/single-actor-digest-story-min)
-        (with-score (story/->MultiListingStory (:actor-id story) (action-for story) listing-ids)  (score story))
+        (with-score (story/->MultiListingStory (:actor-id story) (type-sym story) listing-ids)  (score story))
         (ActorStorySet. new-stories)))))
 
 ;;;;;;; digest indexing ;;;;;;;
@@ -51,7 +51,7 @@
   [:listings (:listing-id story)])
 
 (defn- actor-index-path [story]
-  [:actors (:actor-id story) (action-for story)])
+  [:actors (:actor-id story) (type-sym story)])
 
 (defn- add-story [existing-digest story init-digest]
   "Given the value of an existing digest for the given story,

@@ -1,6 +1,7 @@
 (ns risingtide.test
   (:require
    [risingtide.core :refer :all]
+   [risingtide.config]
    [clj-logging-config.log4j :as log-config]
    [risingtide.v2.story :refer [with-score score] :as story]
    [midje.sweet :refer :all]))

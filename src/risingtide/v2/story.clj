@@ -1,8 +1,5 @@
 (ns risingtide.v2.story)
 
-(defprotocol Action
-  (action [story] "return the action symbol for this story"))
-
 (defrecord TagLikedStory [actor-id tag-id])
 (defrecord ListingLikedStory [actor-id listing-id tag-ids feed])
 (defrecord ListingCommentedStory [actor-id listing-id tag-ids text feed])
@@ -16,22 +13,7 @@
 (defn with-score [story score]
   (with-meta story (assoc (meta story) :timestamp score)))
 
-(defprotocol Action (action-for [story] "return the action symbol for this story"))
-(extend-protocol Action
-  TagLikedStory (action-for [_] :tag_liked)
-  ListingLikedStory (action-for [_] :listing_liked)
-  ListingCommentedStory (action-for [_] :listing_commented)
-  ListingActivatedStory (action-for [_] :listing_activated)
-  ListingSoldStory (action-for [_] :listing_sold)
-  ListingSharedStory (action-for [_] :listing_shared))
-
-(def story-factory-for
-  {:tag_liked map->TagLikedStory
-   :listing_liked map->ListingLikedStory
-   :listing_commented map->ListingCommentedStory
-   :listing_activated map->ListingActivatedStory
-   :listing_sold map->ListingSoldStory
-   :listing_shared map->ListingSharedStory})
+(defprotocol TypeSym (type-sym [story] "return the type-sym symbol for this story"))
 
 ;;; Story Digests
 
@@ -42,7 +24,7 @@
   StoryDigest
   (add [this story]
     ;; XXX: prereqs must have same listing-id
-    (let [path [:actions (action-for story)]]
+    (let [path [:actions (type-sym story)]]
       (with-score (assoc-in this path (set (conj (get-in this path) (:actor-id story))))
         (score story)))))
 
@@ -52,11 +34,11 @@
     ;; XXX: prereqs must have same listing-id
     (with-score
      (if (= actor-id (:actor-id story))
-       (assoc this :actions (set (conj actions (action-for story))))
+       (assoc this :actions (set (conj actions (type-sym story))))
        (->MultiActorMultiActionStory
         listing-id
         (reduce (fn [h action] (assoc h action (set (conj (h action) actor-id))))
-                {(action-for story) #{(:actor-id story)}}
+                {(type-sym story) #{(:actor-id story)}}
                 actions)))
      (score story))))
 
@@ -65,12 +47,12 @@
   (add [this story]
     ;; XXX: prereqs must have same listing-id
     (with-score
-     (if (= (action-for story) action)
+     (if (= (type-sym story) action)
        (assoc this :actor-ids (set (conj actor-ids (:actor-id story))))
        (->MultiActorMultiActionStory
         listing-id
         {action actor-ids
-         (action-for story) #{(:actor-id story)}}))
+         (type-sym story) #{(:actor-id story)}}))
      (score story))))
 
 (defrecord MultiListingStory [actor-id action listing-ids]
@@ -82,3 +64,28 @@
        :listing-ids (set (conj listing-ids (:listing-id story))))
      (score story))))
 
+;;; Translating between type symbols used in JSON and types
+
+(extend-protocol TypeSym
+  TagLikedStory (type-sym [_] :tag_liked)
+  ListingLikedStory (type-sym [_] :listing_liked)
+  ListingCommentedStory (type-sym [_] :listing_commented)
+  ListingActivatedStory (type-sym [_] :listing_activated)
+  ListingSoldStory (type-sym [_] :listing_sold)
+  ListingSharedStory (type-sym [_] :listing_shared)
+  MultiActorStory (type-sym [_] :listing_multi_actor)
+  MultiActionStory (type-sym [_] :listing_multi_action)
+  MultiActorMultiActionStory (type-sym [_] :listing_multi_actor_multi_action)
+  MultiListingStory (type-sym [_] :actor_multi_listing))
+
+(def story-factory-for
+  {:tag_liked map->TagLikedStory
+   :listing_liked map->ListingLikedStory
+   :listing_commented map->ListingCommentedStory
+   :listing_activated map->ListingActivatedStory
+   :listing_sold map->ListingSoldStory
+   :listing_shared map->ListingSharedStory
+   :listing_multi_actor map->MultiActorStory
+   :listing_multi_action map->MultiActionStory
+   :listing_multi_actor_multi_action map->MultiActorMultiActionStory
+   :actor_multi_listing map->MultiListingStory})

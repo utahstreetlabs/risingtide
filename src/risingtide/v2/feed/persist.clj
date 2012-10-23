@@ -8,8 +8,7 @@
     [config :as config]]
    [risingtide.v2
     [story :as story]
-    [feed :as feed]])
-  (:import [risingtide.v2.story TagLikedStory ListingLikedStory ListingActivatedStory ListingSoldStory ListingSharedStory ListingCommentedStory MultiActionStory MultiActorStory MultiActorMultiActionStory MultiListingStory]))
+    [feed :as feed]]))
 
 (defn- max-feed-size
   [feed]
@@ -36,28 +35,32 @@
   [hash translator]
   (reduce (fn [h [key val]] (let [s (translator key)] (if s (assoc h s val) h))) {} hash))
 
+;;; encoding stories for redis
+
 (defn encode
   "given a story, encode it into a short-key json format suitable for memory efficient storage in redis"
   [story]
   (json/json-str (translate-keys (assoc story :type (story/type-sym story))
                                  short-key)))
 
-(defn convert [story value-converter & keys]
+;;; decoding stories from redis
+
+(defn- convert [story value-converter & keys]
   (reduce (fn [story key] (if (get story key)
                            (assoc story key (value-converter (get story key)))
                            story))
           story keys))
 
-(defn convert-to-set-with-converter [story value-converter & keys]
+(defn- convert-to-set-with-converter [story value-converter & keys]
   (apply convert story #(set (map value-converter %)) keys))
 
-(defn convert-to-kw-set [story & keys]
+(defn- convert-to-kw-set [story & keys]
   (apply convert-to-set-with-converter story keyword keys))
 
-(defn convert-to-set [story & keys]
+(defn- convert-to-set [story & keys]
   (apply convert-to-set-with-converter story identity keys))
 
-(defn keywordize [story & keys]
+(defn- keywordize [story & keys]
   (apply convert story keyword keys))
 
 (defn decode
@@ -69,6 +72,8 @@
         (convert-to-kw-set :feed :actions)
         (convert-to-set :actor-ids :listing-ids)
         (keywordize :action))))
+
+;;; writing feeds to redis
 
 (defn- add-stories-to-jedis
   [jedis feed-key stories]

@@ -12,7 +12,7 @@
 
 (defn- for-feed-with-token?
   [story token token-pred]
-  (let [f (get story :feed default-feeds)]
+  (let [f (map keyword (get story :feed default-feeds))]
     (or (= f nil) (= f token) (some token-pred f))))
 
 (defn for-everything-feed?

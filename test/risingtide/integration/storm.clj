@@ -1,4 +1,4 @@
-(ns risingtide.test.storm
+(ns risingtide.integration.storm
   (:require
    [midje.sweet :refer :all]
    [backtype.storm [testing :refer

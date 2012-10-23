@@ -12,7 +12,7 @@
              [key :as key]
              [config :as config]]))
 
-
+(comment
 (before :facts (clear-redis!))
 (before :facts (clear-digest-cache!))
 (before :facts (clear-migrations!))
@@ -336,3 +336,4 @@
 
   (feed-for-cutter :card) =>
   (encoded-feed (listing-liked jim nail-polish) (listing-liked jim ham)))
+)

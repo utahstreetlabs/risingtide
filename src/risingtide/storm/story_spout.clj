@@ -1,39 +1,15 @@
 (ns risingtide.storm.story-spout
   (:require
-   [risingtide.core :refer [now]]
-   [risingtide.v2.story :as story]
    [risingtide
     [config :as config]
     [redis :as redis]]
-
-   [backtype.storm [clojure :refer [ack! defspout spout emit-spout! defbolt emit-bolt!]]]
-
-   [clojure.data.json :as json]
-   [clojure.string :as str]
-   [clojure.set :refer [rename-keys]]))
-
-(defn dash-case-keys [story]
-  (into {} (map (fn [[k v]] [(keyword (str/replace (name k) "_" "-")) v]) story)))
-
-(defn story-to-record [story]
-  (story/with-score
-   ((story/story-factory-for (keyword (:type story)))
-    (-> story
-        dash-case-keys
-        (dissoc :type)
-        (assoc :feed (map keyword (:feed story)))))
-   (or (:timestamp story) (now))))
+   [backtype.storm [clojure :refer [defspout spout emit-spout!]]]
+   [clojure.data.json :as json]))
 
 (defn story-from-resque [story]
   (let [json (json/read-json story)]
     (when (= "Stories::Create" (:class json))
       (first (:args json)))))
-
-(defbolt record-bolt ["story"] [tuple collector]
-  (let [{story "story"} tuple
-        record (story-to-record story)]
-    (emit-bolt! collector [record])
-    (ack! collector tuple)))
 
 (defspout resque-spout ["story"]
   [conf context collector]

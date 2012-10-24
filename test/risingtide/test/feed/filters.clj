@@ -1,7 +1,7 @@
-(ns risingtide.test.v2.feed.filters
+(ns risingtide.test.feed.filters
   (:require
    [midje.sweet :refer :all]
-   [risingtide.v2.feed.filters :refer :all]))
+   [risingtide.feed.filters :refer :all]))
 
 (facts
   (for-user-feed? {}) => :ylf

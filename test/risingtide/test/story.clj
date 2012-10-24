@@ -1,6 +1,6 @@
-(ns risingtide.test.v2.story
+(ns risingtide.test.story
   (:require
-   [risingtide.v2.story :refer :all]
+   [risingtide.story :refer :all]
 
    [risingtide.test :refer :all]
    [midje.sweet :refer :all]))

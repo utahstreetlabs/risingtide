@@ -1,5 +1,5 @@
 (ns risingtide.storm.active-user-bolt
-  (:require [risingtide.v2.feed
+  (:require [risingtide.feed
              [filters :refer [for-user-feed?]]]
             [backtype.storm [clojure :refer [emit-bolt! defbolt ack!]]]))
 

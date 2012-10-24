@@ -1,7 +1,7 @@
 (ns risingtide.storm.record-bolt
   (:require
    [risingtide.core :refer [now]]
-   [risingtide.v2.story :as story]
+   [risingtide.story :as story]
    [backtype.storm [clojure :refer [ack! defbolt emit-bolt!]]]
    [clojure.string :as str]))
 

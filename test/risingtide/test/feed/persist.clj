@@ -1,7 +1,7 @@
-(ns risingtide.test.v2.feed.persist
+(ns risingtide.test.feed.persist
   (:require
-   [risingtide.v2.feed.persist :refer :all]
-   [risingtide.v2.story :as story]
+   [risingtide.feed.persist :refer :all]
+   [risingtide.story :as story]
 
    [risingtide.test :refer :all]
    [midje.sweet :refer :all]))

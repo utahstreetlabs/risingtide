@@ -1,11 +1,11 @@
-(ns risingtide.test.v2.feed.digest
+(ns risingtide.test.feed.digest
   (:require
-   [risingtide.v2.feed :refer [min-timestamp max-timestamp] :as feed]
-   [risingtide.v2.feed.digest :refer :all]
-   [risingtide.v2.story :refer [with-score score] :as story]
-   [risingtide.config :as config]
-
-   [risingtide.test :refer :all]
+   [risingtide.feed.digest :refer :all]
+   [risingtide
+    [story :refer [with-score score] :as story]
+    [feed :refer [min-timestamp max-timestamp] :as feed]
+    [config :as config]
+    [test :refer :all]]
    [midje.sweet :refer :all]))
 
 (facts "about listing story set"

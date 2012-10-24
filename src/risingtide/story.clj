@@ -1,4 +1,4 @@
-(ns risingtide.v2.story)
+(ns risingtide.story)
 
 (defrecord TagLikedStory [actor-id tag-id])
 (defrecord ListingLikedStory [actor-id listing-id tag-ids feed])

@@ -1,4 +1,4 @@
-(ns risingtide.v2.feed.persist
+(ns risingtide.feed.persist
   (:require
    [clojure.data.json :as json]
    [risingtide
@@ -6,7 +6,7 @@
     [shard :as shard]
     [redis :as redis]
     [config :as config]]
-   [risingtide.v2
+   [risingtide
     [story :as story]
     [feed :as feed]]))
 

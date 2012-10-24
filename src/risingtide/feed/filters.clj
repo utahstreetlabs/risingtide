@@ -1,4 +1,4 @@
-(ns risingtide.v2.feed.filters)
+(ns risingtide.feed.filters)
 
 ;;;; filtering ;;;;
 

@@ -1,4 +1,4 @@
-(ns risingtide.v2.feed)
+(ns risingtide.feed)
 
 (defprotocol Feed
   (add [feed story] "")

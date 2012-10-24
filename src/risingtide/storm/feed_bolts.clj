@@ -1,7 +1,7 @@
 (ns risingtide.storm.feed-bolts
-  (:require [risingtide.v2
+  (:require [risingtide
              [feed :refer [add]]]
-            [risingtide.v2.feed
+            [risingtide.feed
              [digest :refer [new-digest-feed]]
              [filters :refer [for-everything-feed?]]]
             [risingtide.interests

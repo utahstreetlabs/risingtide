@@ -1,10 +1,10 @@
-(ns risingtide.v2.feed.digest
-  (require [risingtide.v2.story :refer [StoryDigest type-sym score with-score] :as story]
-           [risingtide.v2.feed :refer [Feed] :as feed]
+(ns risingtide.feed.digest
+  (require [risingtide.story :refer [StoryDigest type-sym score with-score] :as story]
+           [risingtide.feed :refer [Feed] :as feed]
            [risingtide.config :as config]
            [clojure.tools.logging :as log]
            [clojure.set :as set])
-  (import [risingtide.v2.story TagLikedStory ListingLikedStory ListingCommentedStory ListingActivatedStory ListingSoldStory ListingSharedStory MultiActorStory MultiActionStory MultiActorMultiActionStory MultiListingStory]))
+  (import [risingtide.story TagLikedStory ListingLikedStory ListingCommentedStory ListingActivatedStory ListingSoldStory ListingSharedStory MultiActorStory MultiActionStory MultiActorMultiActionStory MultiListingStory]))
 
 (defn- listing-digest-index-for-stories [stories]
   (reduce (fn [m story]

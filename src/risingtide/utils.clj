@@ -4,7 +4,6 @@
             [risingtide
              [config :as config]
              [key :as key]
-             [stories :as stories]
              [redis :as redis]]))
 
 (defn- env-connection-config

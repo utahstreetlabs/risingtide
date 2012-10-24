@@ -4,7 +4,7 @@
             [risingtide.v2.feed
              [digest :refer [new-digest-feed]]
              [filters :refer [for-everything-feed? for-user-feed?]]]
-            [risingtide.storm.story-spout :refer [resque-spout]]
+            [risingtide.storm.story-spout :refer [resque-spout record-bolt]]
             [risingtide.interests
              [brooklyn :as follows]
              [pyramid :as likes]]
@@ -83,23 +83,25 @@
 
    ;; everything feed
 
-   {
-    "curated-feed" (bolt-spec {"stories" :global}
+   {"records" (bolt-spec {"stories" :shuffle}
+                         record-bolt)
+
+    "curated-feed" (bolt-spec {"records" :global}
                               add-to-curated-feed
                               :p 1)
 
     ;; user feeds
 
-    "active-users" (bolt-spec {"stories" :shuffle}
+    "active-users" (bolt-spec {"records" :shuffle}
                               active-user-bolt
-                              :p 5)
+                              :p 1)
 
     "likes" (bolt-spec {"active-users" :shuffle}
                        like-interest-scorer
-                       :p 20)
+                       :p 2)
     "follows" (bolt-spec {"active-users" :shuffle}
                          follow-interest-scorer
-                         :p 20)
+                         :p 2)
 
     "interest-reducer" (bolt-spec {"likes" ["user-id" "story"]
                                    "follows" ["user-id" "story"]}
@@ -108,7 +110,8 @@
 
     "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]}
                              add-to-feed
-                             :p 20)}))
+                             :p 20)
+  }))
 
 (defn run-local! []
   (let [cluster (LocalCluster.)]

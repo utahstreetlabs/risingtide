@@ -6,7 +6,7 @@
     [config :as config]
     [redis :as redis]]
 
-   [backtype.storm [clojure :refer [defspout spout emit-spout!]]]
+   [backtype.storm [clojure :refer [ack! defspout spout emit-spout! defbolt emit-bolt!]]]
 
    [clojure.data.json :as json]
    [clojure.string :as str]
@@ -27,23 +27,28 @@
 (defn story-from-resque [story]
   (let [json (json/read-json story)]
     (when (= "Stories::Create" (:class json))
-      (prn json)
-      (story-to-record (first (:args json))))))
+      (first (:args json)))))
+
+(defbolt record-bolt ["story"] [tuple collector]
+  (let [{story "story"} tuple
+        record (story-to-record story)]
+    (emit-bolt! collector [record])
+    (ack! collector tuple)))
 
 (defspout resque-spout ["story"]
   [conf context collector]
   (let [pool (redis/redis (config/redis-config))]
    (spout
     (nextTuple []
-     (when-let [s (let [r (.getResource pool)]
-                    (try
-                      (or
-                       (.lpop r "resque:queue:rising_tide_priority")
-                       (.lpop r "resque:queue:rising_tide_stories"))
-                      (finally (.returnResource pool r))))]
-       (let [story (story-from-resque s)]
-         (prn "PROCESSING "s" with meta"(meta s))
-        (emit-spout! collector [story]))))
+     (when-let [string (let [r (.getResource pool)]
+                         (try
+                           (or
+                            (.lpop r "resque:queue:rising_tide_priority")
+                            (.lpop r "resque:queue:rising_tide_stories"))
+                           (finally (.returnResource pool r))))]
+       (when-let [story (story-from-resque string)]
+         (emit-spout! collector [story]))
+))
     (ack [id]
          ;; You only need to define this method for reliable spouts
          ;; (such as one that reads off of a queue like Kestrel)

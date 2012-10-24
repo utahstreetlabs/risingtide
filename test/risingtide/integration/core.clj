@@ -1,12 +1,13 @@
 (ns risingtide.integration.core
-  (:use risingtide.core
-        risingtide.integration.support
-        risingtide.test)
-  (:use [midje.sweet])
-  (:require [risingtide
-             [shard :as shard]
-             [key :as key]
-             [config :as config]]))
+  (:require
+   [risingtide.integration.support :refer :all]
+   [risingtide
+    [core :refer :all]
+    [shard :as shard]
+    [key :as key]
+    [config :as config]
+    [test :refer :all]]
+   [midje.sweet :refer :all]))
 
 (comment
 (before :facts (clear-redis!))

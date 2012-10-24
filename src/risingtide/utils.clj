@@ -1,7 +1,7 @@
 (ns risingtide.utils
-  (:use risingtide.core)
   (:require [clojure.data.json :as json]
             [risingtide
+             [core :refer :all]
              [config :as config]
              [key :as key]
              [redis :as redis]]))

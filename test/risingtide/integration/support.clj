@@ -14,11 +14,9 @@
     [brooklyn :as brooklyn]
     [pyramid :as pyramid]]))
 
-(def conn {:watchers (redis/redis {:db 2})
-           :everything-card-feed (redis/redis {:db 3})
+(def conn {:everything-card-feed (redis/redis {:db 3})
            :card-feeds-1 (redis/redis {:db 4})
            :card-feeds-2 (redis/redis {:db 5})
-           :stories (redis/redis {:db 7})
            :shard-config (redis/redis {:db 8})})
 
 (defn stories
@@ -169,11 +167,11 @@
 
 (defn truncates-feed
   [actor-id]
-  (let [feed-key (key/user-card-feed actor-id)]
+  (let [feed-key (key/user-feed actor-id)]
     (shard/with-connection-for-feed conn feed-key
       [pool]
       (redis/with-jedis* pool
-        (fn [jedis] (.del jedis (into-array String [(key/user-card-feed actor-id)])))))))
+        (fn [jedis] (.del jedis (into-array String [(key/user-feed actor-id)])))))))
 
 ;; reset
 

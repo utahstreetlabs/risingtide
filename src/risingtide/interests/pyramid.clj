@@ -1,7 +1,8 @@
 (ns risingtide.interests.pyramid
-  (:use korma.db
-        korma.core)
-  (:require [risingtide.config :as config]))
+  (:require [risingtide.config :as config]
+            [korma
+             [db :refer :all]
+             [core :refer :all]]))
 
 (ns-unmap *ns* 'pyramid)
 

@@ -1,8 +1,8 @@
 (ns risingtide.test.shard
-  (:use [risingtide
-         test shard])
-  (:use [midje.sweet])
-  (:require [risingtide.shard.config :as shard-config]))
+  (:require [risingtide.shard.config :as shard-config]
+            [risingtide
+             [test :refer :all] [shard :refer :all]]
+            [midje.sweet :refer :all]))
 
 (expose risingtide.shard/feeds-by-shard
         risingtide.shard/flatten-keys)

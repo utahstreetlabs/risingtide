@@ -12,7 +12,6 @@
                  [ring/ring-jetty-adapter "1.1.0"]
                  [enlive "1.0.0"]
                  [redis.clients/jedis "2.0.0"]
-                 [robert/bruce "0.7.1"]
                  [storm "0.8.1"]
                  [storm-test "0.2.0"]
                  [korma "0.3.0-beta11"]

@@ -1,7 +1,8 @@
 (ns risingtide.interests.brooklyn
-  (:use korma.db
-        korma.core)
-  (:require [risingtide.config :as config]))
+  (:require [risingtide.config :as config]
+            [korma
+             [db :refer :all]
+             [core :refer :all]]))
 
 ;; unmap dbs so they reload properly
 (ns-unmap *ns* 'brooklyn)

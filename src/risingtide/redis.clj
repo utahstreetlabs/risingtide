@@ -1,7 +1,8 @@
 (ns risingtide.redis
   "Generic redis utilities"
-  (:use risingtide.core)
-  (:require [risingtide.config :as config])
+  (:require [risingtide
+             [config :as config]
+             [core :refer :all]])
   (:import [redis.clients.jedis JedisPool JedisPoolConfig ZParams ZParams$Aggregate]
            java.util.Map))
 

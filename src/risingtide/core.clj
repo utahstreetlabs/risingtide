@@ -4,10 +4,6 @@
 
 (defn now [] (long (/ (.getTime (java.util.Date.)) 1000)))
 
-(defn first-char
-  [string-or-keyword]
-  (first (name string-or-keyword)))
-
 (defn safe-print-stack-trace
   [throwable]
   (try (let [w (java.io.PrintWriter. *out*)]

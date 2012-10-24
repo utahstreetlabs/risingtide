@@ -4,11 +4,7 @@
         risingtide.test)
   (:use [midje.sweet])
   (:require [risingtide
-             [stories :as story]
-             [feed :as feed]
              [shard :as shard]
-             [digest :as digest]
-             [persist :as persist]
              [key :as key]
              [config :as config]]))
 

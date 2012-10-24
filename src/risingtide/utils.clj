@@ -3,8 +3,6 @@
   (:require [clojure.data.json :as json]
             [risingtide
              [config :as config]
-             [feed :as feed]
-             [interests :as interests]
              [key :as key]
              [stories :as stories]
              [redis :as redis]]))

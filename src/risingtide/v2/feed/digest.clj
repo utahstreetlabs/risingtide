@@ -181,3 +181,43 @@ to be inserted into the feed."))
   (->DigestFeed (new-index)))
 
 
+
+
+(comment
+  ;;expiration
+  (defn expired?
+  [feed-key story]
+  (< (:score story) (expiration-threshold feed-key)))
+
+(defn filter-expired-stories-from-set
+  [feed-key s]
+  (let [s (filter #(not (expired? feed-key %)) s)]
+    (when (not (empty? s)) (into #{} s))))
+
+(defn expire-feed-index
+  [feed-key feed-index]
+  (reduce (fn [m [key value]]
+            (let [new-value (if (map? value)
+                              (when (not (expired? feed-key value)) value)
+                              (filter-expired-stories-from-set feed-key value))]
+              (if new-value (assoc m key new-value) (dissoc m key))))
+          {} feed-index))
+
+(defn expire-nodigest
+  [feed-key feed-indexes]
+  (assoc feed-indexes :nodigest (filter-expired-stories-from-set feed-key (:nodigest feed-indexes))))
+
+(defn expire-feed-indexes
+  [feed-key feed-indexes]
+  (assoc
+   (expire-nodigest
+    feed-key
+    (reduce (fn [f key] (assoc f key (expire-feed-index feed-key (f key)))) feed-indexes [:listings :actors]))
+   :min (expiration-threshold feed-key)))
+
+(defn clean-feed-index
+  [feed-key feed-index]
+  (dissoc (expire-feed-indexes feed-key feed-index) :dirty))
+
+
+  )

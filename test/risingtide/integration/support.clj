@@ -1,20 +1,18 @@
 (ns risingtide.integration.support
-  (:use risingtide.core
-        risingtide.test)
-  (:require [clojure.data.json :as json]
-            [risingtide
-             [redis :as redis]
-             [config :as config]
-             [key :as key]
-             [jobs :as jobs]
-             [persist :as persist]
-             [stories :as story]
-             [shard :as shard]
-             [digest :as digest]]
-            [risingtide.shard.config :as shard-config]
-            [risingtide.interests
-             [brooklyn :as brooklyn]
-             [pyramid :as pyramid]]))
+  (:require
+   [risingtide
+    [core :refer :all]
+    [test :refer :all]]
+   [clojure.data.json :as json]
+   [risingtide
+    [redis :as redis]
+    [config :as config]
+    [key :as key]
+    [shard :as shard]]
+   [risingtide.shard.config :as shard-config]
+   [risingtide.interests
+    [brooklyn :as brooklyn]
+    [pyramid :as pyramid]]))
 
 (def conn {:watchers (redis/redis {:db 2})
            :everything-card-feed (redis/redis {:db 3})
@@ -38,7 +36,7 @@
       [pool]
       (stories pool feed-key))))
 
-(defn stories-about-user
+#_(defn stories-about-user
   [id type]
   (map #(dissoc % :score) (stories (:stories conn)
                                    (story/actor-story-set (first-char type) id))))
@@ -89,9 +87,9 @@
 
 ;; feeds
 
-(expose persist/encode)
+#_(expose persist/encode)
 
-(defn encoded-feed
+#_(defn encoded-feed
   [& stories]
   (map json/read-json (map encode stories)))
 
@@ -106,13 +104,13 @@
 
 ;; actions
 (defn interested-in-user [actor-one-id actor-two-id]
-  (jobs/add-interest! conn :actor [actor-one-id actor-two-id]))
+  #_(jobs/add-interest! conn :actor [actor-one-id actor-two-id]))
 
 (defn interested-in-listing [actor-id listing-id]
-  (jobs/add-interest! conn :listing [actor-id listing-id]))
+  #_(jobs/add-interest! conn :listing [actor-id listing-id]))
 
 (defn removes-interest-in-listings [actor-id & listing-ids]
-  (jobs/batch-remove-user-interests! conn :listing [actor-id listing-ids]))
+  #_(jobs/batch-remove-user-interests! conn :listing [actor-id listing-ids]))
 
 (defn creates-brooklyn-follow [follower-id followee-id]
   (brooklyn/create-follow follower-id followee-id))
@@ -131,7 +129,7 @@
   [name action]
   `(defn ~name
      ([actor-id# listing-id# args#]
-        (jobs/add-story! conn (merge args# (~action actor-id# listing-id#))))
+        #_(jobs/add-story! conn (merge args# (~action actor-id# listing-id#))))
      ([actor-id# listing-id#] (~name actor-id# listing-id# {}))))
 
 (listing-action-helper activates listing-activated)
@@ -142,23 +140,23 @@
 
 (defn likes-tag
   [actor-id tag-id]
-  (jobs/add-story! conn (tag-liked actor-id tag-id)))
+  #_(jobs/add-story! conn (tag-liked actor-id tag-id)))
 
 (defn joins
   [actor-id]
-  (jobs/add-story! conn (user-joined actor-id)))
+  #_(jobs/add-story! conn (user-joined actor-id)))
 
 (defn follows
   [actor-id followee-id]
-  (jobs/add-story! conn (user-followed actor-id followee-id)))
+  #_(jobs/add-story! conn (user-followed actor-id followee-id)))
 
 (defn invites
   [actor-id invitee-profile-id]
-  (jobs/add-story! conn (user-invited actor-id invitee-profile-id)))
+  #_(jobs/add-story! conn (user-invited actor-id invitee-profile-id)))
 
 (defn piles-on
   [actor-id invitee-profile-id]
-  (jobs/add-story! conn (user-piled-on actor-id invitee-profile-id)))
+  #_(jobs/add-story! conn (user-piled-on actor-id invitee-profile-id)))
 
 (defn activates-many-listings
   [actor-id ids]
@@ -167,7 +165,7 @@
 
 (defn builds-feeds
   [actor-id]
-  (jobs/build-feeds! conn [actor-id]))
+  #_(jobs/build-feeds! conn [actor-id]))
 
 (defn truncates-feed
   [actor-id]
@@ -191,7 +189,7 @@
 
 (defn clear-digest-cache!
   []
-  (digest/reset-cache!))
+  #_(digest/reset-cache!))
 
 (defn clear-migrations!
   []
@@ -225,7 +223,7 @@ usable in backgrounds yet.
   (let [[subject action & args] statement]
     (cons action (cons subject args))))
 
-(def write! digest/write-cache!)
+#_(def write! digest/write-cache!)
 
 (defmacro on-copious
   "convenience macro for specifying user-action-subject actions like:
@@ -239,5 +237,5 @@ usable in backgrounds yet.
   [& statements]
   `(with-increasing-seconds-timeline
      ~@(map swap-subject-action statements)
-     (write! conn)))
+     #_(write! conn)))
 

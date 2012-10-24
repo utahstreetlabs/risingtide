@@ -3,12 +3,11 @@
    [clojure.data.json :as json]
    [risingtide
     [core :refer [now]]
-    [shard :as shard]
     [redis :as redis]
-    [config :as config]]
-   [risingtide
+    [config :as config]
     [story :as story]
-    [feed :as feed]]))
+    [feed :as feed]]
+   [risingtide.feed.persist.shard :as shard]))
 
 (defn- max-feed-size
   [feed]

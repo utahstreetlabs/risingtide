@@ -1,15 +1,14 @@
 (ns risingtide.integration.support
   (:require
-   [risingtide
-    [core :refer :all]
-    [test :refer :all]]
    [clojure.data.json :as json]
    [risingtide
+    [core :refer :all]
+    [test :refer :all]
     [redis :as redis]
     [config :as config]
-    [key :as key]
-    [shard :as shard]]
-   [risingtide.shard.config :as shard-config]
+    [key :as key]]
+   [risingtide.feed.persist.shard :as shard]
+   [risingtide.feed.persist.shard.config :as shard-config]
    [risingtide.interests
     [brooklyn :as brooklyn]
     [pyramid :as pyramid]]))

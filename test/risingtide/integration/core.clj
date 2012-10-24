@@ -3,10 +3,10 @@
    [risingtide.integration.support :refer :all]
    [risingtide
     [core :refer :all]
-    [shard :as shard]
     [key :as key]
     [config :as config]
     [test :refer :all]]
+   [risingtide.feed.persist [shard :as shard]]
    [midje.sweet :refer :all]))
 
 (comment

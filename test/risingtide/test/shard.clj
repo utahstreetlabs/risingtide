@@ -1,11 +1,12 @@
 (ns risingtide.test.shard
-  (:require [risingtide.shard.config :as shard-config]
-            [risingtide
-             [test :refer :all] [shard :refer :all]]
+  (:require [risingtide
+             [test :refer :all]]
+            [risingtide.feed.persist.shard.config :as shard-config]
+            [risingtide.feed.persist.shard :refer :all]
             [midje.sweet :refer :all]))
 
-(expose risingtide.shard/feeds-by-shard
-        risingtide.shard/flatten-keys)
+(expose risingtide.feed.persist.shard/feeds-by-shard
+        risingtide.feed.persist.shard/flatten-keys)
 
 (fact
   (flatten-keys {:a 1 :b {:c 2 :d 3}} "-") => {:a 1 :b-c 2 :b-d 3})

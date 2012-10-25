@@ -8,6 +8,7 @@
             [risingtide.interests
              [brooklyn :as follows]
              [pyramid :as likes]]
+            [risingtide.feed.persist :refer [encode-feed]]
             [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]]))
 
 (defbolt add-to-feed ["feed"] {:prepare true}
@@ -30,3 +31,10 @@
                   (swap! feed #(add % story))
                   (emit-bolt! collector [(seq @feed)]))
                 (ack! collector tuple))))))
+
+(defn serialize [{id "id" feed "feed"} collector]
+  (emit-bolt! collector [id (with-out-str (print (encode-feed feed)))]))
+
+(defbolt serialize-feed ["id" "feed"] [tuple collector]
+  (serialize tuple collector)
+  (ack! collector tuple))

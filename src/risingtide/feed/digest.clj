@@ -162,24 +162,22 @@ to be inserted into the feed."))
 
 ;;;; Digest Feed Implementation ;;;;
 
+(defn new-index [] {})
 
-(deftype DigestFeed [story-index]
+(deftype DigestFeed [idx]
   Feed
   (add [this story]
     (DigestFeed. (-> story
-                     (index story-index)
+                     (index (or idx (new-index)))
                      (update-timestamps story))))
-  (min-timestamp [feed] (min-ts story-index))
-  (max-timestamp [feed] (max-ts story-index))
+  (min-timestamp [feed] (min-ts idx))
+  (max-timestamp [feed] (max-ts idx))
   clojure.lang.Seqable
-  (seq [this] (feed-from-index story-index)))
-
-(defn new-index [] {})
+  (seq [this] (feed-from-index (or idx (new-index)))))
 
 (defn new-digest-feed
   []
   (->DigestFeed (new-index)))
-
 
 
 

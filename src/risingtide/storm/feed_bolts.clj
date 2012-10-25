@@ -9,7 +9,7 @@
              [pyramid :as likes]]
             [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]]))
 
-(defbolt add-to-feed [] {:prepare true}
+(defbolt add-to-feed ["feed"] {:prepare true}
   [conf context collector]
   (let [feed-set (atom {})]
     (bolt
@@ -19,7 +19,7 @@
                 (emit-bolt! collector [(seq (@feed-set user-id))])
                 (ack! collector tuple))))))
 
-(defbolt add-to-curated-feed [] {:prepare true}
+(defbolt add-to-curated-feed ["feed"] {:prepare true}
   [conf context collector]
   (let [feed (atom (new-digest-feed))]
     (bolt

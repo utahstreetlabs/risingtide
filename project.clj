@@ -16,11 +16,13 @@
                  [storm-test "0.2.0"]
                  [korma "0.3.0-beta11"]
                  [mysql/mysql-connector-java "5.1.20"]]
-
+  :java-source-paths ["java-src"]
   :profiles {:dev {:dependencies [[midje "1.4.0"]]}}
 
   :run-aliases {:convert-redis-keys-from-staging-to-dev! risingtide.utils/run-convert-redis-keys-from-staging-to-dev!}
 
   :main risingtide
   :min-lein-version "2.0.0"
-  :plugins [[lein-midje "2.0.0-SNAPSHOT"]])
+  :plugins [[lein-midje "2.0.0-SNAPSHOT"]]
+  :aot [risingtide.story
+        risingtide.feed.digest])

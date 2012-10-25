@@ -32,9 +32,9 @@
 
 (defn add-interests!
   [redii type [user-ids object-id]]
-  (bench (str "add interest in "type" "object-id" to "(count user-ids)" users ")
-         (doall
-          (pmap #(interests/add! redii % type object-id) user-ids))))
+  (bench (str "IGNORING add interest in "type" "object-id" to "(count user-ids)" users ")
+         #_(doall
+            (pmap #(interests/add! redii % type object-id) user-ids))))
 
 (defn remove-interest!
   [redii type [user-id object-id]]

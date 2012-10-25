@@ -3,7 +3,7 @@
    [midje.sweet :refer :all]
    [backtype.storm [testing :refer
                     [with-local-cluster with-simulated-time-local-cluster ms= complete-topology read-tuples]]]
-   [risingtide.story :refer [->ListingLikedStory ->ListingCommentedStory ->ListingActivatedStory]]
+   [risingtide.model.story :refer [->ListingLikedStory ->ListingCommentedStory ->ListingActivatedStory]]
    [risingtide.storm.core :refer [feed-generation-topology]]))
 
 (with-local-cluster [cluster]
@@ -14,6 +14,16 @@
                                    )]
     (fact
       (read-tuples results "records") =>
-      [[#risingtide.story.ListingLikedStory{:actor-id 1, :listing-id 2, :tag-ids [1 2], :feed ()}]])))
+      [[#risingtide.model.story.ListingLikedStory{:actor-id 1, :listing-id 2, :tag-ids [1 2], :feed ()}]])))
+
+
+
+
+
+
+
+
+
+
 
 

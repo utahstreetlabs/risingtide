@@ -1,6 +1,6 @@
 (ns risingtide.storm.build-feed
-  (:require [risingtide.story :refer [->ListingLikedStory]]
-   [risingtide.storm
+  (:require [risingtide.model.story :refer [->ListingLikedStory]]
+            [risingtide.storm
              [story-spout :refer [resque-spout]]
              [record-bolt :refer [record-bolt]]
              [active-user-bolt :refer [active-user-bolt]]

@@ -60,5 +60,4 @@
 
 (def max-card-feed-size 500)
 (def initial-feed-size 1000)
-(def single-actor-digest-story-min 15)
 (def default-card-shard "1")

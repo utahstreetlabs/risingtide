@@ -12,7 +12,7 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 import java.util.Map;
-import risingtide.feed.digest.DigestFeed;
+import risingtide.model.feed.digest.DigestFeed;
 
 public class FeedBuilder extends BaseBatchBolt {
     BatchOutputCollector _collector;

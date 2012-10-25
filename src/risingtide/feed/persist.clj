@@ -4,7 +4,8 @@
    [risingtide
     [core :refer [now]]
     [redis :as redis]
-    [config :as config]
+    [config :as config]]
+   [risingtide.model
     [story :as story]
     [feed :as feed]]
    [risingtide.feed.persist.shard :as shard]))

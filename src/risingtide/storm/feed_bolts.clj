@@ -1,8 +1,9 @@
 (ns risingtide.storm.feed-bolts
-  (:require [risingtide
+  (:require [risingtide.model
              [feed :refer [add]]]
+            [risingtide.model.feed
+             [digest :refer [new-digest-feed]]]
             [risingtide.feed
-             [digest :refer [new-digest-feed]]
              [filters :refer [for-everything-feed?]]]
             [risingtide.interests
              [brooklyn :as follows]

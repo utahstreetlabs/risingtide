@@ -36,20 +36,16 @@ public class FeedBuilder extends BaseBatchBolt {
 
     @Override
     public void execute(Tuple tuple) {
-        System.out.println("EXECUTING TUPLE");
-        System.out.println(tuple.toString());
-        System.out.println(tuple.getValueByField(_field));
-        System.out.println("EXECUTED TUPLE");
+        // write this every time, should always be the same
         _userId = tuple.getStringByField(_userIdField);
-        _feed = (DigestFeed)_feed.add(tuple.getValueByField(_field));
+        Object story = tuple.getValueByField(_field);
+        if (story != null) {
+            _feed = (DigestFeed)_feed.add(story);
+        }
     }
 
     @Override
     public void finishBatch() {
-        System.out.println("FINISHING!");
-        System.out.println(_userId);
-        System.out.println(_feed);
-        System.out.println(_feed.idx);
         _collector.emit(new Values(_id, _userId, _feed));
     }
 

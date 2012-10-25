@@ -31,16 +31,11 @@ public class Concatter extends BaseBatchBolt {
 
     @Override
     public void execute(Tuple tuple) {
-        System.out.println("EXECUTING TUPLE");
-        System.out.println(tuple.toString());
-
         _strings.append(tuple.getValueByField(_field).toString());
     }
 
     @Override
     public void finishBatch() {
-        System.out.println("FINISHING!");
-        System.out.println(_strings.toString());
         _collector.emit(new Values(_id, _strings.toString()));
     }
 
@@ -48,12 +43,4 @@ public class Concatter extends BaseBatchBolt {
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("id", "string"));
     }
-
-    // @Override
-    // public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
-    //     //        _collector = collector;
-    // }
-    // @Override
-    // public void cleanup() {
-    // }
 }

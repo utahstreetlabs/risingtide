@@ -5,8 +5,7 @@
             [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]]))
 
 (defn like-score [user-id story]
-  1
-  #_(if (likes/likes? user-id (:listing-id story)) 1 0))
+  (if (likes/likes? user-id (:listing-id story)) 1 0))
 
 (defbolt like-interest-scorer ["id" "user-id" "story" "score" "type"]  [tuple collector]
   (let [{id "id" user-id "user-id" story "story"} tuple]

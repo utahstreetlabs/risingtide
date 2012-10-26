@@ -4,7 +4,8 @@
    [risingtide
     [core :refer [now]]
     [redis :as redis]
-    [config :as config]
+    [config :as config]]
+   [risingtide.model
     [story :as story]
     [feed :as feed]]
    [risingtide.feed.persist.shard :as shard]))
@@ -36,11 +37,18 @@
 
 ;;; encoding stories for redis
 
+(defn encoded-hash [story]
+  (translate-keys (assoc story :type (story/type-sym story))
+                                 short-key))
+
 (defn encode
   "given a story, encode it into a short-key json format suitable for memory efficient storage in redis"
   [story]
-  (json/json-str (translate-keys (assoc story :type (story/type-sym story))
-                                 short-key)))
+  (json/json-str (encoded-hash)))
+
+(defn encode-feed
+  [feed]
+  (json/json-str (map encoded-hash (seq feed))))
 
 ;;; decoding stories from redis
 

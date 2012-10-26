@@ -1,15 +1,17 @@
 (ns risingtide.storm.feed-bolts
-  (:require [risingtide
+  (:require [risingtide.model
              [feed :refer [add]]]
+            [risingtide.model.feed
+             [digest :refer [new-digest-feed]]]
             [risingtide.feed
-             [digest :refer [new-digest-feed]]
              [filters :refer [for-everything-feed?]]]
             [risingtide.interests
              [brooklyn :as follows]
              [pyramid :as likes]]
+            [risingtide.feed.persist :refer [encode-feed]]
             [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]]))
 
-(defbolt add-to-feed [] {:prepare true}
+(defbolt add-to-feed ["feed"] {:prepare true}
   [conf context collector]
   (let [feed-set (atom {})]
     (bolt
@@ -19,7 +21,7 @@
                 (emit-bolt! collector [(seq (@feed-set user-id))])
                 (ack! collector tuple))))))
 
-(defbolt add-to-curated-feed [] {:prepare true}
+(defbolt add-to-curated-feed ["feed"] {:prepare true}
   [conf context collector]
   (let [feed (atom (new-digest-feed))]
     (bolt
@@ -29,3 +31,10 @@
                   (swap! feed #(add % story))
                   (emit-bolt! collector [(seq @feed)]))
                 (ack! collector tuple))))))
+
+(defn serialize [{id "id" feed "feed"} collector]
+  (emit-bolt! collector [id (with-out-str (print (encode-feed feed)))]))
+
+(defbolt serialize-feed ["id" "feed"] [tuple collector]
+  (serialize tuple collector)
+  (ack! collector tuple))

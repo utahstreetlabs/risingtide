@@ -6,9 +6,9 @@
 (defn active-users []
   [47])
 
-(defbolt active-user-bolt ["user-id" "story"] [tuple collector]
-  (let [{story "story"} tuple]
+(defbolt active-user-bolt ["id" "user-id" "story"] [tuple collector]
+  (let [{id "id" story "story"} tuple]
     (when (for-user-feed? story)
      (doseq [user-id (active-users)]
-       (emit-bolt! collector [user-id story]))))
+       (emit-bolt! collector [id user-id story]))))
   (ack! collector tuple))

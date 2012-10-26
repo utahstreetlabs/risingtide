@@ -28,8 +28,6 @@
 (defn spouts [drpc]
   (drpc/topology-spouts drpc "build-feed" "drpc-feed-build-requests"))
 
-(def feed-builder-bolt-name "drpc-feed-builder")
-
 (defn bolts []
   (drpc/topology-bolts
    "drpc-feed-build-requests"
@@ -45,11 +43,11 @@
                              interest-reducer
                              :p 5]
 
-    feed-builder-bolt-name  [{["drpc-interest-reducer" "story"] ["id" "user-id"]}
+    "drpc-feed-builder"  [{["drpc-interest-reducer" "story"] ["id" "user-id"]}
                              (BatchBoltExecutor. (FeedBuilder. "story" "user-id"))
                              :p 1]
 
-    "drpc-serialize-feed" [{feed-builder-bolt-name ["id" "user-id"]}
+    "drpc-serialize-feed" [{"drpc-feed-builder" ["id" "user-id"]}
                            serialize-feed
                            :p 1]
 
@@ -57,7 +55,7 @@
    ["drpc-serialize-feed" "feed"]))
 
 (defn feed-build-topology [drpc]
-  (topology (spouts drpc) (bolts)) )
+  (topology (spouts drpc) (bolts)))
 
 (comment
   (def c (LocalCluster.))

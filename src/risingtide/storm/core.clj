@@ -39,7 +39,8 @@
                                    interest-reducer
                                    :p 5)
 
-     "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]}
+     "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]
+                               "drpc-interest-reducer" ["user-id"]}
                               add-to-feed
                               :p 20)}
     (feed-building/bolts))))

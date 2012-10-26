@@ -7,7 +7,8 @@
     [config :as config]]
    [risingtide.model
     [story :as story]
-    [feed :as feed]]
+    [feed :as feed]
+    [timestamps :refer [timestamp min-timestamp max-timestamp]]]
    [risingtide.feed.persist.shard :as shard]))
 
 (defn- max-feed-size
@@ -85,7 +86,7 @@
 (defn- add-stories-to-jedis
   [jedis feed-key stories]
   (doseq [story stories]
-    (.zadd jedis feed-key (double (story/score story)) (encode story))))
+    (.zadd jedis feed-key (double (timestamp story)) (encode story))))
 
 (defn replace-feed-head!
   [conn feed-key stories low-score high-score]
@@ -101,4 +102,4 @@
    (when (not (empty? stories))
      (shard/with-connection-for-feed redii feed-key
        [connection]
-       (replace-feed-head! connection feed-key stories (feed/min-timestamp feed) (feed/max-timestamp feed))))))
+       (replace-feed-head! connection feed-key stories (min-timestamp feed) (max-timestamp feed))))))

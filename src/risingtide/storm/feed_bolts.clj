@@ -11,15 +11,17 @@
             [risingtide.feed.persist :refer [encode-feed]]
             [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]]))
 
+(defn update-feed-set! [feed-set user-id story]
+  (swap! feed-set #(update-in % [user-id] (fn [v] (add (or v (new-digest-feed)) story)))))
+
 (defbolt add-to-feed ["feed"] {:prepare true}
   [conf context collector]
   (let [feed-set (atom {})]
     (bolt
-     (execute [tuple]
-              (let [{user-id "user-id" story "story" score "score"} tuple]
-                (swap! feed-set #(update-in % [user-id] (fn [v] (add (or v (new-digest-feed)) story))))
-                (emit-bolt! collector [(seq (@feed-set user-id))])
-                (ack! collector tuple))))))
+     (execute [{user-id "user-id" story "story" score "score" :as tuple}]
+              (update-feed-set! feed-set user-id story)
+              (emit-bolt! collector [(seq (@feed-set user-id))])
+              (ack! collector tuple)))))
 
 (defbolt add-to-curated-feed ["feed"] {:prepare true}
   [conf context collector]

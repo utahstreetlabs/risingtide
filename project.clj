@@ -16,7 +16,7 @@
                  [storm-test "0.2.0"]
                  [korma "0.3.0-beta11"]
                  [mysql/mysql-connector-java "5.1.20"]
-                 [risingtide-model "1.0.0"]]
+                 [risingtide-model "2.0.0-SNAPSHOT"]]
   :java-source-paths ["java-src"]
   :profiles {:dev {:dependencies [[midje "1.4.0"]]}}
 

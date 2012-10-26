@@ -1,7 +1,9 @@
 (ns risingtide.storm.record-bolt
   (:require
    [risingtide.core :refer [now]]
-   [risingtide.model.story :as story]
+   [risingtide.model
+    [story :as story]
+    [timestamps :refer [with-timestamp]]]
    [backtype.storm [clojure :refer [ack! defbolt emit-bolt!]]]
    [clojure.string :as str]))
 
@@ -9,7 +11,7 @@
   (into {} (map (fn [[k v]] [(keyword (str/replace (name k) "_" "-")) v]) story)))
 
 (defn story-to-record [story]
-  (story/with-score
+  (with-timestamp
    ((story/story-factory-for (keyword (:type story)))
     (-> story
         dash-case-keys

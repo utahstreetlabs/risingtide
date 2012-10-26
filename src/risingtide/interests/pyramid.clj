@@ -1,7 +1,8 @@
 (ns risingtide.interests.pyramid
-  (:use korma.db
-        korma.core)
-  (:require [risingtide.config :as config]))
+  (:require [risingtide.config :as config]
+            [korma
+             [db :refer :all]
+             [core :refer :all]]))
 
 (ns-unmap *ns* 'pyramid)
 
@@ -23,6 +24,9 @@
                (where {:user_id user-id})
                (fields :listing_id :tag_id))))
 
+(defn likes? [user-id listing-id]
+  (> (:cnt (first (select likes (fields (raw "count(*) cnt"))  (where {:user_id 47 :listing_id listing-id}))))
+     0))
 
 ;;; mutating methods - should only be used in test!!!
 

@@ -1,7 +1,8 @@
 (ns risingtide.redis
   "Generic redis utilities"
-  (:use risingtide.core)
-  (:require [risingtide.config :as config])
+  (:require [risingtide
+             [config :as config]
+             [core :refer :all]])
   (:import [redis.clients.jedis JedisPool JedisPoolConfig ZParams ZParams$Aggregate]
            java.util.Map))
 
@@ -17,7 +18,7 @@
       pool)))
 
 (defn redii [env]
-  (reduce (fn [m [k v]] (assoc m k (redis v))) {} (config/redis env)))
+  (reduce (fn [m [k v]] (assoc m k (redis v))) {} (config/redis config/env)))
 
 (defprotocol JedisConnectionPool
   (get-resource [pool])

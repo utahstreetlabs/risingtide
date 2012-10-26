@@ -1,21 +1,18 @@
 (ns risingtide.integration.core
-  (:use risingtide.core
-        risingtide.integration.support
-        risingtide.test)
-  (:use [midje.sweet])
-  (:require [risingtide
-             [stories :as story]
-             [feed :as feed]
-             [shard :as shard]
-             [digest :as digest]
-             [persist :as persist]
-             [key :as key]
-             [config :as config]]))
+  (:require
+   [risingtide.integration.support :refer :all]
+   [risingtide
+    [core :refer :all]
+    [key :as key]
+    [config :as config]
+    [test :refer :all]]
+   [risingtide.feed.persist [shard :as shard]]
+   [midje.sweet :refer :all]))
 
-(test-background
- (before :facts (clear-redis!))
- (before :facts (clear-digest-cache!))
- (before :facts (clear-migrations!)))
+(comment
+(before :facts (clear-redis!))
+(before :facts (clear-digest-cache!))
+(before :facts (clear-migrations!))
 
 (fact "initial feed builds get stories"
   (on-copious
@@ -336,3 +333,4 @@
 
   (feed-for-cutter :card) =>
   (encoded-feed (listing-liked jim nail-polish) (listing-liked jim ham)))
+)

@@ -1,4 +1,4 @@
-(ns risingtide.shard.config
+(ns risingtide.feed.persist.shard.config
  "Sharding config server"
  (:require [risingtide
             [config :as config]

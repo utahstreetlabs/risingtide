@@ -1,7 +1,8 @@
 (ns risingtide.interests.brooklyn
-  (:use korma.db
-        korma.core)
-  (:require [risingtide.config :as config]))
+  (:require [risingtide.config :as config]
+            [korma
+             [db :refer :all]
+             [core :refer :all]]))
 
 ;; unmap dbs so they reload properly
 (ns-unmap *ns* 'brooklyn)
@@ -29,6 +30,12 @@
        (select follows
                (where {:follower_id user-id})
                (fields :user_id))))
+
+(defn following? [follower-id followee-id]
+  (> (:cnt (first (select follows (fields (raw "count(*) cnt"))
+                          (where {:user_id followee-id
+                                  :follower_id follower-id}))))
+     0))
 
 ;;; mutating methods - should only be used in test!!!
 

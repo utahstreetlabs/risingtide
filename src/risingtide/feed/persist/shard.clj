@@ -1,4 +1,4 @@
-(ns risingtide.shard
+(ns risingtide.feed.persist.shard
   "Utilities for sharding
 
 Currently supports storing different feeds on different redii.
@@ -7,7 +7,7 @@ Shards are configured as different redis configs in risingtide.config/redis.
 "
   (:require [clojure.string :as str]
             [risingtide [key :as key]]
-            [risingtide.shard [config :as shard-config]]))
+            [risingtide.feed.persist.shard [config :as shard-config]]))
 
 ;;;; connection negotation ;;;;
 ;;

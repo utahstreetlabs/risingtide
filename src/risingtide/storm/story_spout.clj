@@ -1,0 +1,32 @@
+(ns risingtide.storm.story-spout
+  (:require
+   [risingtide
+    [config :as config]
+    [redis :as redis]]
+   [backtype.storm [clojure :refer [defspout spout emit-spout!]]]
+   [clojure.data.json :as json]))
+
+(defn story-from-resque [story]
+  (let [json (json/read-json story)]
+    (when (= "Stories::Create" (:class json))
+      (first (:args json)))))
+
+(defspout resque-spout ["story"]
+  [conf context collector]
+  (let [pool (redis/redis (config/redis-config))]
+   (spout
+    (nextTuple []
+     (when-let [string (let [r (.getResource pool)]
+                         (try
+                           (or
+                            (.lpop r "resque:queue:rising_tide_priority")
+                            (.lpop r "resque:queue:rising_tide_stories"))
+                           (finally (.returnResource pool r))))]
+       (when-let [story (story-from-resque string)]
+         (emit-spout! collector [story]))
+))
+    (ack [id]
+         ;; You only need to define this method for reliable spouts
+         ;; (such as one that reads off of a queue like Kestrel)
+         ;; This is an unreliable spout, so it does nothing here
+         ))))

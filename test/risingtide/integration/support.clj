@@ -1,26 +1,21 @@
 (ns risingtide.integration.support
-  (:use risingtide.core
-        risingtide.test)
-  (:require [clojure.data.json :as json]
-            [risingtide
-             [redis :as redis]
-             [config :as config]
-             [key :as key]
-             [jobs :as jobs]
-             [persist :as persist]
-             [stories :as story]
-             [shard :as shard]
-             [digest :as digest]]
-            [risingtide.shard.config :as shard-config]
-            [risingtide.interests
-             [brooklyn :as brooklyn]
-             [pyramid :as pyramid]]))
+  (:require
+   [clojure.data.json :as json]
+   [risingtide
+    [core :refer :all]
+    [test :refer :all]
+    [redis :as redis]
+    [config :as config]
+    [key :as key]]
+   [risingtide.feed.persist.shard :as shard]
+   [risingtide.feed.persist.shard.config :as shard-config]
+   [risingtide.interests
+    [brooklyn :as brooklyn]
+    [pyramid :as pyramid]]))
 
-(def conn {:watchers (redis/redis {:db 2})
-           :everything-card-feed (redis/redis {:db 3})
+(def conn {:everything-card-feed (redis/redis {:db 3})
            :card-feeds-1 (redis/redis {:db 4})
            :card-feeds-2 (redis/redis {:db 5})
-           :stories (redis/redis {:db 7})
            :shard-config (redis/redis {:db 8})})
 
 (defn stories
@@ -38,13 +33,13 @@
       [pool]
       (stories pool feed-key))))
 
-(defn stories-about-user
+#_(defn stories-about-user
   [id type]
   (map #(dissoc % :score) (stories (:stories conn)
                                    (story/actor-story-set (first-char type) id))))
 
 ;; users
-(defmacro defuser
+#_(defmacro defuser
   [n id]
   `(do
     (def ~n ~id)
@@ -55,43 +50,43 @@
       [type#]
       (stories-about-user ~id type#))))
 
-(defuser jim 1)
-(defuser jon 2)
-(defuser bcm 3)
-(defuser dave 4)
-(defuser rob 5)
-(defuser cutter 6)
-(defuser kaitlyn 7)
-(defuser courtney 8)
+;; (defuser jim 1)
+;; (defuser jon 2)
+;; (defuser bcm 3)
+;; (defuser dave 4)
+;; (defuser rob 5)
+;; (defuser cutter 6)
+;; (defuser kaitlyn 7)
+;; (defuser courtney 8)
 
 
-;; profiles
+;; ;; profiles
 
-(def mark-z :markz)
+;; (def mark-z :markz)
 
-;; listings
+;; ;; listings
 
-(def bacon 100)
-(def ham 101)
-(def eggs 102)
-(def muffins 103)
-(def breakfast-tacos 104)
-(def toast 105)
-(def scones 106)
-(def croissants 107)
-(def danishes 108)
-(def omelettes 109)
-(def nail-polish 110)
+;; (def bacon 100)
+;; (def ham 101)
+;; (def eggs 102)
+;; (def muffins 103)
+;; (def breakfast-tacos 104)
+;; (def toast 105)
+;; (def scones 106)
+;; (def croissants 107)
+;; (def danishes 108)
+;; (def omelettes 109)
+;; (def nail-polish 110)
 
-;; tags
+;; ;; tags
 
-(def breakfast 200)
+;; (def breakfast 200)
 
 ;; feeds
 
-(expose persist/encode)
+#_(expose persist/encode)
 
-(defn encoded-feed
+#_(defn encoded-feed
   [& stories]
   (map json/read-json (map encode stories)))
 
@@ -106,13 +101,13 @@
 
 ;; actions
 (defn interested-in-user [actor-one-id actor-two-id]
-  (jobs/add-interest! conn :actor [actor-one-id actor-two-id]))
+  #_(jobs/add-interest! conn :actor [actor-one-id actor-two-id]))
 
 (defn interested-in-listing [actor-id listing-id]
-  (jobs/add-interest! conn :listing [actor-id listing-id]))
+  #_(jobs/add-interest! conn :listing [actor-id listing-id]))
 
 (defn removes-interest-in-listings [actor-id & listing-ids]
-  (jobs/batch-remove-user-interests! conn :listing [actor-id listing-ids]))
+  #_(jobs/batch-remove-user-interests! conn :listing [actor-id listing-ids]))
 
 (defn creates-brooklyn-follow [follower-id followee-id]
   (brooklyn/create-follow follower-id followee-id))
@@ -131,7 +126,7 @@
   [name action]
   `(defn ~name
      ([actor-id# listing-id# args#]
-        (jobs/add-story! conn (merge args# (~action actor-id# listing-id#))))
+        #_(jobs/add-story! conn (merge args# (~action actor-id# listing-id#))))
      ([actor-id# listing-id#] (~name actor-id# listing-id# {}))))
 
 (listing-action-helper activates listing-activated)
@@ -142,23 +137,23 @@
 
 (defn likes-tag
   [actor-id tag-id]
-  (jobs/add-story! conn (tag-liked actor-id tag-id)))
+  #_(jobs/add-story! conn (tag-liked actor-id tag-id)))
 
 (defn joins
   [actor-id]
-  (jobs/add-story! conn (user-joined actor-id)))
+  #_(jobs/add-story! conn (user-joined actor-id)))
 
 (defn follows
   [actor-id followee-id]
-  (jobs/add-story! conn (user-followed actor-id followee-id)))
+  #_(jobs/add-story! conn (user-followed actor-id followee-id)))
 
 (defn invites
   [actor-id invitee-profile-id]
-  (jobs/add-story! conn (user-invited actor-id invitee-profile-id)))
+  #_(jobs/add-story! conn (user-invited actor-id invitee-profile-id)))
 
 (defn piles-on
   [actor-id invitee-profile-id]
-  (jobs/add-story! conn (user-piled-on actor-id invitee-profile-id)))
+  #_(jobs/add-story! conn (user-piled-on actor-id invitee-profile-id)))
 
 (defn activates-many-listings
   [actor-id ids]
@@ -167,31 +162,31 @@
 
 (defn builds-feeds
   [actor-id]
-  (jobs/build-feeds! conn [actor-id]))
+  #_(jobs/build-feeds! conn [actor-id]))
 
 (defn truncates-feed
   [actor-id]
-  (let [feed-key (key/user-card-feed actor-id)]
+  (let [feed-key (key/user-feed actor-id)]
     (shard/with-connection-for-feed conn feed-key
       [pool]
       (redis/with-jedis* pool
-        (fn [jedis] (.del jedis (into-array String [(key/user-card-feed actor-id)])))))))
+        (fn [jedis] (.del jedis (into-array String [(key/user-feed actor-id)])))))))
 
 ;; reset
 
 (defn clear-redis!
   []
-  (if (= env :test)
+  (if (= config/env :test)
     (doseq [redis [:everything-card-feed :shard-config :card-feeds-1 :card-feeds-2 :watchers :stories]]
       (let [keys (redis/with-jedis* (redis conn) (fn [jedis] (.keys jedis (key/format-key "*"))))]
         (when (not (empty? keys))
           (redis/with-jedis* (redis conn)
             (fn [jedis] (.del jedis (into-array String keys)))))))
-    (prn "clearing redis in" env "is a super bad idea. let's not.")))
+    (prn "clearing redis in" config/env "is a super bad idea. let's not.")))
 
 (defn clear-digest-cache!
   []
-  (digest/reset-cache!))
+  #_(digest/reset-cache!))
 
 (defn clear-migrations!
   []
@@ -225,7 +220,7 @@ usable in backgrounds yet.
   (let [[subject action & args] statement]
     (cons action (cons subject args))))
 
-(def write! digest/write-cache!)
+#_(def write! digest/write-cache!)
 
 (defmacro on-copious
   "convenience macro for specifying user-action-subject actions like:
@@ -239,5 +234,5 @@ usable in backgrounds yet.
   [& statements]
   `(with-increasing-seconds-timeline
      ~@(map swap-subject-action statements)
-     (write! conn)))
+     #_(write! conn)))
 

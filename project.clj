@@ -16,10 +16,12 @@
                  [storm-test "0.2.0"]
                  [korma "0.3.0-beta11"]
                  [mysql/mysql-connector-java "5.1.20"]
-                 [risingtide-model "2.0.0-SNAPSHOT"]]
+                 [risingtide-model "2.0.0-SNAPSHOT"]
+
+                 [org.syslog4j/syslog4j "0.9.30"]
+                 [utahstreetlabs/clojure-solr "0.3.0-SNAPSHOT"]]
   :java-source-paths ["java-src"]
   :profiles {:dev {:dependencies [[midje "1.4.0"]]}}
-
   :run-aliases {:convert-redis-keys-from-staging-to-dev! risingtide.utils/run-convert-redis-keys-from-staging-to-dev!}
 
   :main risingtide

@@ -61,3 +61,16 @@
 (def max-card-feed-size 500)
 (def initial-feed-size 1000)
 (def default-card-shard "1")
+
+(def story-bolt-syslog-config
+  {:development
+   {:host "localhost"
+    :port 50000}})
+(defn story-bolt-syslog []
+  (story-bolt-syslog-config env))
+
+(def story-solr-config
+  {:development "http://127.0.0.1:8080/solr"
+   :test "http://127.0.0.1:8080/solr"})
+(defn story-solr []
+  (story-solr-config env))

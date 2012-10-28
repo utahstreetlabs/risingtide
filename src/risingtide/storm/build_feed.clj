@@ -2,6 +2,7 @@
   (:require [risingtide.model.story :refer [->ListingLikedStory]]
             [risingtide.storm
              [story-spout :refer [resque-spout]]
+             [recent-stories-bolt :refer [recent-stories-bolt]]
              [record-bolt :refer [record-bolt]]
              [active-user-bolt :refer [active-user-bolt]]
              [interests-bolts :refer [like-interest-scorer follow-interest-scorer interest-reducer]]
@@ -31,14 +32,17 @@
 (defn bolts []
   (drpc/topology-bolts
    "drpc-feed-build-requests"
-   ["drpc-records" find-candidate-stories]
+   ["drpc-stories" recent-stories-bolt]
+   {"drpc-records" [{"drpc-stories" :shuffle} record-bolt]}
    {"drpc-likes" [{"drpc-records" :shuffle}
                   like-interest-scorer
                   :p 2]
+
     "drpc-follows" [{"drpc-records" :shuffle}
-                    follow-interest-scorer
-                    :p 2]}
-   {"drpc-interest-reducer" [{"drpc-likes" ["user-id" "story"]
+                   follow-interest-scorer
+                   :p 2]
+
+    "drpc-interest-reducer" [{"drpc-likes" ["user-id" "story"]
                               "drpc-follows" ["user-id" "story"]}
                              interest-reducer
                              :p 5]

@@ -1,6 +1,7 @@
 (ns risingtide.feed.persist
   (:require
    [clojure.data.json :as json]
+   [clojure.set :refer [map-invert rename-keys]]
    [risingtide
     [core :refer [now]]
     [redis :as redis]
@@ -30,17 +31,13 @@
    :text :tx
    :network :n})
 
-(def long-key (reduce (fn [hash [key val]] (assoc hash val key)) {} short-key))
-
-(defn- translate-keys
-  [hash translator]
-  (reduce (fn [h [key val]] (let [s (translator key)] (if s (assoc h s val) h))) {} hash))
+(def long-key (map-invert short-key))
 
 ;;; encoding stories for redis
 
 (defn encoded-hash [story]
-  (translate-keys (assoc story :type (story/type-sym story))
-                                 short-key))
+  (rename-keys (assoc story :type (story/type-sym story))
+               short-key))
 
 (defn encode
   "given a story, encode it into a short-key json format suitable for memory efficient storage in redis"
@@ -74,7 +71,7 @@
 (defn decode
   "given a short-key json encoded story, decode into a long keyed hash"
   [string]
-  (let [story (translate-keys (json/read-json string) long-key)]
+  (let [story (rename-keys (json/read-json string) long-key)]
     (-> ((story/story-factory-for (keyword (:type story))) story)
         (dissoc :type)
         (convert-to-kw-set :feed :actions)

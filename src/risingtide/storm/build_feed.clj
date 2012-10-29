@@ -13,19 +13,6 @@
            [backtype.storm.coordination BatchBoltExecutor]
            [risingtide FeedBuilder]))
 
-(defn find-cands [tuple collector]
-  ;; the second value in the tuple coming off a drpc spout will be the
-  ;; argument passed by the client
-  (let [user-id (.getString tuple 1)]
-    ;; the first value in the tuple coming off a drpc spout will be
-    ;; the request id
-    (emit-bolt! collector [(.getValue tuple 0) user-id (->ListingLikedStory 2 23 [3 4] nil)])
-    (emit-bolt! collector [(.getValue tuple 0) user-id (->ListingLikedStory 3 23 [3 4] nil)])))
-
-(defbolt find-candidate-stories ["id" "user-id" "story"] [tuple collector]
-  (find-cands tuple collector)
-  (ack! collector tuple))
-
 (defn spouts [drpc]
   (drpc/topology-spouts drpc "build-feed" "drpc-feed-build-requests"))
 

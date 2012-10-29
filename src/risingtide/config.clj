@@ -65,6 +65,9 @@
 (def story-bolt-syslog-config
   {:development
    {:host "localhost"
+    :port 50000}
+   :test
+   {:host "localhost"
     :port 50000}})
 (defn story-bolt-syslog []
   (story-bolt-syslog-config env))

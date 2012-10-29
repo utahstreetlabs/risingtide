@@ -103,22 +103,3 @@
      {:type :tag_liked :actor_id actor-id :tag_id tag-id :timestamp timestamp})
   ([actor-id tag-id] (tag-liked actor-id tag-id (now))))
 
-(defn user-joined
-  ([actor-id timestamp]
-     {:type :user_joined :actor_id actor-id :timestamp timestamp})
-  ([actor-id] (user-joined actor-id (now))))
-
-(defn user-followed
-  ([actor-id followee-id timestamp]
-     {:type :user_followed :actor_id actor-id :followee_id followee-id :timestamp timestamp})
-  ([actor-id followee-id] (user-followed actor-id followee-id (now))))
-
-(defn user-invited
-  ([actor-id invitee-profile-id timestamp]
-     {:type :user_invited :actor_id actor-id :invitee_profile_id invitee-profile-id :timestamp timestamp})
-  ([actor-id invitee-profile-id] (user-followed actor-id invitee-profile-id (now))))
-
-(defn user-piled-on
-  ([actor-id invitee-profile-id timestamp]
-     {:type :user_piled_on :actor_id actor-id :invitee_profile_id invitee-profile-id :timestamp timestamp})
-  ([actor-id invitee-profile-id] (user-followed actor-id invitee-profile-id (now))))

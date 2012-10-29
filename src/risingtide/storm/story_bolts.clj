@@ -8,8 +8,7 @@
 
 (defn prepare-story [story]
   (assoc story
-    :timestamp (now)
-    :id (or (:id story) (str (java.util.UUID/randomUUID)))))
+    :timestamp (now)))
 
 (defbolt prepare-story-bolt ["story"] [{story "story" :as tuple} collector]
   (emit-bolt! collector [(prepare-story story)])

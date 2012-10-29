@@ -126,7 +126,7 @@
   [name action]
   `(defn ~name
      ([actor-id# listing-id# args#]
-        #_(jobs/add-story! conn (merge args# (~action actor-id# listing-id#))))
+        (merge args# (~action actor-id# listing-id#)))
      ([actor-id# listing-id#] (~name actor-id# listing-id# {}))))
 
 (listing-action-helper activates listing-activated)
@@ -137,23 +137,7 @@
 
 (defn likes-tag
   [actor-id tag-id]
-  #_(jobs/add-story! conn (tag-liked actor-id tag-id)))
-
-(defn joins
-  [actor-id]
-  #_(jobs/add-story! conn (user-joined actor-id)))
-
-(defn follows
-  [actor-id followee-id]
-  #_(jobs/add-story! conn (user-followed actor-id followee-id)))
-
-(defn invites
-  [actor-id invitee-profile-id]
-  #_(jobs/add-story! conn (user-invited actor-id invitee-profile-id)))
-
-(defn piles-on
-  [actor-id invitee-profile-id]
-  #_(jobs/add-story! conn (user-piled-on actor-id invitee-profile-id)))
+  (tag-liked actor-id tag-id))
 
 (defn activates-many-listings
   [actor-id ids]
@@ -220,8 +204,6 @@ usable in backgrounds yet.
   (let [[subject action & args] statement]
     (cons action (cons subject args))))
 
-#_(def write! digest/write-cache!)
-
 (defmacro on-copious
   "convenience macro for specifying user-action-subject actions like:
 
@@ -233,6 +215,4 @@ usable in backgrounds yet.
 "
   [& statements]
   `(with-increasing-seconds-timeline
-     ~@(map swap-subject-action statements)
-     #_(write! conn)))
-
+     [~@(map swap-subject-action statements)]))

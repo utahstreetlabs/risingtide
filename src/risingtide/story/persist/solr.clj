@@ -27,9 +27,16 @@
   (dissoc story :interests  :_version_))
 
 (defn encode [story]
-  (add-interests (rename-keys story to-solr-keys)))
+  (-> story
+      (rename-keys to-solr-keys)
+      add-interests
+      (assoc :id (or (:id story) (str (java.util.UUID/randomUUID))))))
 
 (defn decode [doc]
+  (-> doc
+      keywordize-keys
+      (rename-keys from-solr-keys)
+      (dissoc :interests :_version_ :id))
   (strip-interests (rename-keys (keywordize-keys doc) from-solr-keys)))
 
 (defn connection []

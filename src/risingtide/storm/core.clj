@@ -1,8 +1,8 @@
 (ns risingtide.storm.core
   (:require [risingtide.storm
-             [story-spout :refer [resque-spout]]
-             [record-bolt :refer [record-bolt]]
-             [story-bolts :refer [prepare-story-bolt]]
+             [action-spout :refer [resque-spout]]
+             [story-bolts :refer [create-story-bolt]]
+             [action-bolts :refer [prepare-action-bolt save-action-bolt]]
              [active-user-bolt :refer [active-user-bolt]]
              [interests-bolts :refer [like-interest-scorer follow-interest-scorer interest-reducer]]
              [feed-bolts :refer [add-to-feed add-to-curated-feed]]
@@ -12,14 +12,17 @@
 
 (defn feed-generation-topology [drpc]
   (topology
-   (merge {"stories" (spout-spec resque-spout)} (feed-building/spouts drpc))
+   (merge {"actions" (spout-spec resque-spout)} (feed-building/spouts drpc))
 
    (merge
-    {"prepare-stories" (bolt-spec {"stories" :shuffle}
-                                  prepare-story-bolt)
+    {"prepare-actions" (bolt-spec {"actions" :shuffle}
+                                  prepare-action-bolt)
 
-     "records" (bolt-spec {"prepare-stories" :shuffle}
-                          record-bolt)
+     "save-actions" (bolt-spec {"actions" :shuffle}
+                               save-action-bolt)
+
+     "records" (bolt-spec {"prepare-actions" :shuffle}
+                          create-story-bolt)
 
      ;; everything feed
      "curated-feed" (bolt-spec {"records" :global}

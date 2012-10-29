@@ -12,7 +12,9 @@
    :text :comment
    :feed :feed_ss
    :buyer_id :buyer_id_i
-   :network :network_s})
+   :network :network_s
+   :type :type_s
+   :timestamp :timestamp_i})
 
 (def from-solr-keys (map-invert to-solr-keys))
 

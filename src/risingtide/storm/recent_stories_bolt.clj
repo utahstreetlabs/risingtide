@@ -12,7 +12,7 @@
    :actors (map :user-id (user-follows user-id))
    :listings (map :user-id (user-likes user-id))))
 
-(defbolt recent-stories-bolt ["id" "user-id" "story"] {:prepare true}
+(defbolt recent-stories-bolt ["id" "user-id" "action"] {:prepare true}
   [conf context collector]
   (let [solr-conn (solr/connection)]
     (bolt

@@ -1,9 +1,9 @@
 (ns risingtide.storm.build-feed
   (:require [risingtide.model.story :refer [->ListingLikedStory]]
             [risingtide.storm
-             [story-spout :refer [resque-spout]]
+             [action-spout :refer [resque-spout]]
              [recent-stories-bolt :refer [recent-stories-bolt]]
-             [record-bolt :refer [record-bolt]]
+             [story-bolts :refer [create-story-bolt]]
              [active-user-bolt :refer [active-user-bolt]]
              [interests-bolts :refer [like-interest-scorer follow-interest-scorer interest-reducer]]
              [feed-bolts :refer [serialize-feed]]
@@ -33,7 +33,7 @@
   (drpc/topology-bolts
    "drpc-feed-build-requests"
    ["drpc-stories" recent-stories-bolt]
-   {"drpc-records" [{"drpc-stories" :shuffle} record-bolt]}
+   {"drpc-records" [{"drpc-stories" :shuffle} create-story-bolt]}
    {"drpc-likes" [{"drpc-records" :shuffle}
                   like-interest-scorer
                   :p 2]

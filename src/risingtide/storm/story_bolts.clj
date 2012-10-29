@@ -1,28 +1,25 @@
 (ns risingtide.storm.story-bolts
-  (:require [risingtide
-             [core :refer [now]]
-             [config :as config]]
-            [risingtide.story.persist.solr :as solr]
-            [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]])
-  (:import org.productivity.java.syslog4j.Syslog))
+  (:require
+   [risingtide.core :refer [now]]
+   [risingtide.model
+    [story :as story]
+    [timestamps :refer [with-timestamp]]]
+   [backtype.storm [clojure :refer [ack! defbolt emit-bolt!]]]
+   [clojure.string :as str]))
 
-(defn prepare-story [story]
-  (assoc story
-    :timestamp (now)))
+(defn dash-case-keys [story]
+  (into {} (map (fn [[k v]] [(keyword (str/replace (name k) "_" "-")) v]) story)))
 
-(defbolt prepare-story-bolt ["story"] [{story "story" :as tuple} collector]
-  (emit-bolt! collector [(prepare-story story)])
+(defn action-to-story [story]
+  (with-timestamp
+   ((story/story-factory-for (keyword (:type story)))
+    (-> story
+        dash-case-keys
+        (dissoc :type :timestamp)
+        (assoc :feed (map keyword (:feed story)))))
+   (or (:timestamp story) (now))))
+
+(defbolt create-story-bolt ["id" "story"] [{id "id" action "action" :as tuple} collector]
+  (emit-bolt! collector [id (action-to-story action)])
   (ack! collector tuple))
-
-(defbolt write-story ["feed"] {:prepare true}
-  [conf context collector]
-  (let [syslog (doto (Syslog/getInstance "tcp")
-                 (-> (.getConfig) (.setHost (:host (config/story-bolt-syslog))))
-                 (-> (.getConfig) (.setPort (:port (config/story-bolt-syslog)))))
-        solr-conn (solr/connection)]
-    (bolt
-     (execute [{story "story" :as tuple}]
-              (.info syslog story)
-              (solr/save! solr-conn story)
-              (ack! collector tuple)))))
 

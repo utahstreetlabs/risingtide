@@ -17,7 +17,7 @@
   (with-local-cluster [cluster]
     (complete-topology cluster
                        (feed-generation-topology drpc)
-                       :mock-sources {"stories" (map vector actions)
+                       :mock-sources {"actions" (map vector actions)
                                       "drpc-feed-build-requests" feed-build-requests})))
 
 (def actions

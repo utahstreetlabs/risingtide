@@ -50,38 +50,6 @@
       [type#]
       (stories-about-user ~id type#))))
 
-;; (defuser jim 1)
-;; (defuser jon 2)
-;; (defuser bcm 3)
-;; (defuser dave 4)
-;; (defuser rob 5)
-;; (defuser cutter 6)
-;; (defuser kaitlyn 7)
-;; (defuser courtney 8)
-
-
-;; ;; profiles
-
-;; (def mark-z :markz)
-
-;; ;; listings
-
-;; (def bacon 100)
-;; (def ham 101)
-;; (def eggs 102)
-;; (def muffins 103)
-;; (def breakfast-tacos 104)
-;; (def toast 105)
-;; (def scones 106)
-;; (def croissants 107)
-;; (def danishes 108)
-;; (def omelettes 109)
-;; (def nail-polish 110)
-
-;; ;; tags
-
-;; (def breakfast 200)
-
 ;; feeds
 
 #_(expose persist/encode)
@@ -100,16 +68,8 @@
 (def empty-feed [])
 
 ;; actions
-(defn interested-in-user [actor-one-id actor-two-id]
-  #_(jobs/add-interest! conn :actor [actor-one-id actor-two-id]))
 
-(defn interested-in-listing [actor-id listing-id]
-  #_(jobs/add-interest! conn :listing [actor-id listing-id]))
-
-(defn removes-interest-in-listings [actor-id & listing-ids]
-  #_(jobs/batch-remove-user-interests! conn :listing [actor-id listing-ids]))
-
-(defn creates-brooklyn-follow [follower-id followee-id]
+(defn creates-user-follow [follower-id followee-id]
   (brooklyn/create-follow follower-id followee-id))
 
 (defn creates-listing-like [liker-id listing-id]
@@ -121,28 +81,6 @@
 (defn clear-mysql-dbs! []
   (brooklyn/clear-tables!)
   (pyramid/clear-tables!))
-
-(defmacro listing-action-helper
-  [name action]
-  `(defn ~name
-     ([actor-id# listing-id# args#]
-        (merge args# (~action actor-id# listing-id#)))
-     ([actor-id# listing-id#] (~name actor-id# listing-id# {}))))
-
-(listing-action-helper activates listing-activated)
-(listing-action-helper likes listing-liked)
-(listing-action-helper shares listing-shared)
-(listing-action-helper sells listing-sold)
-(listing-action-helper comments-on listing-commented)
-
-(defn likes-tag
-  [actor-id tag-id]
-  (tag-liked actor-id tag-id))
-
-(defn activates-many-listings
-  [actor-id ids]
-  (doseq [id ids]
-    (activates actor-id id)))
 
 (defn builds-feeds
   [actor-id]

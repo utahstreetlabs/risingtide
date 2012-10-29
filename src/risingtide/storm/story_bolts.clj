@@ -16,7 +16,7 @@
     (-> story
         dash-case-keys
         (dissoc :type :timestamp)
-        (assoc :feed (map keyword (:feed story)))))
+        (assoc :feed (when (:feed story) (map keyword (:feed story))))))
    (or (:timestamp story) (now))))
 
 (defbolt create-story-bolt ["id" "story"] [{id "id" action "action" :as tuple} collector]

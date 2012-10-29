@@ -25,7 +25,7 @@
                (fields :listing_id :tag_id))))
 
 (defn likes? [user-id listing-id]
-  (> (:cnt (first (select likes (fields (raw "count(*) cnt"))  (where {:user_id 47 :listing_id listing-id}))))
+  (> (:cnt (first (select likes (fields (raw "count(*) cnt"))  (where {:user_id user-id :listing_id listing-id}))))
      0))
 
 ;;; mutating methods - should only be used in test!!!

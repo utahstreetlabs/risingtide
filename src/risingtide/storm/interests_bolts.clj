@@ -12,7 +12,6 @@
     (emit-bolt! collector [id user-id story (like-score user-id story) :like]))
   (ack! collector tuple))
 
-
 (defn follow-score [user-id story]
   (if (follows/following? user-id (:actor-id story)) 1 0))
 

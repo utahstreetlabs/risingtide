@@ -14,24 +14,24 @@
 (defn update-feed-set! [feed-set user-id story]
   (swap! feed-set #(update-in % [user-id] (fn [v] (add (or v (new-digest-feed)) story)))))
 
-(defbolt add-to-feed ["feed"] {:prepare true}
+(defbolt add-to-feed ["id" "feed"] {:prepare true}
   [conf context collector]
   (let [feed-set (atom {})]
     (bolt
-     (execute [{user-id "user-id" story "story" score "score" :as tuple}]
+     (execute [{id "id" user-id "user-id" story "story" score "score" :as tuple}]
               (update-feed-set! feed-set user-id story)
-              (emit-bolt! collector [(seq (@feed-set user-id))])
+              (emit-bolt! collector [id (seq (@feed-set user-id))])
               (ack! collector tuple)))))
 
-(defbolt add-to-curated-feed ["feed"] {:prepare true}
+(defbolt add-to-curated-feed ["id" "feed"] {:prepare true}
   [conf context collector]
   (let [feed (atom (new-digest-feed))]
     (bolt
      (execute [tuple]
-              (let [{story "story"} tuple]
+              (let [{id "id" story "story"} tuple]
                 (when (for-everything-feed? story)
                   (swap! feed #(add % story))
-                  (emit-bolt! collector [(seq @feed)]))
+                  (emit-bolt! collector [id (seq @feed)]))
                 (ack! collector tuple))))))
 
 (defn serialize [{id "id" feed "feed"} collector]

@@ -21,17 +21,17 @@
      "save-actions" (bolt-spec {"actions" :shuffle}
                                save-action-bolt)
 
-     "records" (bolt-spec {"prepare-actions" :shuffle}
+     "stories" (bolt-spec {"prepare-actions" :shuffle}
                           create-story-bolt)
 
      ;; everything feed
-     "curated-feed" (bolt-spec {"records" :global}
+     "curated-feed" (bolt-spec {"stories" :global}
                                add-to-curated-feed
                                :p 1)
 
      ;; user feeds
 
-     "active-users" (bolt-spec {"records" :shuffle}
+     "active-users" (bolt-spec {"stories" :shuffle}
                                active-user-bolt
                                :p 1)
 

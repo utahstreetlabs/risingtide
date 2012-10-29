@@ -13,7 +13,6 @@
                  [enlive "1.0.0"]
                  [redis.clients/jedis "2.0.0"]
                  [storm "0.8.1"]
-                 [storm-test "0.2.0"]
                  [korma "0.3.0-beta11"]
                  [mysql/mysql-connector-java "5.1.20"]
                  [risingtide-model "2.0.0-SNAPSHOT"]

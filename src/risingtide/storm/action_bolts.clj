@@ -15,15 +15,16 @@
   (emit-bolt! collector [(prepare-action action)])
   (ack! collector tuple))
 
-(defbolt save-action-bolt ["feed"] {:prepare true}
+(defbolt save-action-bolt ["id" "action"] {:prepare true}
   [conf context collector]
   (let [syslog (doto (Syslog/getInstance "tcp")
                  (-> (.getConfig) (.setHost (:host (config/story-bolt-syslog))))
                  (-> (.getConfig) (.setPort (:port (config/story-bolt-syslog)))))
         solr-conn (solr/connection)]
     (bolt
-     (execute [{action "action" :as tuple}]
+     (execute [{id "id" action "action" :as tuple}]
               (.info syslog (json/json-str action))
               (solr/save! solr-conn action)
+              (emit-bolt! collector [id action])
               (ack! collector tuple)))))
 

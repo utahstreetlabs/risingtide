@@ -108,7 +108,7 @@
 
       (run-topology :feed-builds [[(str rob) (json/json-str {:id "12345" :host (.getServiceId drpc) :port 0})]])
 
-      (map last (bolt-output "drpc-stories")) =>
+      (map last (bolt-output "drpc-actions")) =>
       (contains
        (map #(dissoc % :feed)
             (filter #(or (= (:actor_id %) cutter) (= (:listing_id %) toast))

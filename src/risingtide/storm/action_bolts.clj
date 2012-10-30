@@ -3,12 +3,12 @@
             [risingtide
              [core :refer [now]]
              [config :as config]]
-            [risingtide.story.persist.solr :as solr]
+            [risingtide.action.persist.solr :as solr]
             [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]])
   (:import org.productivity.java.syslog4j.Syslog))
 
-(defn prepare-action [story]
-  (assoc story
+(defn prepare-action [action]
+  (assoc action
     :timestamp (now)))
 
 (defbolt prepare-action-bolt ["action"] [{action "action" :as tuple} collector]
@@ -18,8 +18,8 @@
 (defbolt save-action-bolt ["id" "action"] {:prepare true}
   [conf context collector]
   (let [syslog (doto (Syslog/getInstance "tcp")
-                 (-> (.getConfig) (.setHost (:host (config/story-bolt-syslog))))
-                 (-> (.getConfig) (.setPort (:port (config/story-bolt-syslog)))))
+                 (-> (.getConfig) (.setHost (:host (config/action-bolt-syslog))))
+                 (-> (.getConfig) (.setPort (:port (config/action-bolt-syslog)))))
         solr-conn (solr/connection)]
     (bolt
      (execute [{id "id" action "action" :as tuple}]

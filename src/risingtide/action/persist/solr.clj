@@ -1,4 +1,4 @@
-(ns risingtide.story.persist.solr
+(ns risingtide.action.persist.solr
   (:require
    [clojure
     [set :refer [map-invert rename-keys]]
@@ -20,20 +20,20 @@
 
 (def from-solr-keys (map-invert to-solr-keys))
 
-(defn interests [story]
-  [(str "a_"(:actor_id story)) (str "l_"(:listing_id story))])
+(defn interests [action]
+  [(str "a_"(:actor_id action)) (str "l_"(:listing_id action))])
 
-(defn add-interests [story]
-  (assoc story :interests
-         (interests story)))
+(defn add-interests [action]
+  (assoc action :interests
+         (interests action)))
 
-(defn strip-interests [story]
-  (dissoc story :interests  :_version_))
+(defn strip-interests [action]
+  (dissoc action :interests  :_version_))
 
-(defn encode [story]
-  (-> story
-      (assoc :id (or (:id story) (str (java.util.UUID/randomUUID)))
-             :type (name (:type story)))
+(defn encode [action]
+  (-> action
+      (assoc :id (or (:id action) (str (java.util.UUID/randomUUID)))
+             :type (name (:type action)))
       (rename-keys to-solr-keys)
       add-interests))
 
@@ -45,12 +45,12 @@
       (keywordize :type)))
 
 (defn connection []
-  (solr/connect (config/story-solr)))
+  (solr/connect (config/action-solr)))
 
-(defn save! [connection story]
+(defn save! [connection action]
   (solr/with-connection connection
     (solr/add-document!
-     (encode story))
+     (encode action))
     (solr/commit!)))
 
 
@@ -62,14 +62,14 @@
   (solr/with-connection connection
     (map decode (solr/search (apply interests-string interests) :df "interests"))))
 
-(defn delete-stories! [connection]
+(defn delete-actions! [connection]
  (solr/with-connection connection
    (solr/delete-query!  "*:*")
    (solr/commit!)))
 
 (comment
   (save! (connection) {:id 1 :actor_id 6 :listing_id 2 :tag_ids [1 2] :type :listing_activated :timestamp 4})
-  (delete-stories! (connection))
+  (delete-actions! (connection))
   (search-interests (connection))
 
 

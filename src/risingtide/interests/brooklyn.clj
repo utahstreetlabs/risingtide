@@ -33,6 +33,16 @@
                                   :follower_id follower-id}))))
      0))
 
+(defn follow-counts [followee-id follower-ids]
+  (dissoc
+   (->> (select follows (fields :follower_id (raw "count(*) cnt"))
+                (where {:user_id followee-id
+                        :follower_id [in follower-ids]}))
+        (map (fn [{cnt :cnt follower-id :follower_id}] [follower-id cnt]))
+        (into {})
+        (merge (reduce #(assoc %1 %2 0) {} follower-ids)))
+   nil))
+
 ;;; mutating methods - should only be used in test!!!
 
 (defn create-user [user-id]

@@ -78,11 +78,11 @@
        [nil nil cutter-liked-breakfast-tacos]]
 
       (bolt-output "active-users") =>
-      [[nil rob jim-activated-bacon]
-       [nil rob jim-liked-ham]
-       [nil rob jim-liked-toast]
-       [nil rob jim-shared-toast]
-       [nil rob cutter-liked-breakfast-tacos]]
+      [[nil [rob] jim-activated-bacon]
+       [nil [rob] jim-liked-ham]
+       [nil [rob] jim-liked-toast]
+       [nil [rob] jim-shared-toast]
+       [nil [rob] cutter-liked-breakfast-tacos]]
 
       (bolt-output "interest-reducer") =>
       (contains [[nil rob jim-liked-toast 1]

@@ -58,10 +58,6 @@
 (defn brooklyn [] (brooklyn-db env))
 (defn pyramid [] (pyramid-db env))
 
-(def max-card-feed-size 500)
-(def initial-feed-size 1000)
-(def default-card-shard "1")
-
 (def action-bolt-syslog-config
   {:development
    {:host "localhost"
@@ -77,3 +73,12 @@
    :test "http://127.0.0.1:8080/solr"})
 (defn action-solr []
   (action-solr-config env))
+
+(def max-card-feed-size 500)
+(def initial-feed-size 1000)
+(def default-card-shard "1")
+
+
+;;; storm topology config ;;;
+
+(def active-user-bolt-batch-size 500)

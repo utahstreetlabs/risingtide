@@ -11,7 +11,7 @@
    :actors (map :user_id (user-follows user-id))
    :listings (filter identity (map :listing_id (user-likes user-id)))))
 
-(defbolt recent-actions-bolt ["id" "user-id" "action"] {:prepare true}
+(defbolt recent-actions-bolt ["id" "user-ids" "action"] {:prepare true}
   [conf context collector]
   (let [solr-conn (solr/connection)]
     (bolt
@@ -21,9 +21,9 @@
               ;; the second value in the tuple coming off a drpc spout will be the
               ;; argument passed by the client
               (let [request-id (.getValue tuple 0)
-                    user-id (.getString tuple 1)]
+                    user-id (Integer/parseInt (.getString tuple 1))]
                (doseq [action (find-actions solr-conn user-id)]
-                 (emit-bolt! collector [request-id user-id action])))
+                 (emit-bolt! collector [request-id [user-id] action])))
               (ack! collector tuple)))))
 
 

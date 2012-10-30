@@ -1,9 +1,12 @@
 (ns risingtide.integration.storm
   (:require
    [clojure.data.json :as json]
-   [risingtide.storm.core :refer [feed-generation-topology]]
-   [risingtide.storm.active-user-bolt :refer [active-users-atom]]
+   [risingtide.config :as config]
+   [risingtide.storm
+    [core :refer [feed-generation-topology]]
+    [active-user-bolt :refer [active-users-atom]]]
    [risingtide.model.feed.digest :refer [new-digest-feed]]
+
    [risingtide.test]
    [risingtide.test.support
     [entities :refer :all]
@@ -57,7 +60,6 @@
                (jim likes toast)
                (jim shares toast)
                (cutter likes breakfast-tacos))]
-
 
   (against-background
     [(before :contents

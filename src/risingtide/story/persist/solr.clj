@@ -4,7 +4,9 @@
     [set :refer [map-invert rename-keys]]
     [string :as str]
     [walk :refer [keywordize-keys]]]
-   [risingtide [config :as config]]
+   [risingtide
+    [config :as config]
+    [persist :refer [keywordize convert-to-kw-set convert-to-set]]]
    [clojure-solr :as solr]))
 
 (def to-solr-keys
@@ -30,16 +32,17 @@
 
 (defn encode [story]
   (-> story
+      (assoc :id (or (:id story) (str (java.util.UUID/randomUUID)))
+             :type (name (:type story)))
       (rename-keys to-solr-keys)
-      add-interests
-      (assoc :id (or (:id story) (str (java.util.UUID/randomUUID))))))
+      add-interests))
 
 (defn decode [doc]
   (-> doc
       keywordize-keys
       (rename-keys from-solr-keys)
-      (dissoc :interests :_version_ :id))
-  (strip-interests (rename-keys (keywordize-keys doc) from-solr-keys)))
+      (dissoc :interests :_version_ :id)
+      (keywordize :type)))
 
 (defn connection []
   (solr/connect (config/story-solr)))
@@ -59,7 +62,16 @@
   (solr/with-connection connection
     (map decode (solr/search (apply interests-string interests) :df "interests"))))
 
+(defn delete-stories! [connection]
+ (solr/with-connection connection
+   (solr/delete-query!  "*:*")
+   (solr/commit!)))
+
 (comment
-  (save! (connection) {:id 1 :actor_id 1 :listing_id 2 :tag_ids [1 2]})
-  (search-interests (connection) :actors [1])
+  (save! (connection) {:id 1 :actor_id 6 :listing_id 2 :tag_ids [1 2] :type :listing_activated :timestamp 4})
+  (delete-stories! (connection))
+  (search-interests (connection))
+
+
+
   )

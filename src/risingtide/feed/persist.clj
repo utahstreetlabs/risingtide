@@ -5,7 +5,8 @@
    [risingtide
     [core :refer [now]]
     [redis :as redis]
-    [config :as config]]
+    [config :as config]
+    [persist :refer [keywordize convert-to-kw-set convert-to-set]]]
    [risingtide.model
     [story :as story]
     [feed :as feed]
@@ -47,26 +48,6 @@
 (defn encode-feed
   [feed]
   (json/json-str (map encoded-hash (seq feed))))
-
-;;; decoding stories from redis
-
-(defn- convert [story value-converter & keys]
-  (reduce (fn [story key] (if (get story key)
-                           (assoc story key (value-converter (get story key)))
-                           story))
-          story keys))
-
-(defn- convert-to-set-with-converter [story value-converter & keys]
-  (apply convert story #(set (map value-converter %)) keys))
-
-(defn- convert-to-kw-set [story & keys]
-  (apply convert-to-set-with-converter story keyword keys))
-
-(defn- convert-to-set [story & keys]
-  (apply convert-to-set-with-converter story identity keys))
-
-(defn- keywordize [story & keys]
-  (apply convert story keyword keys))
 
 (defn decode
   "given a short-key json encoded story, decode into a long keyed hash"

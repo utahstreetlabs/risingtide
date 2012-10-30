@@ -1,5 +1,6 @@
 (ns risingtide.integration.storm
   (:require
+   [clojure.data.json :as json]
    [risingtide.storm.core :refer [feed-generation-topology]]
    [risingtide.storm.active-user-bolt :refer [active-users-atom]]
    [risingtide.model.feed.digest :refer [new-digest-feed]]
@@ -62,17 +63,19 @@
               :likes {rob toast}
               :active-users [rob])
 
-             :after (clear-mysql-dbs!))]
+             :after (do
+                      (clear-mysql-dbs!)
+                      (clear-action-solr!)))]
 
     (facts "about a basic topology"
       (run-topology :actions actions)
 
       (bolt-output "stories") =>
-      [[nil jim-activated-bacon]
-       [nil jim-liked-ham]
-       [nil jim-liked-toast]
-       [nil jim-shared-toast]
-       [nil cutter-liked-breakfast-tacos]]
+      [[nil nil jim-activated-bacon]
+       [nil nil jim-liked-ham]
+       [nil nil jim-liked-toast]
+       [nil nil jim-shared-toast]
+       [nil nil cutter-liked-breakfast-tacos]]
 
       (bolt-output "active-users") =>
       [[nil rob jim-activated-bacon]
@@ -98,11 +101,19 @@
                                             jim-shared-toast cutter-liked-breakfast-tacos))]])
 
       (map second (bolt-output "save-actions")) =>
-      actions)))
+      actions
 
 
+      ;;;; test feed building ;;;;
 
+      (run-topology :feed-builds [[(str rob) (json/json-str {:id "12345" :host (.getServiceId drpc) :port 0})]])
 
+      (map last (bolt-output "drpc-stories")) =>
+      (contains
+       (map #(dissoc % :feed)
+            (filter #(or (= (:actor_id %) cutter) (= (:listing_id %) toast))
+                    actions))
+       :in-any-order)
 
-
-
+      (seq (last (last (bolt-output "drpc-feed-builder")))) =>
+      (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos)))))

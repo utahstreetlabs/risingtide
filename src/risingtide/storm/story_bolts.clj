@@ -15,11 +15,10 @@
    ((story/story-factory-for (keyword (:type story)))
     (-> story
         dash-case-keys
-        (dissoc :type :timestamp)
-        (assoc :feed (when (:feed story) (map keyword (:feed story))))))
+        (dissoc :type :timestamp)))
    (or (:timestamp story) (now))))
 
-(defbolt create-story-bolt ["id" "story"] [{id "id" action "action" :as tuple} collector]
-  (emit-bolt! collector [id (action-to-story action)])
+(defbolt create-story-bolt ["id" "user-id" "story"] [{id "id" user-id "user-id" action "action" :as tuple} collector]
+  (emit-bolt! collector [id user-id (action-to-story action)])
   (ack! collector tuple))
 

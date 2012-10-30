@@ -9,6 +9,7 @@
     [key :as key]]
    [risingtide.feed.persist.shard :as shard]
    [risingtide.feed.persist.shard.config :as shard-config]
+   [risingtide.story.persist.solr :as solr]
    [risingtide.interests
     [brooklyn :as brooklyn]
     [pyramid :as pyramid]]))
@@ -81,6 +82,9 @@
 (defn clear-mysql-dbs! []
   (brooklyn/clear-tables!)
   (pyramid/clear-tables!))
+
+(defn clear-action-solr! []
+  (solr/delete-stories! (solr/connection)))
 
 (defn builds-feeds
   [actor-id]

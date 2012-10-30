@@ -7,10 +7,17 @@
             [backtype.storm [clojure :refer [defbolt bolt emit-bolt! ack!]]]))
 
 (defn- find-stories [solr-conn user-id]
+  (prn "FINDING FOR" user-id
+       "HI"(map :user_id (user-follows user-id))
+       "THERE"(filter identity (map :listing_id (user-likes user-id)))
+         (solr/search-interests
+   solr-conn
+   :actors (map :user_id (user-follows user-id))
+   :listings (filter identity (map :listing_id (user-likes user-id)))))
   (solr/search-interests
    solr-conn
-   :actors (map :user-id (user-follows user-id))
-   :listings (map :user-id (user-likes user-id))))
+   :actors (map :user_id (user-follows user-id))
+   :listings (filter identity (map :listing_id (user-likes user-id)))))
 
 (defbolt recent-stories-bolt ["id" "user-id" "action"] {:prepare true}
   [conf context collector]
@@ -21,7 +28,7 @@
               ;; the request id
               ;; the second value in the tuple coming off a drpc spout will be the
               ;; argument passed by the client
-              (let [request-id (.getString tuple 0)
+              (let [request-id (.getValue tuple 0)
                     user-id (.getString tuple 1)]
                (doseq [story (find-stories solr-conn user-id)]
                  (emit-bolt! collector [request-id user-id story])))

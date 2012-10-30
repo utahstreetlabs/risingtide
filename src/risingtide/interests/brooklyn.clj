@@ -22,14 +22,10 @@
   (table :users)
   (database brooklyn))
 
-(defn follow-to-actor-interest [follow]
-  (str "a:" (:user_id follow)))
-
 (defn user-follows [user-id]
-  (map follow-to-actor-interest
-       (select follows
-               (where {:follower_id user-id})
-               (fields :user_id))))
+  (select follows
+          (where {:follower_id user-id})
+          (fields :user_id)))
 
 (defn following? [follower-id followee-id]
   (> (:cnt (first (select follows (fields (raw "count(*) cnt"))

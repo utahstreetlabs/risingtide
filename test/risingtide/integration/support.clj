@@ -79,6 +79,9 @@
 (defn is-a-user [user-id]
   (brooklyn/create-user user-id))
 
+(defn is-a-listing [listing-id seller-id]
+  (brooklyn/create-listing listing-id seller-id))
+
 (defn clear-mysql-dbs! []
   (brooklyn/clear-tables!)
   (pyramid/clear-tables!))

@@ -1,6 +1,6 @@
 (ns risingtide.storm.interests-bolts
   (:require [risingtide.interests
-             [brooklyn :as follows]
+             [brooklyn :as brooklyn]
              [pyramid :as likes]]
             [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]]))
 
@@ -14,12 +14,21 @@
   (ack! collector tuple))
 
 (defn follow-scores [user-ids story]
-  (follows/follow-counts (:actor-id story) user-ids))
+  (brooklyn/follow-counts (:actor-id story) user-ids))
 
 (defbolt follow-interest-scorer ["id" "user-id" "story" "score" "type"]
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
   (doseq [[user-id score] (follow-scores user-ids story)]
     (emit-bolt! collector [id user-id story score :follow]))
+  (ack! collector tuple))
+
+(defn seller-follow-scores [user-ids story]
+  (brooklyn/follow-counts (:seller_id (brooklyn/find-listing (:listing-id story))) user-ids))
+
+(defbolt seller-follow-interest-scorer ["id" "user-id" "story" "score" "type"]
+  [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
+  (doseq [[user-id score] (seller-follow-scores user-ids story)]
+    (emit-bolt! collector [id user-id story score :listing-seller]))
   (ack! collector tuple))
 
 (defn sum-scores [scores]
@@ -30,12 +39,12 @@
   [conf context collector]
   (let [scores (atom {})]
     (bolt
-     (execute [{id "id" user-id "user-id" story "story" type "type" score "score" :as  tuple}]
+     (execute [{id "id" user-id "user-id" story "story" type "type" score "score" :as tuple}]
               (swap! scores #(assoc-in % [[user-id story] type] score))
               (let [story-scores (get @scores [user-id story])
                     scored-types (set (keys story-scores))
                     total-score (sum-scores story-scores)]
-                (when  (= scored-types #{:follow :like})
+                (when (= scored-types #{:follow :like :listing-seller})
                   (if (>= total-score 1)
                     (do
                       (emit-bolt! collector [id user-id story total-score])

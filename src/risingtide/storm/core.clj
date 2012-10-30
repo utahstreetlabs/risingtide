@@ -4,7 +4,8 @@
              [story-bolts :refer [create-story-bolt]]
              [action-bolts :refer [prepare-action-bolt save-action-bolt]]
              [active-user-bolt :refer [active-user-bolt]]
-             [interests-bolts :refer [like-interest-scorer follow-interest-scorer interest-reducer]]
+             [interests-bolts :refer [like-interest-scorer follow-interest-scorer
+                                      seller-follow-interest-scorer interest-reducer]]
              [feed-bolts :refer [add-to-feed add-to-curated-feed]]
              [build-feed :as feed-building]]
             [backtype.storm [clojure :refer [topology spout-spec bolt-spec]] [config :refer [TOPOLOGY-DEBUG]]])
@@ -41,9 +42,13 @@
      "follows" (bolt-spec {"active-users" :shuffle}
                           follow-interest-scorer
                           :p 2)
+     "seller-follows" (bolt-spec {"active-users" :shuffle}
+                                 seller-follow-interest-scorer
+                                 :p 2)
 
      "interest-reducer" (bolt-spec {"likes" ["user-id" "story"]
-                                    "follows" ["user-id" "story"]}
+                                    "follows" ["user-id" "story"]
+                                    "seller-follows" ["user-id" "story"]}
                                    interest-reducer
                                    :p 5)
 

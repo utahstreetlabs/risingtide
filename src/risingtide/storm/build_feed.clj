@@ -5,7 +5,8 @@
              [recent-actions-bolt :refer [recent-actions-bolt]]
              [story-bolts :refer [create-story-bolt]]
              [active-user-bolt :refer [active-user-bolt]]
-             [interests-bolts :refer [like-interest-scorer follow-interest-scorer interest-reducer]]
+             [interests-bolts :refer [like-interest-scorer follow-interest-scorer
+                                      seller-follow-interest-scorer interest-reducer]]
              [feed-bolts :refer [serialize-feed]]
              [drpc :as drpc]]
             [backtype.storm [clojure :refer [defbolt bolt emit-bolt! ack! topology]] [config :refer [TOPOLOGY-DEBUG]]])
@@ -26,13 +27,16 @@
    {"drpc-likes" [{"drpc-stories" :shuffle}
                   like-interest-scorer
                   :p 2]
-
     "drpc-follows" [{"drpc-stories" :shuffle}
                    follow-interest-scorer
                    :p 2]
+    "drpc-seller-follows" [{"drpc-stories" :shuffle}
+                           seller-follow-interest-scorer
+                           :p 2]
 
     "drpc-interest-reducer" [{"drpc-likes" ["user-id" "story"]
-                              "drpc-follows" ["user-id" "story"]}
+                              "drpc-follows" ["user-id" "story"]
+                              "drpc-seller-follows" ["user-id" "story"]}
                              interest-reducer
                              :p 5]
 

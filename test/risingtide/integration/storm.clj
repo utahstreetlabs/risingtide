@@ -39,10 +39,12 @@
 (defn bolt-output [name]
   (read-tuples @topology-results name))
 
-(defn copious-background [& {follows :follows likes :likes active-users :active-users}]
-  (let [users (distinct (concat (keys follows) (vals follows) (keys likes)))]
+(defn copious-background [& {follows :follows likes :likes listings :listings active-users :active-users}]
+  (let [users (distinct (concat (keys follows) (vals follows) (keys likes) (keys listings)))]
     (doseq [user users]
       (is-a-user user))
+    (doseq [[seller-id listing-id] listings]
+      (is-a-listing listing-id seller-id))
     (doseq [[follower followee] follows]
       (creates-user-follow follower followee))
     (doseq [[liker listing] likes]
@@ -56,11 +58,15 @@
                (jim shares toast)
                (cutter likes breakfast-tacos))]
 
+
   (against-background
     [(before :contents
              (copious-background
-              :follows {rob cutter}
-              :likes {rob toast}
+              :follows {rob cutter
+                        jon cutter}
+              :likes {rob toast
+                      jon toast}
+              :listings {cutter ham}
               :active-users [rob])
 
              :after (do
@@ -87,14 +93,15 @@
       (bolt-output "interest-reducer") =>
       (contains [[nil rob jim-liked-toast 1]
                  [nil rob jim-shared-toast 1]
-                 [nil rob cutter-liked-breakfast-tacos 1]]
+                 [nil rob cutter-liked-breakfast-tacos 1]
+                 [nil rob jim-liked-ham 1]]
                 :in-any-order)
 
       ;; we can't know fthe order in which stories are added, but we do
       ;; know that at least one of the tuples in the feed output should
       ;; be the completed feed
       (bolt-output "add-to-feed") =>
-      (contains [[nil (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos))]])
+      (contains [[nil (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham))]])
 
       (bolt-output "curated-feed") =>
       (contains [[nil (seq (new-digest-feed jim-activated-bacon jim-liked-ham jim-liked-toast
@@ -106,14 +113,16 @@
 
       ;;;; test feed building ;;;;
 
-      (run-topology :feed-builds [[(str rob) (json/json-str {:id "12345" :host (.getServiceId drpc) :port 0})]])
+      (run-topology :feed-builds [[(str jon) (json/json-str {:id "12345" :host (.getServiceId drpc) :port 0})]])
 
       (map last (bolt-output "drpc-actions")) =>
       (contains
        (map #(dissoc % :feed)
-            (filter #(or (= (:actor_id %) cutter) (= (:listing_id %) toast))
+            (filter #(or (= (:actor_id %) cutter) (= (:listing_id %) toast)
+                         ;; because cutter's the seller of ham and we follow him
+                         (= (:listing_id %) ham))
                     actions))
        :in-any-order)
 
       (seq (last (last (bolt-output "drpc-feed-builder")))) =>
-      (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos)))))
+      (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham)))))

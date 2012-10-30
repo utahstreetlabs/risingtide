@@ -22,6 +22,10 @@
   (table :users)
   (database brooklyn))
 
+(defentity listings
+  (table :listings)
+  (database brooklyn))
+
 (defn user-follows [user-id]
   (select follows
           (where {:follower_id user-id})
@@ -43,16 +47,29 @@
         (merge (reduce #(assoc %1 %2 0) {} follower-ids)))
    nil))
 
+(defn find-listing [listing-id]
+  (first (select listings
+                 (where {:id listing-id}))))
+
+(defn listings-for-sale [seller-ids]
+  (select listings
+          (where {:seller_id [in seller-ids]})))
+
 ;;; mutating methods - should only be used in test!!!
 
 (defn create-user [user-id]
   (insert people (values {:id user-id}))
   (insert users (values {:id user-id :person_id user-id})))
 
+(defn create-listing [listing-id seller-id]
+  (insert listings (values {:id listing-id :seller_id seller-id :slug (str listing-id) :pricing_version 0})))
+
 (defn create-follow [follower-id followee-id]
   (insert follows (values {:user_id followee-id :follower_id follower-id})))
 
 (defn clear-tables! []
   (delete follows)
+  (delete listings)
   (delete users)
   (delete people))
+

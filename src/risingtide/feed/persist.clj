@@ -52,7 +52,7 @@
 
 (defn decode-actions [actions]
   (if (map? actions)
-    actions
+    (into {} (map (fn [[k v]] [k (set v)]) actions))
     (set (map keyword actions))))
 
 (defn decode

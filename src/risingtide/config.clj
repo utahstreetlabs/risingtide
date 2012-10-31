@@ -61,3 +61,19 @@
 (def max-card-feed-size 500)
 (def initial-feed-size 1000)
 (def default-card-shard "1")
+
+(def action-bolt-syslog-config
+  {:development
+   {:host "localhost"
+    :port 50000}
+   :test
+   {:host "localhost"
+    :port 50000}})
+(defn action-bolt-syslog []
+  (action-bolt-syslog-config env))
+
+(def action-solr-config
+  {:development "http://127.0.0.1:8080/solr"
+   :test "http://127.0.0.1:8080/solr"})
+(defn action-solr []
+  (action-solr-config env))

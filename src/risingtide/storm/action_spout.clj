@@ -1,4 +1,4 @@
-(ns risingtide.storm.story-spout
+(ns risingtide.storm.action-spout
   (:require
    [risingtide
     [config :as config]
@@ -6,12 +6,12 @@
    [backtype.storm [clojure :refer [defspout spout emit-spout!]]]
    [clojure.data.json :as json]))
 
-(defn story-from-resque [story]
-  (let [json (json/read-json story)]
+(defn action-from-resque [action]
+  (let [json (json/read-json action)]
     (when (= "Stories::Create" (:class json))
       (first (:args json)))))
 
-(defspout resque-spout ["story"]
+(defspout resque-spout ["action"]
   [conf context collector]
   (let [pool (redis/redis (config/redis-config))]
    (spout
@@ -22,8 +22,8 @@
                             (.lpop r "resque:queue:rising_tide_priority")
                             (.lpop r "resque:queue:rising_tide_stories"))
                            (finally (.returnResource pool r))))]
-       (when-let [story (story-from-resque string)]
-         (emit-spout! collector [story]))
+       (when-let [action (action-from-resque string)]
+         (emit-spout! collector [action]))
 ))
     (ack [id]
          ;; You only need to define this method for reliable spouts

@@ -12,7 +12,6 @@
     (emit-bolt! collector [id user-id story (like-score user-id story) :like]))
   (ack! collector tuple))
 
-
 (defn follow-score [user-id story]
   (if (follows/following? user-id (:actor-id story)) 1 0))
 
@@ -39,8 +38,7 @@
                   (when  (= scored-types #{:follow :like})
                     (if (>= total-score 1)
                       (do
-                        (prn "YEAYEA")
-                       (emit-bolt! collector [id user-id story total-score])
+                         (emit-bolt! collector [id user-id story total-score])
                        (emit-bolt! collector [id user-id story] :stream "story")
                        (swap! scores #(dissoc % [user-id story])))
                       (emit-bolt! collector [id user-id nil] :stream "story")))))

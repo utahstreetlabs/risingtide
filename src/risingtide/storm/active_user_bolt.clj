@@ -3,12 +3,14 @@
              [filters :refer [for-user-feed?]]]
             [backtype.storm [clojure :refer [emit-bolt! defbolt ack!]]]))
 
-(defn active-users []
-  [47])
+(def active-users-atom (atom []))
 
-(defbolt active-user-bolt ["id" "user-id" "story"] [tuple collector]
-  (let [{id "id" story "story"} tuple]
-    (when (for-user-feed? story)
-     (doseq [user-id (active-users)]
-       (emit-bolt! collector [id user-id story]))))
+(defn active-users []
+  @active-users-atom)
+
+
+(defbolt active-user-bolt ["id" "user-id" "story"] [{id "id" story "story" :as tuple} collector]
+  (when (for-user-feed? story)
+    (doseq [user-id (active-users)]
+      (emit-bolt! collector [id user-id story])))
   (ack! collector tuple))

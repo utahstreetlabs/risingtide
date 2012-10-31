@@ -1,7 +1,8 @@
 (ns risingtide.storm.core
   (:require [risingtide.storm
-             [story-spout :refer [resque-spout]]
-             [record-bolt :refer [record-bolt]]
+             [action-spout :refer [resque-spout]]
+             [story-bolts :refer [create-story-bolt]]
+             [action-bolts :refer [prepare-action-bolt save-action-bolt]]
              [active-user-bolt :refer [active-user-bolt]]
              [interests-bolts :refer [like-interest-scorer follow-interest-scorer interest-reducer]]
              [feed-bolts :refer [add-to-feed add-to-curated-feed]]
@@ -11,19 +12,26 @@
 
 (defn feed-generation-topology [drpc]
   (topology
-   (merge {"stories" (spout-spec resque-spout)} (feed-building/spouts drpc))
+   (merge {"actions" (spout-spec resque-spout)} (feed-building/spouts drpc))
 
    (merge
-    {"records" (bolt-spec {"stories" :shuffle}
-                          record-bolt)
+    {"prepare-actions" (bolt-spec {"actions" :shuffle}
+                                  prepare-action-bolt)
+
+     "save-actions" (bolt-spec {"actions" :shuffle}
+                               save-action-bolt)
+
+     "stories" (bolt-spec {"prepare-actions" :shuffle}
+                          create-story-bolt)
+
      ;; everything feed
-     "curated-feed" (bolt-spec {"records" :global}
+     "curated-feed" (bolt-spec {"stories" :global}
                                add-to-curated-feed
                                :p 1)
 
      ;; user feeds
 
-     "active-users" (bolt-spec {"records" :shuffle}
+     "active-users" (bolt-spec {"stories" :shuffle}
                                active-user-bolt
                                :p 1)
 
@@ -39,7 +47,8 @@
                                    interest-reducer
                                    :p 5)
 
-     "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]}
+     "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]
+                               "drpc-interest-reducer" ["user-id"]}
                               add-to-feed
                               :p 20)}
     (feed-building/bolts))))

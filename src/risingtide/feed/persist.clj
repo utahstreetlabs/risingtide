@@ -1,13 +1,16 @@
 (ns risingtide.feed.persist
   (:require
    [clojure.data.json :as json]
+   [clojure.set :refer [map-invert rename-keys]]
    [risingtide
     [core :refer [now]]
     [redis :as redis]
-    [config :as config]]
+    [config :as config]
+    [persist :refer [keywordize convert-to-kw-set convert-to-set]]]
    [risingtide.model
     [story :as story]
-    [feed :as feed]]
+    [feed :as feed]
+    [timestamps :refer [timestamp min-timestamp max-timestamp]]]
    [risingtide.feed.persist.shard :as shard]))
 
 (defn- max-feed-size
@@ -29,17 +32,13 @@
    :text :tx
    :network :n})
 
-(def long-key (reduce (fn [hash [key val]] (assoc hash val key)) {} short-key))
-
-(defn- translate-keys
-  [hash translator]
-  (reduce (fn [h [key val]] (let [s (translator key)] (if s (assoc h s val) h))) {} hash))
+(def long-key (map-invert short-key))
 
 ;;; encoding stories for redis
 
 (defn encoded-hash [story]
-  (translate-keys (assoc story :type (story/type-sym story))
-                                 short-key))
+  (rename-keys (assoc story :type (story/type-sym story))
+               short-key))
 
 (defn encode
   "given a story, encode it into a short-key json format suitable for memory efficient storage in redis"
@@ -50,30 +49,10 @@
   [feed]
   (json/json-str (map encoded-hash (seq feed))))
 
-;;; decoding stories from redis
-
-(defn- convert [story value-converter & keys]
-  (reduce (fn [story key] (if (get story key)
-                           (assoc story key (value-converter (get story key)))
-                           story))
-          story keys))
-
-(defn- convert-to-set-with-converter [story value-converter & keys]
-  (apply convert story #(set (map value-converter %)) keys))
-
-(defn- convert-to-kw-set [story & keys]
-  (apply convert-to-set-with-converter story keyword keys))
-
-(defn- convert-to-set [story & keys]
-  (apply convert-to-set-with-converter story identity keys))
-
-(defn- keywordize [story & keys]
-  (apply convert story keyword keys))
-
 (defn decode
   "given a short-key json encoded story, decode into a long keyed hash"
   [string]
-  (let [story (translate-keys (json/read-json string) long-key)]
+  (let [story (rename-keys (json/read-json string) long-key)]
     (-> ((story/story-factory-for (keyword (:type story))) story)
         (dissoc :type)
         (convert-to-kw-set :feed :actions)
@@ -85,7 +64,7 @@
 (defn- add-stories-to-jedis
   [jedis feed-key stories]
   (doseq [story stories]
-    (.zadd jedis feed-key (double (story/score story)) (encode story))))
+    (.zadd jedis feed-key (double (timestamp story)) (encode story))))
 
 (defn replace-feed-head!
   [conn feed-key stories low-score high-score]
@@ -101,4 +80,4 @@
    (when (not (empty? stories))
      (shard/with-connection-for-feed redii feed-key
        [connection]
-       (replace-feed-head! connection feed-key stories (feed/min-timestamp feed) (feed/max-timestamp feed))))))
+       (replace-feed-head! connection feed-key stories (min-timestamp feed) (max-timestamp feed))))))

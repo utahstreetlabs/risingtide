@@ -6,6 +6,7 @@
     [core :refer [now]]
     [redis :as redis]
     [config :as config]
+    [key :as key]
     [persist :refer [keywordize convert-to-kw-set convert-to-set]]]
    [risingtide.model
     [story :as story]
@@ -14,7 +15,7 @@
    [risingtide.feed.persist.shard :as shard]))
 
 (defn- max-feed-size
-  [feed]
+  []
   (- 0 config/max-card-feed-size 1))
 
 (def short-key
@@ -43,7 +44,7 @@
 (defn encode
   "given a story, encode it into a short-key json format suitable for memory efficient storage in redis"
   [story]
-  (json/json-str (encoded-hash)))
+  (json/json-str (encoded-hash story)))
 
 (defn encode-feed
   [feed]
@@ -77,7 +78,7 @@
 (defn write-feed!
   [redii feed-key feed]
   (let [stories (seq feed)]
-   (when (not (empty? stories))
-     (shard/with-connection-for-feed redii feed-key
-       [connection]
-       (replace-feed-head! connection feed-key stories (min-timestamp feed) (max-timestamp feed))))))
+    (when (not (empty? stories))
+      (shard/with-connection-for-feed redii feed-key
+        [connection]
+        (replace-feed-head! connection feed-key stories (min-timestamp feed) (max-timestamp feed))))))

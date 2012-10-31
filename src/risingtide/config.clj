@@ -84,3 +84,4 @@
 ;;; storm topology config ;;;
 
 (def active-user-bolt-batch-size 500)
+

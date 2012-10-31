@@ -1,6 +1,8 @@
 (ns risingtide.storm.feed-bolts
   (:require [risingtide
-             [config :as config]]
+             [config :as config]
+             [redis :as redis]
+             [key :as key]]
             [risingtide.model [feed :refer [add]]]
             [risingtide.interests
              [brooklyn :as follows]
@@ -8,7 +10,7 @@
             [risingtide.feed
              [expiration :refer [expire]]
              [filters :refer [for-everything-feed?]]
-             [persist :refer [encode-feed]]]
+             [persist :refer [encode-feed write-feed!]]]
             [risingtide.feed.persist.shard :as shard]
             [risingtide.model.feed.digest :refer [new-digest-feed]]
             [risingtide.model
@@ -42,22 +44,33 @@
                           (expire-feeds! feed-set)
                              (catch Exception e
                                (log/error "exception expiring cache" e)))
-                       config/feed-expiration-delay)]
+                       config/feed-expiration-delay)
+        redii (redis/redii)]
     (bolt
      (execute [{id "id" user-id "user-id" story "story" score "score" :as tuple}]
               (update-feed-set! feed-set user-id story)
-              (emit-bolt! collector [id (seq @(@feed-set user-id))])
+              (let [feed @(@feed-set user-id)]
+                (write-feed! redii (key/user-feed user-id) feed)
+                (emit-bolt! collector [id (seq feed)]))
               (ack! collector tuple))
      (cleanup [] (.shutdown feed-expirer)))))
 
 (defbolt add-to-curated-feed ["id" "feed"] {:prepare true}
   [conf context collector]
-  (let [feed (atom (new-digest-feed))]
+  (let [feed (atom (new-digest-feed))
+        feed-expirer (schedule-with-delay
+                       #(try
+                          (expire-feed! feed)
+                          (catch Exception e
+                            (log/error "exception expiring cache" e)))
+                       config/feed-expiration-delay)
+        redii (redis/redii)]
     (bolt
      (execute [tuple]
               (let [{id "id" story "story"} tuple]
                 (when (for-everything-feed? story)
                   (swap! feed #(add % story))
+                  (write-feed! redii (key/everything-feed) @feed)
                   (emit-bolt! collector [id (seq @feed)]))
                 (ack! collector tuple))))))
 

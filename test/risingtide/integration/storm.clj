@@ -73,7 +73,8 @@
 
              :after (do
                       (clear-mysql-dbs!)
-                      (clear-action-solr!)))]
+                      (clear-action-solr!)
+                      (clear-redis!)))]
 
     (facts "about a basic topology"
       (run-topology :actions actions)
@@ -111,6 +112,11 @@
 
       (map second (bolt-output "save-actions")) =>
       actions
+
+      (feed-for rob) =>
+      (contains
+       (apply encoded-feed (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham)))
+       :in-any-order)
 
 
       ;;;; test feed building ;;;;

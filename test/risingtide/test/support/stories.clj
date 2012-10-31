@@ -37,3 +37,15 @@
 (defn listing-shared [actor-id listing-id tag-ids network feed]
   (->ListingSharedStory actor-id listing-id tag-ids network feed))
 
+(defn multi-actor-multi-action-story [listing-id actions]
+  (->MultiActorMultiActionStory listing-id actions))
+
+(defn multi-action-story [listing-id actor-id actions]
+  (->MultiActionStory listing-id actor-id actions))
+
+(defn multi-actor-story [listing-id action actor-ids]
+  (->MultiActorStory listing-id action actor-ids))
+
+(defn multi-listing-story [actor-id action listing-ids]
+  (->MultiListingStory actor-id action listing-ids))
+

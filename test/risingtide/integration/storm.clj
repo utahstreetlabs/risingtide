@@ -33,6 +33,7 @@
 (def jim-liked-toast (listing-liked jim toast nil nil))
 (def jim-shared-toast (listing-shared jim toast nil nil nil))
 (def cutter-liked-breakfast-tacos (listing-liked cutter breakfast-tacos nil nil))
+(def cutter-liked-toast (listing-liked cutter toast nil nil))
 
 (def topology-results (atom nil))
 
@@ -54,12 +55,22 @@
       (creates-listing-like liker listing))
     (swap! risingtide.storm.active-user-bolt/active-users-atom (constantly active-users))))
 
-(let [actions (on-copious
-               (jim activates bacon)
-               (jim likes ham)
-               (jim likes toast)
-               (jim shares toast)
-               (cutter likes breakfast-tacos))]
+(let [actions-rob-cares-about
+      (on-copious
+       (jim likes ham)
+       (jim likes toast)
+       (jim shares toast)
+       (cutter likes breakfast-tacos))
+
+      actions-rob-doesnt-care-about
+      (on-copious
+       (jim activates bacon))
+
+      more-actions-rob-cares-about
+      (on-copious
+       (cutter likes toast))
+
+      actions (concat actions-rob-doesnt-care-about actions-rob-cares-about)]
 
   (against-background
     [(before :contents
@@ -119,6 +130,19 @@
        :in-any-order)
 
 
+      ;;;; test loading feeds from redis ;;;;
+
+      (run-topology :actions more-actions-rob-cares-about)
+
+      (bolt-output "add-to-feed") =>
+      [[nil (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham cutter-liked-toast))]]
+
+      (feed-for rob) =>
+      (contains
+       (apply encoded-feed (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham cutter-liked-toast)))
+       :in-any-order)
+
+
       ;;;; test feed building ;;;;
 
       (run-topology :feed-builds [[(str jon) (json/json-str {:id "12345" :host (.getServiceId drpc) :port 0})]])
@@ -126,11 +150,11 @@
       (map last (bolt-output "drpc-actions")) =>
       (contains
        (map #(dissoc % :feed)
-            (filter #(or (= (:actor_id %) cutter) (= (:listing_id %) toast)
-                         ;; because cutter's the seller of ham and we follow him
-                         (= (:listing_id %) ham))
-                    actions))
+            (concat
+             actions-rob-cares-about
+             more-actions-rob-cares-about))
        :in-any-order)
 
       (seq (last (last (bolt-output "drpc-feed-builder")))) =>
-      (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham)))))
+      (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos
+                            cutter-liked-toast jim-liked-ham)))))

@@ -1,5 +1,6 @@
 (ns risingtide.storm.feed-bolts
   (:require [risingtide
+             [core :refer [now]]
              [config :as config]
              [redis :as redis]
              [key :as key]]
@@ -8,9 +9,9 @@
              [brooklyn :as follows]
              [pyramid :as likes]]
             [risingtide.feed
-             [expiration :refer [expire]]
+             [expiration :refer [expire expiration-threshold]]
              [filters :refer [for-everything-feed?]]
-             [persist :refer [encode-feed write-feed!]]]
+             [persist :refer [encode-feed write-feed! feed]]]
             [risingtide.feed.persist.shard :as shard]
             [risingtide.model.feed.digest :refer [new-digest-feed]]
             [risingtide.model
@@ -19,10 +20,15 @@
             [clojure.tools.logging :as log])
   (:import java.util.concurrent.ScheduledThreadPoolExecutor))
 
-(defn update-feed-set! [feed-set-atom user-id story]
+(defn initialize-digest-feed [redii feed-key & stories]
+  (let [initial-stories (feed redii feed-key (expiration-threshold) (now))]
+    (atom (apply new-digest-feed (concat initial-stories stories)))))
+
+(defn update-feed-set! [redii feed-set-atom user-id story]
   (if-let [feed-atom (@feed-set-atom user-id)]
-    (swap! feed-atom #(add % story))
-    (swap! feed-set-atom #(assoc % user-id (atom (new-digest-feed story))))))
+    (swap! feed-atom add story)
+    (swap! feed-set-atom
+           #(assoc % user-id (initialize-digest-feed redii (key/user-feed user-id) story)))))
 
 (defn expire-feed! [feed-atom]
   (swap! feed-atom #(apply new-digest-feed (expire %))))
@@ -33,8 +39,6 @@
 (defn schedule-with-delay [function interval]
   (doto (java.util.concurrent.ScheduledThreadPoolExecutor. 1)
     (.scheduleWithFixedDelay function interval interval java.util.concurrent.TimeUnit/SECONDS)))
-
-
 
 (defbolt add-to-feed ["id" "feed"] {:prepare true}
   [conf context collector]
@@ -48,7 +52,7 @@
         redii (redis/redii)]
     (bolt
      (execute [{id "id" user-id "user-id" story "story" score "score" :as tuple}]
-              (update-feed-set! feed-set user-id story)
+              (update-feed-set! redii feed-set user-id story)
               (let [feed @(@feed-set user-id)]
                 (write-feed! redii (key/user-feed user-id) feed)
                 (emit-bolt! collector [id (seq feed)]))
@@ -57,21 +61,21 @@
 
 (defbolt add-to-curated-feed ["id" "feed"] {:prepare true}
   [conf context collector]
-  (let [feed (atom (new-digest-feed))
+  (let [redii (redis/redii)
+        feed-atom (initialize-digest-feed redii (key/everything-feed))
         feed-expirer (schedule-with-delay
                        #(try
-                          (expire-feed! feed)
+                          (expire-feed! feed-atom)
                           (catch Exception e
                             (log/error "exception expiring cache" e)))
-                       config/feed-expiration-delay)
-        redii (redis/redii)]
+                       config/feed-expiration-delay)]
     (bolt
      (execute [tuple]
               (let [{id "id" story "story"} tuple]
                 (when (for-everything-feed? story)
-                  (swap! feed #(add % story))
-                  (write-feed! redii (key/everything-feed) @feed)
-                  (emit-bolt! collector [id (seq @feed)]))
+                  (swap! feed-atom add story)
+                  (write-feed! redii (key/everything-feed) @feed-atom)
+                  (emit-bolt! collector [id (seq @feed-atom)]))
                 (ack! collector tuple))))))
 
 (defn serialize [{id "id" feed "feed"} collector]

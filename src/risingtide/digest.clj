@@ -9,7 +9,7 @@
             [risingtide.config :as config]
             [clojure.set :as set]))
 
-(def ^:dynamic *card-cache-ttl* (* 6 60 60))
+(def ^:dynamic *card-cache-ttl* (* 4 60 60))
 (def ^:dynamic *network-cache-ttl* 0)
 
 (defn cache-ttl

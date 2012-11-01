@@ -87,8 +87,8 @@
 (defn clear-mysql-dbs! []
   (if (= config/env :test)
     (do
-     (brooklyn/clear-tables!)
-     (pyramid/clear-tables!))
+      (brooklyn/clear-tables!)
+      (pyramid/clear-tables!))
     (prn "let's not clear sql dbs in " config/env)))
 
 (defn clear-action-solr! []
@@ -99,14 +99,13 @@
 (defn clear-redis!
   []
   (if (= config/env :test)
-    (for [redis [:everything-card-feed :shard-config :card-feeds-1]]
+    (doseq [redis [:everything-card-feed :shard-config :card-feeds-1 :active-users]]
       (let [keys (redis/with-jedis* (redis conn) (fn [jedis] (.keys jedis (key/format-key "*"))))]
         (when (not (empty? keys))
           (redis/with-jedis* (redis conn)
             (fn [jedis] (.del jedis (into-array String keys)))))))
     (prn "clearing redis in" config/env "is a super bad idea. let's not.")))
 
-(redis/with-jedis* (:shard-config conn) (fn [jedis] (.keys jedis (key/format-key "*"))))
 (defn clear-digest-cache!
   []
   #_(digest/reset-cache!))

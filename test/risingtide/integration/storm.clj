@@ -1,10 +1,12 @@
 (ns risingtide.integration.storm
   (:require
    [clojure.data.json :as json]
-   [risingtide.config :as config]
+   [risingtide
+    [config :as config]
+    [redis :as redis]
+    [active-users :refer [add-active-users]]]
    [risingtide.storm
-    [core :refer [feed-generation-topology]]
-    [active-user-bolt :refer [active-users-atom]]]
+    [core :refer [feed-generation-topology]]]
    [risingtide.model.feed.digest :refer [new-digest-feed]]
 
    [risingtide.test]
@@ -53,7 +55,10 @@
       (creates-user-follow follower followee))
     (doseq [[liker listing] likes]
       (creates-listing-like liker listing))
-    (swap! risingtide.storm.active-user-bolt/active-users-atom (constantly active-users))))
+    (apply add-active-users (redis/redii) (* 60 10) active-users)))
+
+
+
 
 (let [actions-rob-cares-about
       (on-copious
@@ -81,7 +86,6 @@
                       jon toast}
               :listings {cutter ham}
               :active-users [rob])
-
              :after (do
                       (clear-mysql-dbs!)
                       (clear-action-solr!)
@@ -129,8 +133,7 @@
        (apply encoded-feed (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham)))
        :in-any-order)
 
-
-      ;;;; test loading feeds from redis ;;;;
+       ;;;; test loading feeds from redis ;;;;
 
       (run-topology :actions more-actions-rob-cares-about)
 
@@ -141,7 +144,6 @@
       (contains
        (apply encoded-feed (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham cutter-liked-toast)))
        :in-any-order)
-
 
       ;;;; test feed building ;;;;
 

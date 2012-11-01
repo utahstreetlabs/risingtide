@@ -3,7 +3,8 @@
              [core :refer [now]]
              [config :as config]
              [redis :as redis]
-             [key :as key]]
+             [key :as key]
+             [active-users :refer [active-users active?]]]
             [risingtide.model [feed :refer [add]]]
             [risingtide.interests
              [brooklyn :as follows]
@@ -11,7 +12,7 @@
             [risingtide.feed
              [expiration :refer [expire expiration-threshold]]
              [filters :refer [for-everything-feed?]]
-             [persist :refer [encode-feed write-feed! feed]]]
+             [persist :refer [encode-feed write-feed! feed delete-feeds!]]]
             [risingtide.feed.persist.shard :as shard]
             [risingtide.model.feed.digest :refer [new-digest-feed]]
             [risingtide.model
@@ -33,8 +34,11 @@
 (defn expire-feed! [feed-atom]
   (swap! feed-atom #(apply new-digest-feed (expire %))))
 
-(defn expire-feeds! [feed-set]
-  (map expire-feed! (vals @feed-set)))
+(defn expire-feeds! [redii feed-set]
+  (let [actives (active-users redii)]
+   (swap! feed-set #(select-keys actives %))
+   (delete-feeds! redii (clojure.set/difference (set (keys @feed-set)) (set actives))))
+  (doall (map expire-feed! (vals @feed-set))))
 
 (defn schedule-with-delay [function interval]
   (doto (java.util.concurrent.ScheduledThreadPoolExecutor. 1)
@@ -43,18 +47,19 @@
 (defbolt add-to-feed ["id" "feed"] {:prepare true}
   [conf context collector]
   (let [feed-set (atom {})
+        redii (redis/redii)
         feed-expirer (schedule-with-delay
                        #(try
-                          (expire-feeds! feed-set)
+                          (expire-feeds! redii feed-set)
                              (catch Exception e
                                (log/error "exception expiring cache" e)))
-                       config/feed-expiration-delay)
-        redii (redis/redii)]
+                       config/feed-expiration-delay)]
     (bolt
      (execute [{id "id" user-id "user-id" story "story" score "score" :as tuple}]
               (update-feed-set! redii feed-set user-id story)
               (let [feed @(@feed-set user-id)]
-                (write-feed! redii (key/user-feed user-id) feed)
+                (when (active? redii user-id)
+                 (write-feed! redii (key/user-feed user-id) feed))
                 (emit-bolt! collector [id (seq feed)]))
               (ack! collector tuple))
      (cleanup [] (.shutdown feed-expirer)))))

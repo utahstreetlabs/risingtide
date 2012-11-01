@@ -18,7 +18,7 @@ module RisingTide
       with_redis do |redis|
         key = active_user_key(user_id)
         unless redis.expire(key, active_user_ttl)
-          redis.hset(key, "sc", default_shard)
+          redis.hset(key, SHARD_KEY, default_shard)
           redis.expire(key, active_user_ttl)
         end
       end
@@ -31,7 +31,7 @@ module RisingTide
     def self.shard(user_id)
       key = active_user_key(user_id)
       with_redis do |redis|
-        redis.hget(key, SHARD_KEY) || '1'
+        redis.hget(key, SHARD_KEY) || default_shard
       end
     end
 

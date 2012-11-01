@@ -17,7 +17,7 @@
 
 (defn add-active-user [redis ttl user-id]
   (let [key (active-user-key user-id)]
-    (.set redis key "")
+    (.hset redis key "manual" "true")
     (.expire redis key ttl)))
 
 (defn add-active-users [redii ttl & user-ids]

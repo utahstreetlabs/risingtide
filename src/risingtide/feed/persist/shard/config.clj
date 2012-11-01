@@ -3,18 +3,17 @@
  (:require [risingtide
             [config :as config]
             [redis :as redis]
-            [key :as key]]
+            [key :as key]
+            [active-users :refer [active-user-key]]]
            [clojure.pprint :as pp]))
-
-(defn buckets [key]
-  (case key
-    :card (key/format-key "card-feed-shard-config")))
 
 (def default-shard config/default-card-shard)
 
 (def shard-value identity)
 
 (def default-migrations-value {:card {}})
+
+(def shard-hash-key "sc")
 
 (def migrations (atom default-migrations-value))
 
@@ -34,21 +33,21 @@
   [conn-spec type user-id]
   (redis/with-jedis* (:shard-config conn-spec)
     (fn [jedis]
-      (.hget jedis (buckets type) (str user-id)))))
+      (.hget jedis (active-user-key user-id) shard-hash-key))))
 
 (defn get-or-create-shard-key
   [conn-spec type user-id]
-  (let [bucket (buckets type)]
+  (let [bucket (active-user-key user-id)]
     (redis/with-jedis* (:shard-config conn-spec)
       (fn [jedis]
-        (or (.hget jedis bucket (str user-id))
-            (do (.hset jedis bucket (str user-id) default-shard)
+        (or (.hget jedis bucket shard-hash-key)
+            (do (.hset jedis bucket shard-hash-key default-shard)
                 default-shard))))))
 
 (defn update-shard-key
   [conn-spec type user-id new-key]
   (redis/with-jedis* (:shard-config conn-spec)
-    (fn [jedis] (.hset jedis (str (buckets type)) (str user-id) new-key))))
+    (fn [jedis] (.hset jedis (active-user-key user-id) shard-hash-key new-key))))
 
 (defn card-feed-shard-key
   "Given a connection and a user id, return the shard key for that user"

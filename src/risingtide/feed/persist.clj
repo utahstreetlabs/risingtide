@@ -109,5 +109,11 @@
   (try
     (shard/with-connection-for-feed conn-spec feed-key
       [connection] (stories connection feed-key since until))
-   (catch Throwable e
-     (throw (Throwable. (str "exception loading" feed-key) e)))))
+    (catch Throwable e
+      (throw (Throwable. (str "exception loading "feed-key) e)))))
+
+(defn delete-feeds! [redii & user-ids]
+  (redis/with-jedis* redii
+    (fn [redis]
+      (.del redis (into-array String (map key/user-feed user-ids))))))
+

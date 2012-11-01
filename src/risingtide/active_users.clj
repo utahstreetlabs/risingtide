@@ -26,3 +26,8 @@
     (fn [redis]
       (doseq [user-id user-ids]
         (add-active-user redis ttl user-id)))))
+
+(defn active? [redii user-id]
+  (redis/with-jedis* (redii :active-users)
+    (fn [redis]
+      (.exists redis (active-user-key user-id)))))

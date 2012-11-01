@@ -7,6 +7,7 @@
     [redis :as redis]
     [config :as config]
     [key :as key]]
+   [risingtide.feed.persist :refer [encode]]
    [risingtide.feed.persist.shard :as shard]
    [risingtide.feed.persist.shard.config :as shard-config]
    [risingtide.action.persist.solr :as solr]
@@ -14,30 +15,21 @@
     [brooklyn :as brooklyn]
     [pyramid :as pyramid]]))
 
-(def conn {:everything-card-feed (redis/redis {:db 3})
-           :card-feeds-1 (redis/redis {:db 4})
-           :card-feeds-2 (redis/redis {:db 5})
-           :shard-config (redis/redis {:db 8})})
+(def conn (redis/redii))
 
 (defn stories
   ([conn key]
      (map json/read-json
           (redis/with-jedis* conn
             (fn [jedis]
-              (.zrange jedis key 0 100000000)))))
-  ([conn id type] (stories conn (key/user-feed id type))))
+              (.zrange jedis (str key) 0 100000000))))))
 
-(defn feed-for-user*
-  [id type]
-  (let [feed-key (key/user-feed id type)]
-    (shard/with-connection-for-feed conn feed-key
+(defn feed-for
+  [id]
+  (let [feed-key (key/user-feed id)]
+    (shard/with-connection-for-feed (redis/redii) feed-key
       [pool]
       (stories pool feed-key))))
-
-#_(defn stories-about-user
-  [id type]
-  (map #(dissoc % :score) (stories (:stories conn)
-                                   (story/actor-story-set (first-char type) id))))
 
 ;; users
 #_(defmacro defuser
@@ -55,7 +47,7 @@
 
 #_(expose persist/encode)
 
-#_(defn encoded-feed
+(defn encoded-feed
   [& stories]
   (map json/read-json (map encode stories)))
 
@@ -79,16 +71,8 @@
 (defn is-a-user [user-id]
   (brooklyn/create-user user-id))
 
-(defn clear-mysql-dbs! []
-  (brooklyn/clear-tables!)
-  (pyramid/clear-tables!))
-
-(defn clear-action-solr! []
-  (solr/delete-actions! (solr/connection)))
-
-(defn builds-feeds
-  [actor-id]
-  #_(jobs/build-feeds! conn [actor-id]))
+(defn is-a-listing [listing-id seller-id]
+  (brooklyn/create-listing listing-id seller-id))
 
 (defn truncates-feed
   [actor-id]
@@ -100,16 +84,29 @@
 
 ;; reset
 
+(defn clear-mysql-dbs! []
+  (if (= config/env :test)
+    (do
+     (brooklyn/clear-tables!)
+     (pyramid/clear-tables!))
+    (prn "let's not clear sql dbs in " config/env)))
+
+(defn clear-action-solr! []
+  (if (= config/env :test)
+    (solr/delete-actions! (solr/connection))
+    (prn "let's not clear solr in " config/env)))
+
 (defn clear-redis!
   []
   (if (= config/env :test)
-    (doseq [redis [:everything-card-feed :shard-config :card-feeds-1 :card-feeds-2 :watchers :stories]]
+    (for [redis [:everything-card-feed :shard-config :card-feeds-1]]
       (let [keys (redis/with-jedis* (redis conn) (fn [jedis] (.keys jedis (key/format-key "*"))))]
         (when (not (empty? keys))
           (redis/with-jedis* (redis conn)
             (fn [jedis] (.del jedis (into-array String keys)))))))
     (prn "clearing redis in" config/env "is a super bad idea. let's not.")))
 
+(redis/with-jedis* (:shard-config conn) (fn [jedis] (.keys jedis (key/format-key "*"))))
 (defn clear-digest-cache!
   []
   #_(digest/reset-cache!))

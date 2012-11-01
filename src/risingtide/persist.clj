@@ -21,6 +21,11 @@
 (defn convert-to-set [story & keys]
   (apply convert-to-set-with-converter story identity keys))
 
+(defn convert-to-seq-with-converter [story value-converter & keys]
+  (apply convert story #(map value-converter %) keys))
+
+(defn convert-to-kw-seq [story & keys]
+  (apply convert-to-seq-with-converter story keyword keys))
+
 (defn keywordize [story & keys]
   (apply convert story keyword keys))
-

@@ -17,7 +17,7 @@
       (assoc config :pool pool)
       pool)))
 
-(defn redii [env]
+(defn redii []
   (reduce (fn [m [k v]] (assoc m k (redis v))) {} (config/redis config/env)))
 
 (defprotocol JedisConnectionPool

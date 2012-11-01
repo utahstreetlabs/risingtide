@@ -17,7 +17,7 @@ import risingtide.model.feed.digest.DigestFeed;
 public class FeedBuilder extends BaseBatchBolt {
     BatchOutputCollector _collector;
     Object _id;
-    String _userId;
+    int _userId;
     DigestFeed _feed;
     String _userIdField;
     String _field;
@@ -37,7 +37,7 @@ public class FeedBuilder extends BaseBatchBolt {
     @Override
     public void execute(Tuple tuple) {
         // write this every time, should always be the same
-        _userId = tuple.getStringByField(_userIdField);
+        _userId = tuple.getIntegerByField(_userIdField);
         Object story = tuple.getValueByField(_field);
         if (story != null) {
             _feed = (DigestFeed)_feed.add(story);

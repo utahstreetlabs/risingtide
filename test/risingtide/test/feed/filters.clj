@@ -1,5 +1,6 @@
 (ns risingtide.test.feed.filters
   (:require
+   [risingtide.test]
    [midje.sweet :refer :all]
    [risingtide.feed.filters :refer :all]))
 

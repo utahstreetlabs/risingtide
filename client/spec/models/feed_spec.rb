@@ -15,7 +15,12 @@ describe RisingTide::Feed do
       [{t: :listing_activated, lid: 1, aid: 2}, {t: :listing_liked, lid: 3, aid: 4},
        {t: :listing_sold, lid: 5, aid: 6}, {t: :tag_liked, tid: 7, aid: 8}]
     end
-    let(:stories) { story_hashes.each_with_index.flat_map {|h,i| [Yajl::Encoder.encode(h), i.days.ago.to_i]} }
+
+    def days_ago(days)
+      Time.now - (24 * 60 * 60)
+    end
+
+    let(:stories) { story_hashes.each_with_index.flat_map {|h,i| [Yajl::Encoder.encode(h), days_ago(i)]} }
 
     context 'with no interested user id specified' do
       let(:key) { "magt:f:c" }
@@ -29,9 +34,9 @@ describe RisingTide::Feed do
       end
 
       context 'with time boundaries specified' do
-        let(:before) { 1.5.days.ago.to_i }
+        let(:before) { days_ago(1.5) }
         let(:redis_before) { before - 1 }
-        let(:after) { 2.5.days.ago.to_i }
+        let(:after) { days_ago(2.5) }
         let(:redis_after) { after + 1 }
 
         it 'should only return stories after the :after parameter' do

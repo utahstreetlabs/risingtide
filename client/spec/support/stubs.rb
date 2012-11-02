@@ -1,5 +1,6 @@
 require 'rising_tide/models/redis_model'
 require 'rising_tide/models/shard_config'
+require 'rising_tide/models/active_users'
 require 'rising_tide/models/feed'
 require 'rising_tide/models/story'
 

@@ -81,6 +81,10 @@ module RisingTide
   end
 
   class CardFeed < Feed
+    def self.shard_number(user_id)
+      RisingTide::ActiveUsers.shard(user_id)
+    end
+
     def self.feed_token; :c; end
 
     def self.shard_config_bucket; format_key 'card-feed-shard-config'; end
@@ -91,11 +95,14 @@ module RisingTide
 
     def self.shard(options = {})
       if options[:interested_user_id]
-        "card_feed_#{shard_key(options[:interested_user_id])}".to_sym
+        if options[:new_feeds]
+          "feed_#{shard_number(options[:interested_user_id])}".to_sym
+        else
+          "card_feed_#{shard_key(options[:interested_user_id])}".to_sym
+        end
       else
         :everything_card_feed
       end
-
     end
   end
 end

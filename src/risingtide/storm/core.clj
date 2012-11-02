@@ -1,5 +1,6 @@
 (ns risingtide.storm.core
-  (:require [risingtide.storm
+  (:require [risingtide.config :as config]
+            [risingtide.storm
              [action-spout :refer [resque-spout]]
              [story-bolts :refer [create-story-bolt]]
              [action-bolts :refer [prepare-action-bolt save-action-bolt]]
@@ -8,7 +9,8 @@
                                       seller-follow-interest-scorer interest-reducer]]
              [feed-bolts :refer [add-to-feed add-to-curated-feed]]
              [build-feed :as feed-building]]
-            [backtype.storm [clojure :refer [topology spout-spec bolt-spec]] [config :refer [TOPOLOGY-DEBUG]]])
+            [risingtide.storm.drpc.local-server :as local-drpc-server]
+            [backtype.storm [clojure :refer [topology spout-spec bolt-spec]] [config :refer [TOPOLOGY-DEBUG DRPC-SERVERS]]])
   (:import [backtype.storm LocalCluster LocalDRPC]))
 
 (defn feed-generation-topology [drpc]
@@ -59,19 +61,27 @@
     (feed-building/bolts))))
 
 (defn run-local! []
-  (let [cluster (LocalCluster.)]
-    (.submitTopology cluster "story" {TOPOLOGY-DEBUG true} (feed-generation-topology))))
+  (let [drpc (LocalDRPC.)]
+    (doto (LocalCluster.)
+      (.submitTopology "story"
+                       {TOPOLOGY-DEBUG true}
+                      (feed-generation-topology drpc)))
+    (local-drpc-server/run! drpc config/local-drpc-port)))
 
 
 (comment
   (def c (LocalCluster.))
   (def d (LocalDRPC.))
+  (def dr (local-drpc-server/run! d 3772))
   (.submitTopology c "build-feed" {TOPOLOGY-DEBUG true} (feed-generation-topology d))
-  (.execute d "build-feed" "1")
+  (import 'backtype.storm.utils.DRPCClient)
+  (def dc (DRPCClient. "localhost" 3772))
+  (.execute dc "build-feed" "47")
   (.shutdown c)
-
+  (.stop dr)
 
   ;; lein run -m risingtide.storm.core/run-local!
   ;; brooklyn:
   ;; User.inject_listing_story(:listing_liked, 2, Listing.find(23))
   )
+

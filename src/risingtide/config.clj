@@ -90,3 +90,4 @@
 
 (def active-user-bolt-batch-size 500)
 
+(def local-drpc-port 3772)

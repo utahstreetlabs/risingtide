@@ -112,8 +112,13 @@
     (catch Throwable e
       (throw (Throwable. (str "exception loading "feed-key) e)))))
 
-(defn delete-feeds! [redii & user-ids]
-  (redis/with-jedis* redii
-    (fn [redis]
-      (.del redis (into-array String (map key/user-feed user-ids))))))
+(defn delete-feeds! [redii user-ids]
+  (when (not (empty? user-ids))
+   (shard/with-connections-for-feeds redii (map key/user-feed user-ids)
+     [pool feed-keys]
+     (redis/with-jedis* pool
+       (fn [redis]
+         (.del redis (into-array String feed-keys)))))))
+
+
 

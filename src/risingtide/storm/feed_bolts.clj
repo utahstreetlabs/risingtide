@@ -1,6 +1,6 @@
 (ns risingtide.storm.feed-bolts
   (:require [risingtide
-             [core :refer [now]]
+             [core :refer [now log-err]]
              [config :as config]
              [redis :as redis]
              [key :as key]
@@ -36,8 +36,8 @@
 
 (defn expire-feeds! [redii feed-set]
   (let [actives (active-users redii)]
-   (swap! feed-set #(select-keys actives %))
-   (delete-feeds! redii (clojure.set/difference (set (keys @feed-set)) (set actives))))
+    (swap! feed-set #(select-keys actives %))
+    (delete-feeds! redii (clojure.set/difference (set (keys @feed-set)) (set actives))))
   (doall (map expire-feed! (vals @feed-set))))
 
 (defn schedule-with-delay [function interval]
@@ -51,8 +51,7 @@
         feed-expirer (schedule-with-delay
                        #(try
                           (expire-feeds! redii feed-set)
-                             (catch Exception e
-                               (log/error "exception expiring cache" e)))
+                          (catch Exception e (log-err "exception expiring cache" e *ns*)))
                        config/feed-expiration-delay)]
     (bolt
      (execute [{id "id" user-id "user-id" story "story" score "score" :as tuple}]
@@ -71,8 +70,7 @@
         feed-expirer (schedule-with-delay
                        #(try
                           (expire-feed! feed-atom)
-                          (catch Exception e
-                            (log/error "exception expiring cache" e)))
+                          (catch Exception e (log-err "exception expiring cache" e *ns*)))
                        config/feed-expiration-delay)]
     (bolt
      (execute [tuple]

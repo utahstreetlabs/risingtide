@@ -33,7 +33,10 @@
           {} bolts))
 
 (defn topology-spouts [drpc method-name spout-name]
-  {spout-name (clj/spout-spec (DRPCSpout. method-name drpc))})
+  (let [spout (if drpc
+                (DRPCSpout. method-name drpc)
+                (DRPCSpout. method-name))]
+   {spout-name (clj/spout-spec spout)}))
 
 (defn topology-bolts [spout-name
                       [first-bolt-name first-bolt]

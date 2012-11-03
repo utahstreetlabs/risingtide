@@ -30,3 +30,7 @@
      (pmap #(doall (map f %)) (partition-all n coll)))
   ([f coll]
      (pmap-in-batches f coll 1000)))
+
+(defn log-err [message e ns]
+  (.printStackTrace e (log/log-stream :error ns))
+  (log/error message e))

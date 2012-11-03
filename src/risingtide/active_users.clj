@@ -7,10 +7,10 @@
   (key/format-key "act" id))
 
 (defn active-user-key-pattern []
-  (active-user-key "*"))
+  (key/format-key "act" "*"))
 
 (defn active-users [redii]
-  (map #(Integer/parseInt ( last (.split % ":")))
+  (map #(Integer/parseInt (last (.split % ":")))
        (redis/with-jedis* (redii :active-users)
          (fn [jedis]
            (.keys jedis (active-user-key-pattern))))))

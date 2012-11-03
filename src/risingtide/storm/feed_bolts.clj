@@ -58,7 +58,7 @@
               (update-feed-set! redii feed-set user-id story)
               (let [feed @(@feed-set user-id)]
                 (when (active? redii user-id)
-                 (write-feed! redii (key/user-feed user-id) feed))
+                  (write-feed! redii (key/user-feed user-id) feed))
                 (emit-bolt! collector [id (seq feed)]))
               (ack! collector tuple))
      (cleanup [] (.shutdown feed-expirer)))))

@@ -13,52 +13,54 @@
             [backtype.storm [clojure :refer [topology spout-spec bolt-spec]] [config :refer [TOPOLOGY-DEBUG DRPC-SERVERS]]])
   (:import [backtype.storm LocalCluster LocalDRPC]))
 
-(defn feed-generation-topology [drpc]
-  (topology
-   (merge {"actions" (spout-spec resque-spout)} (feed-building/spouts drpc))
+(defn feed-generation-topology
+  ([] (feed-generation-topology nil))
+  ([drpc]
+     (topology
+      (merge {"actions" (spout-spec resque-spout)} (feed-building/spouts drpc))
 
-   (merge
-    {"prepare-actions" (bolt-spec {"actions" :shuffle}
-                                  prepare-action-bolt)
+      (merge
+       {"prepare-actions" (bolt-spec {"actions" :shuffle}
+                                     prepare-action-bolt)
 
-     "save-actions" (bolt-spec {"actions" :shuffle}
-                               save-action-bolt)
+        "save-actions" (bolt-spec {"actions" :shuffle}
+                                  save-action-bolt)
 
-     "stories" (bolt-spec {"prepare-actions" :shuffle}
-                          create-story-bolt)
+        "stories" (bolt-spec {"prepare-actions" :shuffle}
+                             create-story-bolt)
 
-     ;; everything feed
-     "curated-feed" (bolt-spec {"stories" :global}
-                               add-to-curated-feed
-                               :p 1)
+        ;; everything feed
+        "curated-feed" (bolt-spec {"stories" :global}
+                                  add-to-curated-feed
+                                  :p 1)
 
-     ;; user feeds
+        ;; user feeds
 
-     "active-users" (bolt-spec {"stories" :shuffle}
-                               active-user-bolt
-                               :p 1)
+        "active-users" (bolt-spec {"stories" :shuffle}
+                                  active-user-bolt
+                                  :p 1)
 
-     "likes" (bolt-spec {"active-users" :shuffle}
-                        like-interest-scorer
-                        :p 2)
-     "follows" (bolt-spec {"active-users" :shuffle}
-                          follow-interest-scorer
-                          :p 2)
-     "seller-follows" (bolt-spec {"active-users" :shuffle}
-                                 seller-follow-interest-scorer
-                                 :p 2)
+        "likes" (bolt-spec {"active-users" :shuffle}
+                           like-interest-scorer
+                           :p 2)
+        "follows" (bolt-spec {"active-users" :shuffle}
+                             follow-interest-scorer
+                             :p 2)
+        "seller-follows" (bolt-spec {"active-users" :shuffle}
+                                    seller-follow-interest-scorer
+                                    :p 2)
 
-     "interest-reducer" (bolt-spec {"likes" ["user-id" "story"]
-                                    "follows" ["user-id" "story"]
-                                    "seller-follows" ["user-id" "story"]}
-                                   interest-reducer
-                                   :p 5)
+        "interest-reducer" (bolt-spec {"likes" ["user-id" "story"]
+                                       "follows" ["user-id" "story"]
+                                       "seller-follows" ["user-id" "story"]}
+                                      interest-reducer
+                                      :p 5)
 
-     "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]
-                               "drpc-interest-reducer" ["user-id"]}
-                              add-to-feed
-                              :p 20)}
-    (feed-building/bolts))))
+        "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]
+                                  "drpc-interest-reducer" ["user-id"]}
+                                 add-to-feed
+                                 :p 20)}
+       (feed-building/bolts)))))
 
 (defn run-local! []
   (let [drpc (LocalDRPC.)]

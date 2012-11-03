@@ -4,7 +4,8 @@
     [config :as config]
     [redis :as redis]]
    [backtype.storm [clojure :refer [defspout spout emit-spout!]]]
-   [clojure.data.json :as json]))
+   [clojure.data.json :as json]
+   [clojure.tools.logging :as log]))
 
 (defn action-from-resque [action]
   (let [json (json/read-json action)]
@@ -18,13 +19,11 @@
     (nextTuple []
      (when-let [string (let [r (.getResource pool)]
                          (try
-                           (or
-                            (.lpop r "resque:queue:rising_tide_priority")
-                            (.lpop r "resque:queue:rising_tide_stories"))
+                           (.lpop r "resque:queue:rising_tide_stories")
                            (finally (.returnResource pool r))))]
-       (when-let [action (action-from-resque string)]
-         (emit-spout! collector [action]))
-))
+       (if-let [action (action-from-resque string)]
+         (emit-spout! collector [action])
+         (log/info "action spout ignoring" string))))
     (ack [id]
          ;; You only need to define this method for reliable spouts
          ;; (such as one that reads off of a queue like Kestrel)

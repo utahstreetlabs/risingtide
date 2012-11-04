@@ -127,8 +127,7 @@ module RisingTide
       def feed_build_client
         transport = Thrift::FramedTransport.new(Thrift::Socket.new(@host, @port))
         transport.open
-        tprotocol = Thrift::BinaryProtocol.new(transport)
-        Storm::DistributedRPC::Client.new(protocol)
+        Storm::DistributedRPC::Client.new(Thrift::BinaryProtocol.new(transport))
       end
 
       def execute(user_id)

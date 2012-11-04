@@ -36,7 +36,7 @@
 
 (defn expire-feeds! [redii feed-set]
   (let [actives (active-users redii)]
-    (swap! feed-set #(select-keys actives %))
+    (swap! feed-set #(select-keys % actives))
     (delete-feeds! redii (clojure.set/difference (set (keys @feed-set)) (set actives))))
   (doall (map expire-feed! (vals @feed-set))))
 

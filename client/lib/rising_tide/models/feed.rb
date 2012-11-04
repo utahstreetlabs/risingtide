@@ -1,5 +1,6 @@
 require 'ladon'
 require 'kaminari'
+require 'storm/distributed_r_p_c'
 
 module RisingTide
   class Feed < RedisModel
@@ -81,6 +82,10 @@ module RisingTide
   end
 
   class CardFeed < Feed
+    class << self
+      attr_accessor :feed_build_service
+    end
+
     def self.shard_number(user_id)
       RisingTide::ActiveUsers.shard(user_id)
     end
@@ -102,6 +107,41 @@ module RisingTide
         end
       else
         :everything_card_feed
+      end
+    end
+
+    def self.build(user_id)
+      feed_build_service.execute(user_id.to_s)
+    end
+  end
+
+  module FeedBuild
+    class StormService
+      attr_reader :host, :port
+
+      def initialize(host, port)
+        @host = host
+        @port = port
+      end
+
+      def feed_build_client
+        transport = Thrift::FramedTransport.new(Thrift::Socket.new(@host, @port))
+        transport.open
+        tprotocol = Thrift::BinaryProtocol.new(transport)
+        Storm::DistributedRPC::Client.new(protocol)
+      end
+
+      def execute(user_id)
+        json = feed_build_client.execute('build-feed', user_id.to_s)
+        Yajl::Parser.new.parse(json).map {|h| Story.from_hash(h) }
+      end
+    end
+
+    class TestService
+      include Ladon::Logging
+      def execute(user_id)
+        logger.info('ignoring feed build request for user ', user_id)
+        "[]"
       end
     end
   end

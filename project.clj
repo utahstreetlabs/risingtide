@@ -11,6 +11,7 @@
                  [korma "0.3.0-beta11"]
                  [mysql/mysql-connector-java "5.1.20"]
                  [org.syslog4j/syslog4j "0.9.30"]
+                 [net.java.dev.jna/jna "3.4.0"]
 
                  [utahstreetlabs/clojure-solr "0.3.0-SNAPSHOT"]
                  [risingtide-model "2.0.0-SNAPSHOT"]]

@@ -111,7 +111,7 @@ module RisingTide
     end
 
     def self.build(user_id)
-      feed_build_service.execute(user_id.to_s)
+      feed_build_service.build(user_id.to_s)
     end
   end
 
@@ -130,7 +130,7 @@ module RisingTide
         Storm::DistributedRPC::Client.new(Thrift::BinaryProtocol.new(transport))
       end
 
-      def execute(user_id)
+      def build(user_id)
         json = feed_build_client.execute('build-feed', user_id.to_s)
         Yajl::Parser.new.parse(json).map {|h| Story.from_hash(h) }
       end
@@ -138,9 +138,9 @@ module RisingTide
 
     class TestService
       include Ladon::Logging
-      def execute(user_id)
+      def build(user_id)
         logger.info('ignoring feed build request for user ', user_id)
-        "[]"
+        []
       end
     end
   end

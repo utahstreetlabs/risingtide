@@ -36,7 +36,7 @@
 
 (defn expire-feeds! [redii feed-set]
   (let [actives (active-users redii)]
-    (swap! feed-set #(select-keys actives %))
+    (swap! feed-set #(select-keys % actives))
     (delete-feeds! redii (clojure.set/difference (set (keys @feed-set)) (set actives))))
   (doall (map expire-feed! (vals @feed-set))))
 
@@ -82,7 +82,7 @@
                 (ack! collector tuple))))))
 
 (defn serialize [{id "id" feed "feed"} collector]
-  (emit-bolt! collector [id (with-out-str (print (encode-feed feed)))]))
+  (emit-bolt! collector [id (with-out-str (print (encode-feed feed :include-ts true)))]))
 
 (defbolt serialize-feed ["id" "feed"] [tuple collector]
   (serialize tuple collector)

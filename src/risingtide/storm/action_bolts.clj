@@ -1,11 +1,12 @@
 (ns risingtide.storm.action-bolts
   (:require [clojure.data.json :as json]
+            [clojure.tools.logging :as log]
             [risingtide
-             [core :refer [now]]
-             [config :as config]]
-            [risingtide.action.persist.solr :as solr]
-            [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]])
-  (:import org.productivity.java.syslog4j.Syslog))
+             [core :refer [now]]]
+            [risingtide.action.persist
+             [solr :as solr]
+             [aof :as aof]]
+            [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]]) )
 
 (defn prepare-action [action]
   (assoc action
@@ -17,13 +18,13 @@
 
 (defbolt save-action-bolt ["id" "action"] {:prepare true}
   [conf context collector]
-  (let [syslog (doto (Syslog/getInstance "tcp")
-                 (-> (.getConfig) (.setHost (:host (config/action-bolt-syslog))))
-                 (-> (.getConfig) (.setPort (:port (config/action-bolt-syslog)))))
+  (let [syslog (aof/syslog)
         solr-conn (solr/connection)]
     (bolt
      (execute [{id "id" action "action" :as tuple}]
-              (.info syslog (json/json-str action))
+              (let [action-json (json/json-str action)]
+                (aof/write! syslog action-json)
+                (log/info "Saving action "action-json))
               (solr/save! solr-conn action)
               (emit-bolt! collector [id action])
               (ack! collector tuple)))))

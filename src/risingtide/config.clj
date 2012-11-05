@@ -63,16 +63,6 @@
 (defn brooklyn [] (brooklyn-db env))
 (defn pyramid [] (pyramid-db env))
 
-(def action-bolt-syslog-config
-  {:development
-   {:host "localhost"
-    :port 50000}
-   :test
-   {:host "localhost"
-    :port 50000}})
-(defn action-bolt-syslog []
-  (action-bolt-syslog-config env))
-
 (def action-solr-config
   {:development "http://127.0.0.1:8080/solr"
    :test "http://127.0.0.1:8080/solr"})

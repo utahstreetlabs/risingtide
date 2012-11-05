@@ -31,15 +31,23 @@
    :tag-ids :tids
    :buyer-id :bid
    :text :tx
-   :network :n})
+   :network :n
+   :timestamp :time})
 
 (def long-key (map-invert short-key))
 
 ;;; encoding stories for redis
 
-(defn encoded-hash [story]
-  (rename-keys (assoc story :type (story/type-sym story))
-               short-key))
+(defn- assoc-if [hash key val bool]
+  (if bool
+    (assoc hash key val)
+    hash))
+
+(defn encoded-hash [story & {include-ts :include-ts :or {include-ts false}}]
+  (-> story
+      (assoc :type (story/type-sym story))
+      (assoc-if :timestamp (timestamp story) include-ts)
+      (rename-keys short-key)))
 
 (defn encode
   "given a story, encode it into a short-key json format suitable for memory efficient storage in redis"
@@ -47,8 +55,8 @@
   (json/json-str (encoded-hash story)))
 
 (defn encode-feed
-  [feed]
-  (json/json-str (map encoded-hash (seq feed))))
+  [feed & args]
+  (json/json-str (map #(apply encoded-hash % args) (seq feed))))
 
 (defn decode-actions [actions]
   (if (map? actions)

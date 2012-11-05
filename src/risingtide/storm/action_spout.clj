@@ -19,7 +19,7 @@
     (nextTuple []
      (when-let [string (let [r (.getResource pool)]
                          (try
-                           (.lpop r "resque:queue:rising_tide_stories")
+                           (.lpop r "resque:queue:rising_tide_actions")
                            (finally (.returnResource pool r))))]
        (if-let [action (action-from-resque string)]
          (emit-spout! collector [action])

@@ -13,7 +13,8 @@ module RisingTide
       bid: :buyer_id,
       fid: :followee_id,
       iid: :invitee_profile_id,
-      tx: :text
+      tx: :text,
+      time: :timestamp
     }
     # created_at is stored separately as the 'score'
     attr_accessor *([:created_at].concat(REVERSE_ATTRIBUTE_MAP.values))
@@ -27,15 +28,20 @@ module RisingTide
     end
 
     class << self
-      def decode(encoded, timestamp = 0)
+      def from_hash(hash, timestamp = nil)
+        timestamp ||= hash[:timestamp]
         story = self.new
-        Yajl::Parser.new.parse(encoded).each do |key,value|
+        hash.each do |key,value|
           if REVERSE_ATTRIBUTE_MAP[key.to_sym]
             story.send("#{REVERSE_ATTRIBUTE_MAP[key.to_sym]}=", (key == 't') ? value.to_sym : value)
           end
         end
         story.created_at = Time.at(timestamp.to_i)
         story
+      end
+
+      def decode(encoded, timestamp = 0)
+        from_hash(Yajl::Parser.new.parse(encoded), timestamp)
       end
 
       def find_most_recent(options={})

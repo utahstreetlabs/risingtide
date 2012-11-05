@@ -13,8 +13,8 @@
                  [org.syslog4j/syslog4j "0.9.30"]
                  [net.java.dev.jna/jna "3.4.0"]
 
-                 [utahstreetlabs/clojure-solr "0.3.0-SNAPSHOT"]
-                 [risingtide-model "2.0.0-SNAPSHOT"]]
+                 [utahstreetlabs/clojure-solr "0.3.0"]
+                 [risingtide-model "2.0.1"]]
   :java-source-paths ["java-src"]
   :profiles {:dev {:dependencies [[midje "1.4.0"]
                                   ;; storm dependency only in dev
@@ -25,6 +25,13 @@
   :main risingtide
   :min-lein-version "2.0.0"
   :plugins [[lein-midje "2.0.0-SNAPSHOT"]]
+
+  :repositories {"usl-snapshots"
+                 {:url "http://ci.copious.com:8082/nexus/content/repositories/snapshots/"
+                  :username "deployment" :password "Q5Erm4JqFppGSf"}
+                 "usl-releases"
+                 {:url "http://ci.copious.com:8082/nexus/content/repositories/releases/"
+                  :username "deployment" :password "Q5Erm4JqFppGSf"}}
 
   :aot [risingtide.storm.FeedTopology])
 

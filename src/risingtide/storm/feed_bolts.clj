@@ -82,7 +82,7 @@
                 (ack! collector tuple))))))
 
 (defn serialize [{id "id" feed "feed"} collector]
-  (emit-bolt! collector [id (with-out-str (print (encode-feed feed)))]))
+  (emit-bolt! collector [id (with-out-str (print (encode-feed feed :include-ts true)))]))
 
 (defbolt serialize-feed ["id" "feed"] [tuple collector]
   (serialize tuple collector)

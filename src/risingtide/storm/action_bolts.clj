@@ -1,5 +1,6 @@
 (ns risingtide.storm.action-bolts
   (:require [clojure.data.json :as json]
+            [clojure.tools.logging :as log]
             [risingtide
              [core :refer [now]]
              [config :as config]]
@@ -23,7 +24,9 @@
         solr-conn (solr/connection)]
     (bolt
      (execute [{id "id" action "action" :as tuple}]
-              (.info syslog (json/json-str action))
+              (let [action-json (json/json-str action)]
+               (.info syslog action-json)
+               (log/info "Saving action "action-json))
               (solr/save! solr-conn action)
               (emit-bolt! collector [id action])
               (ack! collector tuple)))))

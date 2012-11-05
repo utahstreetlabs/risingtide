@@ -32,5 +32,5 @@
      (pmap-in-batches f coll 1000)))
 
 (defn log-err [message e ns]
-  (.printStackTrace e (log/log-stream :error ns))
-  (log/error message e))
+  (log/error message e)
+  (.printStackTrace e (log/log-stream :error ns)))

@@ -47,10 +47,11 @@
 (defn connection []
   (solr/connect (config/action-solr)))
 
-(defn save! [connection action]
+(defn save! [connection & actions]
   (solr/with-connection connection
-    (solr/add-document!
-     (encode action))
+    (doseq [action actions]
+      (solr/add-document!
+       (encode action)))
     (solr/commit!)))
 
 
@@ -70,7 +71,7 @@
 (comment
   (save! (connection) {:id 1 :actor_id 6 :listing_id 2 :tag_ids [1 2] :type :listing_activated :timestamp 4})
   (delete-actions! (connection))
-  (search-interests (connection))
+  (search-interests (connection) :actors [1])
 
 
 

@@ -1,7 +1,7 @@
 (ns risingtide.config
   (:require [risingtide.core :as core]))
 
-(def env (keyword (or (System/getenv "RISINGTIDE_ENV") (System/getenv "RT_ENV") "development")))
+(def env (keyword (or (System/getProperty "risingtide.env") (System/getenv "RISINGTIDE_ENV") (System/getenv "RT_ENV") "development")))
 
 (def redis
   {:development {:resque {}

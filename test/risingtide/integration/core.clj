@@ -15,7 +15,8 @@
 (test-background
  (before :facts (clear-redis!))
  (before :facts (clear-digest-cache!))
- (before :facts (clear-migrations!)))
+ (before :facts (clear-migrations!))
+ (before :facts (clear-mysql-dbs!)))
 
 (fact "initial feed builds get stories"
   (on-copious

@@ -14,7 +14,8 @@ module RisingTide
       fid: :followee_id,
       iid: :invitee_profile_id,
       tx: :text,
-      time: :timestamp
+      time: :timestamp,
+      c: :count
     }
     # created_at is stored separately as the 'score'
     attr_accessor *([:created_at].concat(REVERSE_ATTRIBUTE_MAP.values))

@@ -15,7 +15,8 @@
 (test-background
  (before :facts (clear-redis!))
  (before :facts (clear-digest-cache!))
- (before :facts (clear-migrations!)))
+ (before :facts (clear-migrations!))
+ (before :facts (clear-mysql-dbs!)))
 
 (fact "initial feed builds get stories"
   (on-copious
@@ -219,7 +220,7 @@
    (jim activates 16))
 
   (feed-for-rob :card) =>
-  (encoded-feed (story/multi-listing-digest jim "listing_activated" (range 0 17))))
+  (encoded-feed (story/multi-listing-digest jim "listing_activated" (range 8 17) nil 17)))
 
 (fact "migration moves a feed from one redis to another"
   (on-copious

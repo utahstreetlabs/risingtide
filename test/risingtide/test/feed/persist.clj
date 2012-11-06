@@ -23,9 +23,7 @@
  (listing-sold 1 2 [3 4] 1 [:ev])
  (listing-shared 1 2 [3 4] :facebook [:ev])
 
- (multi-listing-story 1 :listing_liked #{2})
+ (multi-listing-story 1 :listing_liked #{2} 1)
  (multi-actor-story 1 :listing_liked #{2 3})
  (multi-action-story 1 2 #{:listing_liked :listing_shared})
  (multi-actor-multi-action-story 1 {:listing_liked #{1} :listing_shared #{3 4}}))
-
-

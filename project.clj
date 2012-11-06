@@ -14,7 +14,7 @@
                  [net.java.dev.jna/jna "3.4.0"]
 
                  [utahstreetlabs/clojure-solr "0.3.0"]
-                 [risingtide-model "2.0.1"]]
+                 [risingtide-model "2.0.2"]]
   :java-source-paths ["java-src"]
   :profiles {:dev {:dependencies [[midje "1.4.0"]
                                   ;; storm dependency only in dev

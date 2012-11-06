@@ -46,6 +46,6 @@
 (defn multi-actor-story [listing-id action actor-ids]
   (->MultiActorStory listing-id action actor-ids))
 
-(defn multi-listing-story [actor-id action listing-ids]
-  (->MultiListingStory actor-id action listing-ids))
+(defn multi-listing-story [actor-id action listing-ids count]
+  (->MultiListingStory actor-id action listing-ids count))
 

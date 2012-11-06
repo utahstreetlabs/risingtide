@@ -166,8 +166,10 @@
   ([listing-id actions] (multi-actor-multi-action-digest listing-id actions nil)))
 
 (defn multi-listing-digest
+  ([actor-id action listing-ids score cnt]
+     (stash-encoded {:type (digest-types :aml) :actor_id actor-id :action action :listing_ids listing-ids :score score :count cnt}))
   ([actor-id action listing-ids score]
-     (stash-encoded {:type (digest-types :aml) :actor_id actor-id :action action :listing_ids listing-ids :score score}))
+     (multi-listing-digest actor-id action listing-ids score (count listing-ids)))
   ([actor-id action listing-ids] (multi-listing-digest actor-id action listing-ids nil)))
 
 ;; functions involving persisted data ;;

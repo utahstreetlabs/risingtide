@@ -11,6 +11,7 @@
 
 (def ^:dynamic *card-cache-ttl* (* 4 60 60))
 (def ^:dynamic *network-cache-ttl* 0)
+(def ^:dynamic *max-actor-digest-stories* 9)
 
 (defn cache-ttl
   [feed-key]
@@ -112,7 +113,8 @@
 (defn add-to-actor-digest [current story]
   {:pre [(= (:actor_id current) (:actor_id story))]}
   (story/update-digest current
-    :listing_ids (distinct (conj (:listing_ids current) (:listing_id story)))
+    :listing_ids (take-last *max-actor-digest-stories* (distinct (conj (:listing_ids current) (:listing_id story))))
+    :count (+ 1 (or (:count current) (count (:listing_ids current))))
     :score (:score story)))
 
 (defn- actor-digest-index-for-stories [stories]

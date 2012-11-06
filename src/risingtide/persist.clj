@@ -47,7 +47,8 @@ object.
    :followee_id :fid
    :invitee_profile_id :iid
    :text :tx
-   :network :n})
+   :network :n
+   :count :c})
 
 (def long-key (reduce (fn [hash [key val]] (assoc hash val key)) {} short-key))
 

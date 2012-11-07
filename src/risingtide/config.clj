@@ -16,8 +16,8 @@
           :shard-config {}}
    :staging {:resque {:host "staging3.copious.com"}
              :everything-card-feed {:host "staging4.copious.com"}
-             :card-feeds-1 {:host "staging4.copious.com"}
-             :card-feeds-2 {:host "staging4.copious.com" :db 1}
+             :card-feeds-1 {:host "staging4.copious.com" :db 2}
+             :card-feeds-2 {:host "staging4.copious.com" :db 3}
              :active-users {:host "staging4.copious.com"}
              :shard-config {:host "staging4.copious.com"}}
    :demo {:resque {:host "demo1.copious.com"}
@@ -28,8 +28,8 @@
           :shard-config {:host "demo1.copious.com"}}
    :production {:resque {:host "resque-redis-master.copious.com"}
                 :everything-card-feed {:host "rt-card-feeds-redis.copious.com"}
-                :card-feeds-1 {:host "rt-card-feeds-1-redis.copious.com"}
-                :card-feeds-2 {:host "rt-card-feeds-2-redis.copious.com"}
+                :card-feeds-1 {:host "rt-feeds-1-redis.copious.com"}
+                :card-feeds-2 {:host "rt-feeds-2-redis.copious.com"}
                 :active-users {:host "rt-active-users-redis.copious.com"}
                 :shard-config {:host "rt-shard-config-redis.copious.com"}}})
 
@@ -68,7 +68,7 @@
    :test "http://127.0.0.1:8951/solr"
    :staging "http://staging.copious.com:8983/solr"
    :demo "http://demo1.copious.com:8983/solr"
-   :production "http://solr-rt.copious.com:8983/solr"})
+   :production "http://solr-rt1.copious.com:8983/solr"})
 (defn action-solr []
   (action-solr-config env))
 

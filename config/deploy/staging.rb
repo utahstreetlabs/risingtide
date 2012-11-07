@@ -1,1 +1,1 @@
-set :domain, 'staging4.copious.com'
+set :domain, 'staging6.copious.com'

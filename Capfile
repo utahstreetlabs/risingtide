@@ -1,7 +1,5 @@
 load 'deploy'
 
-require 'bundler/capistrano'
-
 set :stages, %w(demo staging production)
 set :default_stage, "staging"
 require 'capistrano/ext/multistage'
@@ -23,10 +21,11 @@ set :deploy_via, :remote_cache
 set :scm, 'git'
 set :scm_verbose, true
 set(:branch) do
-  case stage
-  when "production" then "master"
-  else "staging"
-  end
+  "storm"
+  # case stage
+  # when "production" then "master"
+  # else "storm"
+  # end
 end
 set :use_sudo, false
 
@@ -37,16 +36,24 @@ set :hipchat_announce, true
 after "deploy", "deploy:cleanup"
 
 namespace :deploy do
+  task :build_uberjar do
+    run "cd #{current_path} && bin/lein clean && bin/lein compile && bin/lein uberjar"
+  end
+  before "deploy:restart", "deploy:build_uberjar"
+
   task :start, :roles => :app, :except => { :no_release => true } do
-    run "#{sudo} start risingtide"
+    run "storm/current/bin/storm jar risingtide/current/target/risingtide-*-standalone.jar risingtide.storm.FeedTopology"
   end
 
   task :stop, :roles => :app, :except => { :no_release => true } do
-    run "#{sudo} stop risingtide ; true"
+    run "storm/current/bin/storm kill 'feed topology'; true"
   end
 
   task :restart, :roles => :app, :except => { :no_release => true } do
     stop
+    # wait maximum amount of time for topology to stop
+    # should match topology.message.timeout.secs in storm.yaml
+    sleep 30
     start
   end
 end

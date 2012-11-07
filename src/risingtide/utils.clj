@@ -31,7 +31,7 @@ run like:
 "
   (with-open [rdr (io/reader dumpfile)]
     (let [solr-conn (solr/connection)]
-      (log/info "Reading actions from "dumpfile" to solr at "solr-conn)
+      (log/info "Reading actions from "dumpfile" to solr at "(config/action-solr))
       (apply solr/save!
        solr-conn
        (map (fn [line-number line]

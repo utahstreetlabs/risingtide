@@ -1,7 +1,7 @@
 (ns risingtide.config
   (:require [risingtide.core :as core]))
 
-(def env (keyword (or (System/getenv "RISINGTIDE_ENV") (System/getenv "RT_ENV") "development")))
+(def env (keyword (or (System/getProperty "risingtide.env") (System/getenv "RISINGTIDE_ENV") (System/getenv "RT_ENV") "development")))
 
 (def redis
   {:development {:resque {}
@@ -64,8 +64,11 @@
 (defn pyramid [] (pyramid-db env))
 
 (def action-solr-config
-  {:development "http://127.0.0.1:8080/solr"
-   :test "http://127.0.0.1:8080/solr"})
+  {:development "http://127.0.0.1:8950/solr"
+   :test "http://127.0.0.1:8951/solr"
+   :staging "http://staging.copious.com:8983/solr"
+   :demo "http://demo1.copious.com:8983/solr"
+   :production "http://solr-rt.copious.com:8983/solr"})
 (defn action-solr []
   (action-solr-config env))
 
@@ -80,4 +83,10 @@
 
 (def active-user-bolt-batch-size 500)
 
-(def local-drpc-port 3772)
+(def local-drpc-port-config
+  ;; this only gets used in dev and test
+  {:development 4050
+   :test 4051})
+
+(defn local-drpc-port []
+  (local-drpc-port-config env))

@@ -32,7 +32,8 @@
    :buyer-id :bid
    :text :tx
    :network :n
-   :timestamp :time})
+   :timestamp :time
+   :count :c})
 
 (def long-key (map-invert short-key))
 

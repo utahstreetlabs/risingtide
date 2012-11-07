@@ -1,0 +1,3 @@
+cd actions-solr
+make
+JETTY_PORT=8950 JAVA_OPTIONS="-Dsolr.solr.home=`pwd` -Dsolr.data.dir=dev_data $JAVA_OPTIONS" jetty/bin/jetty.sh run

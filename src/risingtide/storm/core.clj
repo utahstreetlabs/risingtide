@@ -68,7 +68,7 @@
       (.submitTopology "story"
                        {TOPOLOGY-DEBUG true}
                       (feed-generation-topology drpc)))
-    (local-drpc-server/run! drpc config/local-drpc-port)))
+    (local-drpc-server/run! drpc (config/local-drpc-port))))
 
 
 (comment

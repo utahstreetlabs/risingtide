@@ -1,1 +1,1 @@
-set :domain, ['risingtide4.copious.com']
+set :domain, ['rt-nimbus.copious.com']

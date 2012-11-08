@@ -14,7 +14,7 @@
 
 (defspout resque-spout ["action"]
   [conf context collector]
-  (let [pool (redis/redis (config/redis-config))]
+  (let [pool (redis/redis (:resque (config/redis-config)))]
    (spout
     (nextTuple []
      (when-let [string (let [r (.getResource pool)]

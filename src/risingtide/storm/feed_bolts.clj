@@ -59,7 +59,7 @@
               (let [feed @(@feed-set user-id)]
                 (when (active? redii user-id)
                   (write-feed! redii (key/user-feed user-id) feed))
-                (emit-bolt! collector [id (seq feed)]))
+                (emit-bolt! collector [id (seq feed)] :anchor tuple))
               (ack! collector tuple))
      (cleanup [] (.shutdown feed-expirer)))))
 
@@ -73,16 +73,15 @@
                           (catch Exception e (log-err "exception expiring cache" e *ns*)))
                        config/feed-expiration-delay)]
     (bolt
-     (execute [tuple]
-              (let [{id "id" story "story"} tuple]
-                (when (for-everything-feed? story)
-                  (swap! feed-atom add story)
-                  (write-feed! redii (key/everything-feed) @feed-atom)
-                  (emit-bolt! collector [id (seq @feed-atom)]))
-                (ack! collector tuple))))))
+     (execute [{id "id" story "story" :as tuple}]
+              (when (for-everything-feed? story)
+                (swap! feed-atom add story)
+                (write-feed! redii (key/everything-feed) @feed-atom)
+                (emit-bolt! collector [id (seq @feed-atom)] :anchor tuple))
+              (ack! collector tuple)))))
 
-(defn serialize [{id "id" feed "feed"} collector]
-  (emit-bolt! collector [id (with-out-str (print (encode-feed feed :include-ts true)))]))
+(defn serialize [{id "id" feed "feed" :as tuple} collector]
+  (emit-bolt! collector [id (with-out-str (print (encode-feed feed :include-ts true)))] :anchor tuple))
 
 (defbolt serialize-feed ["id" "feed"] [tuple collector]
   (serialize tuple collector)

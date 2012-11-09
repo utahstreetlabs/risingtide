@@ -10,7 +10,7 @@
 (defbolt like-interest-scorer ["id" "user-id" "story" "score" "type"]
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
   (doseq [[user-id score] (like-scores user-ids story)]
-    (emit-bolt! collector [id user-id story score :like]))
+    (emit-bolt! collector [id user-id story score :like] :anchor tuple))
   (ack! collector tuple))
 
 (defn follow-scores [user-ids story]
@@ -19,7 +19,7 @@
 (defbolt follow-interest-scorer ["id" "user-id" "story" "score" "type"]
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
   (doseq [[user-id score] (follow-scores user-ids story)]
-    (emit-bolt! collector [id user-id story score :follow]))
+    (emit-bolt! collector [id user-id story score :follow] :anchor tuple))
   (ack! collector tuple))
 
 (defn seller-follow-scores [user-ids story]
@@ -28,7 +28,7 @@
 (defbolt seller-follow-interest-scorer ["id" "user-id" "story" "score" "type"]
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
   (doseq [[user-id score] (seller-follow-scores user-ids story)]
-    (emit-bolt! collector [id user-id story score :listing-seller]))
+    (emit-bolt! collector [id user-id story score :listing-seller] :anchor tuple))
   (ack! collector tuple))
 
 (defn sum-scores [scores]
@@ -47,8 +47,8 @@
                 (when (= scored-types #{:follow :like :listing-seller})
                   (if (>= total-score 1)
                     (do
-                      (emit-bolt! collector [id user-id story total-score])
-                      (emit-bolt! collector [id user-id story] :stream "story")
+                      (emit-bolt! collector [id user-id story total-score] :anchor tuple)
+                      (emit-bolt! collector [id user-id story] :stream "story" :anchor tuple)
                       (swap! scores #(dissoc % [user-id story])))
-                    (emit-bolt! collector [id user-id nil] :stream "story"))))
+                    (emit-bolt! collector [id user-id nil] :stream "story" :anchor tuple))))
               (ack! collector tuple)))))

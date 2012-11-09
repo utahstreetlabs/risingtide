@@ -25,7 +25,7 @@
               (let [request-id (.getValue tuple 0)
                     user-id (Integer/parseInt (.getString tuple 1))]
                (doseq [action (find-actions solr-conn user-id)]
-                 (emit-bolt! collector [request-id [user-id] action])))
+                 (emit-bolt! collector [request-id [user-id] action] :anchor tuple)))
               (ack! collector tuple)))))
 
 

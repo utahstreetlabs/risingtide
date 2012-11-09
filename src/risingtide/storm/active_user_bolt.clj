@@ -15,5 +15,5 @@
      (execute [{id "id" story "story" :as tuple}]
               (when (for-user-feed? story)
                 (doseq [user-ids (partition-all config/active-user-bolt-batch-size (active-users redii))]
-                  (emit-bolt! collector [id user-ids story])))
+                  (emit-bolt! collector [id user-ids story] :anchor tuple)))
               (ack! collector tuple)))))

@@ -10,7 +10,7 @@
              [feed-bolts :refer [add-to-feed add-to-curated-feed]]
              [build-feed :as feed-building]]
             [risingtide.storm.drpc.local-server :as local-drpc-server]
-            [backtype.storm [clojure :refer [topology spout-spec bolt-spec]] [config :refer [TOPOLOGY-DEBUG DRPC-SERVERS]]])
+            [backtype.storm [clojure :refer [topology spout-spec bolt-spec]] [config :refer :all]])
   (:import [backtype.storm LocalCluster LocalDRPC]))
 
 (defn feed-generation-topology

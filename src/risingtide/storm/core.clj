@@ -59,7 +59,7 @@
         "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]
                                   "drpc-interest-reducer" ["user-id"]}
                                  add-to-feed
-                                 :p 20)}
+                                 :p 12)}
        (feed-building/bolts)))))
 
 (defn run-local! [& {debug "debug" workers "workers" :or {debug "false" workers "4"}}]

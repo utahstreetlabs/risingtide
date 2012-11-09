@@ -23,8 +23,8 @@ set :scm_verbose, true
 set(:branch) do
   "storm"
   # case stage
-  # when "production" then "master"
-  # else "storm"
+  # when :production then "production"
+  # else "staging"
   # end
 end
 set :use_sudo, false
@@ -36,7 +36,7 @@ set :hipchat_announce, true
 # total number of workers
 set(:workers) do
   case stage
-  when "production" then 12
+  when :production then 12
   else 4
   end
 end

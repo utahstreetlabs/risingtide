@@ -66,7 +66,7 @@
 (def action-solr-config
   {:development "http://127.0.0.1:8950/solr"
    :test "http://127.0.0.1:8951/solr"
-   :staging "http://staging.copious.com:8983/solr"
+   :staging "http://127.0.0.1:8983/solr"
    :demo "http://demo1.copious.com:8983/solr"
    :production "http://solr-rt1.copious.com:8983/solr"})
 (defn action-solr []

@@ -27,7 +27,7 @@
           :active-users {:host "demo1.copious.com"}
           :shard-config {:host "demo1.copious.com"}}
    :production {:resque {:host "resque-redis-master.copious.com"}
-                :everything-card-feed {:host "rt-card-feeds-redis.copious.com"}
+                :everything-card-feed {:host "rt-feeds-1-redis.copious.com"}
                 :card-feeds-1 {:host "rt-feeds-1-redis.copious.com"}
                 :card-feeds-2 {:host "rt-feeds-2-redis.copious.com"}
                 :active-users {:host "rt-active-users-redis.copious.com"}

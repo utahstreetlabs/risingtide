@@ -33,6 +33,14 @@ set :hipchat_token, '39019837fa847cfb17282ed5d3fbce'
 set :hipchat_room_name, 'bots'
 set :hipchat_announce, true
 
+# total number of workers
+set(:workers) do
+  case stage
+  when "production" then 12
+  else 4
+  end
+end
+
 after "deploy", "deploy:cleanup"
 
 namespace :deploy do
@@ -42,7 +50,7 @@ namespace :deploy do
   before "deploy:restart", "deploy:build_uberjar"
 
   task :start, :roles => :app, :except => { :no_release => true } do
-    run "storm/current/bin/storm jar risingtide/current/target/risingtide-*-standalone.jar risingtide.storm.FeedTopology"
+    run "storm/current/bin/storm jar risingtide/current/target/risingtide-*-standalone.jar risingtide.storm.FeedTopology debug true workers #{workers}"
   end
 
   task :stop, :roles => :app, :except => { :no_release => true } do

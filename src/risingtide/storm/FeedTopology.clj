@@ -5,8 +5,9 @@
   (:import [backtype.storm StormSubmitter])
   (:gen-class))
 
-(defn -main []
+(defn -main [& {debug "debug" workers "workers" :or {debug "false" workers "4"}}]
   (StormSubmitter/submitTopology
    "feed topology"
-   {TOPOLOGY-DEBUG true}
+   {TOPOLOGY-DEBUG (Boolean/parseBoolean debug)
+    TOPOLOGY-WORKERS (Integer/parseInteger workers)}
    (feed-generation-topology)))

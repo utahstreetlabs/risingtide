@@ -62,14 +62,12 @@
                                  :p 20)}
        (feed-building/bolts)))))
 
-(defn run-local! []
+(defn run-local! [& {debug "debug" workers "workers" :or {debug "false" workers "4"}}]
   (let [drpc (LocalDRPC.)]
     (doto (LocalCluster.)
       (.submitTopology "story"
-                       {
-                        ;; enable during development for easy debugging
-                        ;; TOPOLOGY-DEBUG true
-                       }
+                       {TOPOLOGY-DEBUG (Boolean/parseBoolean debug)
+                        TOPOLOGY-WORKERS (Integer/parseInt workers)}
                       (feed-generation-topology drpc)))
     (local-drpc-server/run! drpc (config/local-drpc-port))))
 

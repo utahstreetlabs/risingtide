@@ -13,7 +13,7 @@
     :timestamp (now)))
 
 (defbolt prepare-action-bolt ["action"] [{action "action" :as tuple} collector]
-  (emit-bolt! collector [(prepare-action action)])
+  (emit-bolt! collector [(prepare-action action)] :anchor tuple)
   (ack! collector tuple))
 
 (defbolt save-action-bolt ["id" "action"] {:prepare true}
@@ -22,10 +22,8 @@
         solr-conn (solr/connection)]
     (bolt
      (execute [{id "id" action "action" :as tuple}]
-              (let [action-json (json/json-str action)]
-                (aof/write! syslog action-json)
-                (log/info "Saving action "action-json))
+              (aof/write! syslog (json/json-str action))
               (solr/save! solr-conn action)
-              (emit-bolt! collector [id action])
+              (emit-bolt! collector [id action] :anchor tuple)
               (ack! collector tuple)))))
 

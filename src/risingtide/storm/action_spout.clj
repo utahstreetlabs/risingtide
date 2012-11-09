@@ -22,9 +22,12 @@
                            (.lpop r "resque:queue:rising_tide_actions")
                            (finally (.returnResource pool r))))]
        (if-let [action (action-from-resque string)]
-         (emit-spout! collector [action])
+         (let [id (str (java.util.UUID/randomUUID))]
+           (log/info "processing action "action" with id "id)
+           (emit-spout! collector [action] :id id))
          (log/info "action spout ignoring" string))))
     (ack [id]
+         (log/info "finished processing action " id)
          ;; You only need to define this method for reliable spouts
          ;; (such as one that reads off of a queue like Kestrel)
          ;; This is an unreliable spout, so it does nothing here

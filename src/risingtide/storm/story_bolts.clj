@@ -19,6 +19,6 @@
    (or (:timestamp action) (now))))
 
 (defbolt create-story-bolt ["id" "user-ids" "story"] [{id "id" user-ids "user-ids" action "action" :as tuple} collector]
-  (emit-bolt! collector [id user-ids (action-to-story action)])
+  (emit-bolt! collector [id user-ids (action-to-story action)] :anchor tuple)
   (ack! collector tuple))
 

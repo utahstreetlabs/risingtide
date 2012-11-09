@@ -66,7 +66,10 @@
   (let [drpc (LocalDRPC.)]
     (doto (LocalCluster.)
       (.submitTopology "story"
-                       {TOPOLOGY-DEBUG true}
+                       {
+                        ;; enable during development for easy debugging
+                        ;; TOPOLOGY-DEBUG true
+                       }
                       (feed-generation-topology drpc)))
     (local-drpc-server/run! drpc (config/local-drpc-port))))
 

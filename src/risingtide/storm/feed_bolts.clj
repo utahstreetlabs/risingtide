@@ -59,7 +59,7 @@
               (let [feed @(@feed-set user-id)]
                 (when (active? redii user-id)
                   (write-feed! redii (key/user-feed user-id) feed))
-                (emit-bolt! collector [id (seq feed)] :anchor tuple))
+                (emit-bolt! collector [id user-id (seq feed)] :anchor tuple))
               (ack! collector tuple))
      (cleanup [] (.shutdown feed-expirer)))))
 

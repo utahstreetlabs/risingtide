@@ -7,7 +7,8 @@
    [risingtide
     [config :as config]
     [persist :refer [keywordize convert-to-kw-set convert-to-set]]]
-   [clojure-solr :as solr]))
+   [clojure-solr :as solr])
+  (:refer-clojure :exclude [find]))
 
 (def to-solr-keys
   {:tag_ids :tag_id_is
@@ -16,7 +17,8 @@
    :buyer_id :buyer_id_i
    :network :network_s
    :type :type_s
-   :timestamp :timestamp_i})
+   :timestamp :timestamp_i
+   :tag_id :tag_id_i})
 
 (def from-solr-keys (map-invert to-solr-keys))
 
@@ -62,6 +64,10 @@
 (defn search-interests [connection & interests]
   (solr/with-connection connection
     (map decode (solr/search (apply interests-string interests) :df "interests"))))
+
+(defn find [connection id]
+  (solr/with-connection connection
+    (decode (first (solr/search (str "id:"id))))))
 
 (defn delete-actions! [connection]
  (solr/with-connection connection

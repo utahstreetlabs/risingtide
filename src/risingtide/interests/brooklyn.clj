@@ -32,14 +32,14 @@
           (fields :user_id)))
 
 (defn following? [follower-id followee-id]
-  (> (:cnt (first (select follows (fields (raw "count(*) cnt"))
+  (> (:cnt (first (select follows (fields (raw "COUNT(*) AS cnt"))
                           (where {:user_id followee-id
                                   :follower_id follower-id}))))
      0))
 
 (defn follow-counts [followee-id follower-ids]
   (dissoc
-   (->> (select follows (fields :follower_id (raw "count(*) cnt"))
+   (->> (select follows (fields :follower_id (raw "COUNT(*) AS cnt"))
                 (where {:user_id followee-id
                         :follower_id [in follower-ids]}))
         (map (fn [{cnt :cnt follower-id :follower_id}] [follower-id cnt]))

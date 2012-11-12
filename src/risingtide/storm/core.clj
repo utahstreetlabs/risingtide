@@ -42,13 +42,13 @@
 
         "likes" (bolt-spec {"active-users" :shuffle}
                            like-interest-scorer
-                           :p 2)
+                           :p 12)
         "follows" (bolt-spec {"active-users" :shuffle}
                              follow-interest-scorer
-                             :p 2)
+                             :p 12)
         "seller-follows" (bolt-spec {"active-users" :shuffle}
                                     seller-follow-interest-scorer
-                                    :p 2)
+                                    :p 12)
 
         "interest-reducer" (bolt-spec {"likes" ["user-id" "story"]
                                        "follows" ["user-id" "story"]

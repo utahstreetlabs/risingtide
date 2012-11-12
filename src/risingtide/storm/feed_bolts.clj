@@ -44,7 +44,7 @@
   (doto (java.util.concurrent.ScheduledThreadPoolExecutor. 1)
     (.scheduleWithFixedDelay function interval interval java.util.concurrent.TimeUnit/SECONDS)))
 
-(defbolt add-to-feed ["id" "feed"] {:prepare true}
+(defbolt add-to-feed ["id" "user-id" "feed"] {:prepare true}
   [conf context collector]
   (let [feed-set (atom {})
         redii (redis/redii)

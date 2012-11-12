@@ -19,12 +19,12 @@
           (fields :listing_id :tag_id)))
 
 (defn likes? [user-id listing-id]
-  (> (:cnt (first (select likes (fields :user_id (raw "count(*) cnt"))  (where {:user_id user-id :listing_id listing-id}))))
+  (> (:cnt (first (select likes (fields :user_id (raw "COUNT(*) AS cnt"))  (where {:user_id user-id :listing_id listing-id}))))
      0))
 
 (defn like-counts [listing-id user-ids]
   (dissoc
-   (->> (select likes (fields :user_id (raw "count(*) cnt")) (where {:user_id [in user-ids] :listing_id listing-id}))
+   (->> (select likes (fields :user_id (raw "COUNT(*) AS cnt")) (where {:user_id [in user-ids] :listing_id listing-id}))
         (map (fn [{cnt :cnt user-id :user_id}] [user-id cnt]))
         (into {})
         (merge (reduce #(assoc %1 %2 0) {} user-ids)))

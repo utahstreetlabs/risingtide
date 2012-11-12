@@ -22,6 +22,6 @@
     (solr/save! solr-conn action)
 
     (fact (str (action "type")" persists to solr without loss")
-      (solr/find solr-conn id) => (solr/decode (solr/encode action)))))
+      (solr/find solr-conn id) => (dissoc (solr/decode (solr/encode action)) :interests))))
 
 (clear-action-solr!)

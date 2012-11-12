@@ -22,5 +22,3 @@
 (defn for-user-feed?
   [story]
   (for-feed-with-token? story user-feed-token user-feed-token?))
-
-(for-user-feed? #risingtide.model.story.ListingActivatedStory{:actor-id 1, :listing-id 100, :tag-ids nil, :feed nil})

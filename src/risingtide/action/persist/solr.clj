@@ -29,9 +29,6 @@
   (assoc action :interests
          (interests action)))
 
-(defn strip-interests [action]
-  (dissoc action :interests  :_version_))
-
 (defn encode [action]
   (-> action
       (assoc :id (or (:id action) (str (java.util.UUID/randomUUID)))
@@ -43,7 +40,7 @@
   (-> doc
       keywordize-keys
       (rename-keys from-solr-keys)
-      (dissoc :interests :_version_ :id)
+      (dissoc :_version_ :id)
       (keywordize :type)))
 
 (defn connection []

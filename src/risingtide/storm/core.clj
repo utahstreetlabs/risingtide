@@ -38,7 +38,7 @@
 
         "active-users" (bolt-spec {"stories" :shuffle}
                                   active-user-bolt
-                                  :p 1)
+                                  :p 4)
 
         "likes" (bolt-spec {"active-users" :shuffle}
                            like-interest-scorer

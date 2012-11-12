@@ -1,5 +1,6 @@
 (ns risingtide.storm.active-user-bolt
   (:require [risingtide
+             [core :refer [bench]]
              [config :as config]
              [redis :as redis]
              [active-users :refer [active-users]]]
@@ -14,6 +15,7 @@
     (bolt
      (execute [{id "id" story "story" :as tuple}]
               (when (for-user-feed? story)
-                (doseq [user-ids (partition-all config/active-user-bolt-batch-size (active-users redii))]
+                (doseq [user-ids (partition-all config/active-user-bolt-batch-size
+                                                (bench "finding active users" (active-users redii)))]
                   (emit-bolt! collector [id user-ids story] :anchor tuple)))
               (ack! collector tuple)))))

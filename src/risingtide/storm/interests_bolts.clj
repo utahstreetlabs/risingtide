@@ -1,5 +1,5 @@
 (ns risingtide.storm.interests-bolts
-  (:require [risingtide.core :only [bench]]
+  (:require [risingtide.core :refer [bench]]
             [risingtide.interests
              [brooklyn :as brooklyn]
              [pyramid :as likes]]

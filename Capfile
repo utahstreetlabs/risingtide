@@ -59,7 +59,7 @@ namespace :deploy do
   before "deploy:restart", "deploy:build_uberjar"
 
   task :start, :roles => :app, :except => { :no_release => true } do
-    run "storm/current/bin/storm jar risingtide/current/target/risingtide-*-standalone.jar risingtide.storm.FeedTopology debug true workers #{workers} debug #{storm_debug}"
+    run "storm/current/bin/storm jar risingtide/current/target/risingtide-*-standalone.jar risingtide.storm.FeedTopology workers #{workers} debug #{storm_debug}"
   end
 
   task :stop, :roles => :app, :except => { :no_release => true } do

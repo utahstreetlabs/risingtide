@@ -60,7 +60,7 @@
 
 (defn search-interests [connection & interests]
   (solr/with-connection connection
-    (map decode (solr/search (apply interests-string interests) :df "interests"))))
+    (doall (map decode (solr/search (apply interests-string interests) :df "interests")))))
 
 (defn find [connection id]
   (solr/with-connection connection

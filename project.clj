@@ -13,6 +13,11 @@
                  [org.syslog4j/syslog4j "0.9.30"]
                  [net.java.dev.jna/jna "3.4.0"]
 
+                 [compojure "1.1.0"]
+                 [ring/ring-jetty-adapter "1.1.6"]
+                 [enlive "1.0.0"]
+
+;;                 [org.slf4j/slf4j-log4j12 "1.6.4"] ;; needed
                  [utahstreetlabs/clojure-solr "0.3.0"]
                  [risingtide-model "2.0.2"]]
   :java-source-paths ["java-src"]
@@ -20,7 +25,7 @@
                                   ;; storm dependency only in dev
                                   ;; cause production storm cluster
                                   ;; provide it
-                                  [storm "0.8.1"]]}}
+                                  [storm "0.8.1" :exclusions [org.slf4j/slf4j-api org.slf4j/slf4j-log4j12]]]}}
   :run-aliases {:convert-redis-keys-from-staging-to-dev! risingtide.utils/run-convert-redis-keys-from-staging-to-dev!}
   :main risingtide
   :min-lein-version "2.0.0"

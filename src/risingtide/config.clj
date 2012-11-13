@@ -90,3 +90,5 @@
 
 (defn local-drpc-port []
   (local-drpc-port-config env))
+
+(def admin-port 4055)

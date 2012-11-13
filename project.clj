@@ -17,7 +17,6 @@
                  [ring/ring-jetty-adapter "1.1.6"]
                  [enlive "1.0.0"]
 
-;;                 [org.slf4j/slf4j-log4j12 "1.6.4"] ;; needed
                  [utahstreetlabs/clojure-solr "0.3.0"]
                  [risingtide-model "2.0.2"]]
   :java-source-paths ["java-src"]

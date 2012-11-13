@@ -61,6 +61,11 @@
     (apply add-active-users (redis/redii) (* 60 10) active-users)))
 
 
+(do
+  (clear-mysql-dbs!)
+  (clear-action-solr!)
+  (clear-redis!))
+
 (let [actions-rob-cares-about
       (on-copious
        (jim likes ham)

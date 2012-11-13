@@ -41,6 +41,15 @@ set(:workers) do
   end
 end
 
+# whether or not topology debug mode should be enabled
+# see https://github.com/nathanmarz/storm/blob/master/src/jvm/backtype/storm/Config.java
+set(:storm_debug) do
+  case stage
+  when :production then 'false'
+  else 'true'
+  end
+end
+
 after "deploy", "deploy:cleanup"
 
 namespace :deploy do
@@ -50,7 +59,7 @@ namespace :deploy do
   before "deploy:restart", "deploy:build_uberjar"
 
   task :start, :roles => :app, :except => { :no_release => true } do
-    run "storm/current/bin/storm jar risingtide/current/target/risingtide-*-standalone.jar risingtide.storm.FeedTopology debug true workers #{workers}"
+    run "storm/current/bin/storm jar risingtide/current/target/risingtide-*-standalone.jar risingtide.storm.FeedTopology debug true workers #{workers} debug #{storm_debug}"
   end
 
   task :stop, :roles => :app, :except => { :no_release => true } do

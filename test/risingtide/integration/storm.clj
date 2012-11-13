@@ -1,5 +1,6 @@
 (ns risingtide.integration.storm
   (:require
+   [risingtide.test]
    [clojure.data.json :as json]
    [risingtide
     [config :as config]
@@ -9,7 +10,6 @@
     [core :refer [feed-generation-topology]]]
    [risingtide.model.feed.digest :refer [new-digest-feed]]
 
-   [risingtide.test]
    [risingtide.test.support
     [entities :refer :all]
     [stories :refer :all]
@@ -25,10 +25,13 @@
 (defn complete-feed-generation-topology [& {actions :actions feed-build-requests :feed-builds
                                             :or {actions [] feed-build-requests []}}]
   (with-local-cluster [cluster]
-    (complete-topology cluster
-                       (feed-generation-topology drpc)
-                       :mock-sources {"actions" (map vector actions)
-                                      "drpc-feed-build-requests" feed-build-requests})))
+    (let [results
+          (complete-topology cluster
+                             (feed-generation-topology drpc)
+                             :mock-sources {"actions" (map vector actions)
+                                            "drpc-feed-build-requests" feed-build-requests})]
+      (Thread/sleep 5000)
+      results)))
 
 (def jim-activated-bacon (listing-activated jim bacon nil nil))
 (def jim-liked-ham (listing-liked jim ham nil nil))
@@ -56,8 +59,6 @@
     (doseq [[liker listing] likes]
       (creates-listing-like liker listing))
     (apply add-active-users (redis/redii) (* 60 10) active-users)))
-
-
 
 
 (let [actions-rob-cares-about
@@ -102,11 +103,12 @@
        [nil nil cutter-liked-breakfast-tacos]]
 
       (bolt-output "active-users") =>
-      [[nil [rob] jim-activated-bacon]
-       [nil [rob] jim-liked-ham]
-       [nil [rob] jim-liked-toast]
-       [nil [rob] jim-shared-toast]
-       [nil [rob] cutter-liked-breakfast-tacos]]
+      (contains [[nil [rob] jim-activated-bacon]
+                 [nil [rob] jim-liked-ham]
+                 [nil [rob] jim-liked-toast]
+                 [nil [rob] jim-shared-toast]
+                 [nil [rob] cutter-liked-breakfast-tacos]]
+                :in-any-order)
 
       (bolt-output "interest-reducer") =>
       (contains [[nil rob jim-liked-toast 1]
@@ -119,7 +121,7 @@
       ;; know that at least one of the tuples in the feed output should
       ;; be the completed feed
       (bolt-output "add-to-feed") =>
-      (contains [[nil (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham))]])
+      (contains [[nil rob (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham))]])
 
       (bolt-output "curated-feed") =>
       (contains [[nil (seq (new-digest-feed jim-activated-bacon jim-liked-ham jim-liked-toast
@@ -138,7 +140,7 @@
       (run-topology :actions more-actions-rob-cares-about)
 
       (bolt-output "add-to-feed") =>
-      [[nil (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham cutter-liked-toast))]]
+      [[nil rob (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham cutter-liked-toast))]]
 
       (feed-for rob) =>
       (contains

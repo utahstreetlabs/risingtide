@@ -13,10 +13,11 @@
   (table :likes)
   (database pyramid))
 
-(defn user-likes [user-id]
+(defn user-likes [user-id lim]
   (select likes
           (where {:user_id user-id})
-          (fields :listing_id :tag_id)))
+          (fields :listing_id :tag_id)
+          (limit lim)))
 
 (defn likes? [user-id listing-id]
   (> (:cnt (first (select likes (fields :user_id (raw "COUNT(*) AS cnt"))  (where {:user_id user-id :listing_id listing-id}))))

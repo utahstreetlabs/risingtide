@@ -26,10 +26,11 @@
   (table :listings)
   (database brooklyn))
 
-(defn user-follows [user-id]
+(defn user-follows [user-id lim]
   (select follows
           (where {:follower_id user-id})
-          (fields :user_id)))
+          (fields :user_id)
+          (limit lim)))
 
 (defn following? [follower-id followee-id]
   (> (:cnt (first (select follows (fields (raw "COUNT(*) AS cnt"))
@@ -51,9 +52,10 @@
   (first (select listings
                  (where {:id listing-id}))))
 
-(defn listings-for-sale [seller-ids]
+(defn listings-for-sale [seller-ids lim]
   (select listings
-          (where {:seller_id [in seller-ids]})))
+          (where {:seller_id [in seller-ids]})
+          (limit lim)))
 
 ;;; mutating methods - should only be used in test!!!
 

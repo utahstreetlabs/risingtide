@@ -82,6 +82,11 @@
 ;;; storm topology config ;;;
 
 (def active-user-bolt-batch-size 500)
+(def recent-actions-max-follows 100)
+(def recent-actions-max-likes 100)
+(def recent-actions-max-seller-listings 100)
+(def recent-actions-max-recent-stories 100)
+
 
 (def local-drpc-port-config
   ;; this only gets used in dev and test

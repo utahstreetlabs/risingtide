@@ -24,25 +24,27 @@
 
    {"drpc-stories" [{"drpc-actions" :shuffle} create-story-bolt]}
 
-   {"drpc-likes" [{"drpc-stories" :shuffle}
-                  like-interest-scorer
-                  :p 2]
-    "drpc-follows" [{"drpc-stories" :shuffle}
-                   follow-interest-scorer
-                   :p 2]
-    "drpc-seller-follows" [{"drpc-stories" :shuffle}
-                           seller-follow-interest-scorer
-                           :p 2]
+   {;; XXX: think about bringing this back if we get more
+    ;; sophisticated scorers
+    ;; "drpc-likes" [{"drpc-stories" :shuffle}
+    ;;               like-interest-scorer
+    ;;               :p 2]
+    ;; "drpc-follows" [{"drpc-stories" :shuffle}
+    ;;                follow-interest-scorer
+    ;;                :p 2]
+    ;; "drpc-seller-follows" [{"drpc-stories" :shuffle}
+    ;;                        seller-follow-interest-scorer
+    ;;                        :p 2]
 
-    "drpc-interest-reducer" [{"drpc-likes" ["user-id" "story"]
-                              "drpc-follows" ["user-id" "story"]
-                              "drpc-seller-follows" ["user-id" "story"]}
-                             interest-reducer
-                             :p 5]
+    ;; "drpc-interest-reducer" [{"drpc-likes" ["user-id" "story"]
+    ;;                           "drpc-follows" ["user-id" "story"]
+    ;;                           "drpc-seller-follows" ["user-id" "story"]}
+    ;;                          interest-reducer
+    ;;                          :p 5]
 
-    "drpc-feed-builder"  [{["drpc-interest-reducer" "story"] ["id" "user-id"]}
-                             (BatchBoltExecutor. (FeedBuilder. "story" "user-id"))
-                             :p 1]
+    "drpc-feed-builder"  [{"drpc-stories" ["id" "user-ids"]}
+                          (BatchBoltExecutor. (FeedBuilder. "story" "user-ids"))
+                          :p 1]
 
     "drpc-serialize-feed" [{"drpc-feed-builder" ["id" "user-id"]}
                            serialize-feed

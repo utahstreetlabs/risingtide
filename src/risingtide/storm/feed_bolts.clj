@@ -54,8 +54,8 @@
                           (catch Exception e (log-err "exception expiring cache" e *ns*)))
                        config/feed-expiration-delay)]
     (bolt
-     (execute [{id "id" user-id "user-id" story "story" score "score" :as tuple}]
-              (update-feed-set! redii feed-set user-id story)
+     (execute [{id "id" user-id "user-id" story "story" new-feed "feed" :as tuple}]
+              (update-feed-set! redii feed-set user-id (or story new-feed))
               (let [feed @(@feed-set user-id)]
                 (when (active? redii user-id)
                   (write-feed! redii (key/user-feed user-id) feed))

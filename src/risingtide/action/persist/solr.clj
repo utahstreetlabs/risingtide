@@ -54,13 +54,13 @@
     (solr/commit!)))
 
 
-(defn- interests-string [& {:as interests}]
-  (str/join " " (concat (map #(str "a_" %) (:actors interests))
-                        (map #(str "l_" %) (:listings interests)))))
+(defn- interests-string [& {actors :actors listings :listings}]
+  (str/join " " (concat (map #(str "a_" %) actors)
+                        (map #(str "l_" %) listings))))
 
-(defn search-interests [connection & interests]
+(defn search-interests [connection & {actors :actors listings :listings rows :rows}]
   (solr/with-connection connection
-    (doall (map decode (solr/search (apply interests-string interests) :df "interests")))))
+    (doall (map decode (solr/search (interests-string :actors actors :listings listings) :df "interests" :rows rows)))))
 
 (defn find [connection id]
   (solr/with-connection connection

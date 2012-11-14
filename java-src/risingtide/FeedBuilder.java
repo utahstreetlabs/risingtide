@@ -46,7 +46,9 @@ public class FeedBuilder extends BaseBatchBolt {
 
     @Override
     public void finishBatch() {
-        _collector.emit(new Values(_id, _userId, _feed));
+      if (_userId != 0) {
+          _collector.emit(new Values(_id, _userId, _feed.seq()));
+      }
     }
 
     @Override

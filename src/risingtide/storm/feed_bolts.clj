@@ -55,11 +55,13 @@
                        config/feed-expiration-delay)]
     (bolt
      (execute [{id "id" user-id "user-id" story "story" new-feed "feed" :as tuple}]
-              (update-feed-set! redii feed-set user-id (or story new-feed))
-              (let [feed @(@feed-set user-id)]
-                (when (active? redii user-id)
-                  (write-feed! redii (key/user-feed user-id) feed))
-                (emit-bolt! collector [id user-id (seq feed)] :anchor tuple))
+              (doseq [s (if story [story] new-feed)]
+                (update-feed-set! redii feed-set user-id s))
+              (when (or story (not (empty? new-feed)))
+               (let [feed @(@feed-set user-id)]
+                 (when (active? redii user-id)
+                   (write-feed! redii (key/user-feed user-id) feed))
+                 (emit-bolt! collector [id user-id (seq feed)] :anchor tuple)))
               (ack! collector tuple))
      (cleanup [] (.shutdown feed-expirer)))))
 

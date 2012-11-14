@@ -44,11 +44,11 @@
 
     "drpc-feed-builder"  [{"drpc-stories" ["id" "user-ids"]}
                           (BatchBoltExecutor. (FeedBuilder. "story" "user-ids"))
-                          :p 1]
+                          :p 4]
 
     "drpc-serialize-feed" [{"drpc-feed-builder" ["id" "user-id"]}
                            serialize-feed
-                           :p 1]
+                           :p 2]
 
     }
    ["drpc-serialize-feed" "feed"]))

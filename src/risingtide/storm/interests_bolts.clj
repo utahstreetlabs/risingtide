@@ -3,28 +3,37 @@
             [risingtide.interests
              [brooklyn :as brooklyn]
              [pyramid :as likes]]
-            [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]]))
+            [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]]
+            [metrics
+             [timers :refer [deftimer time!]]
+             [meters :refer [defmeter mark!]]]))
 
 (defn like-scores [user-ids story]
   (likes/like-counts (:listing-id story) user-ids))
 
+(deftimer like-interest-score-time)
+
 (defbolt like-interest-scorer ["id" "user-id" "story" "score" "type"]
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
-  (doseq [[user-id score] (bench (str "like scores query for "id)  (like-scores user-ids story))]
+  (doseq [[user-id score] (time! like-interest-score-time  (like-scores user-ids story))]
     (emit-bolt! collector [id user-id story score :like] :anchor tuple))
   (ack! collector tuple))
 
 (defn follow-scores [user-ids story]
   (brooklyn/follow-counts (:actor-id story) user-ids))
 
+(deftimer follow-interest-score-time)
+
 (defbolt follow-interest-scorer ["id" "user-id" "story" "score" "type"]
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
-  (doseq [[user-id score] (bench (str "follow scores query for "id)  (follow-scores user-ids story))]
+  (doseq [[user-id score] (time! follow-interest-score-time (follow-scores user-ids story))]
     (emit-bolt! collector [id user-id story score :follow] :anchor tuple))
   (ack! collector tuple))
 
 (defn seller-follow-scores [user-ids story]
   (brooklyn/follow-counts (:seller_id (brooklyn/find-listing (:listing-id story))) user-ids))
+
+(deftimer seller-follow-interest-score-time)
 
 (defbolt seller-follow-interest-scorer ["id" "user-id" "story" "score" "type"]
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
@@ -34,6 +43,8 @@
 
 (defn sum-scores [scores]
   (apply + (vals scores)))
+
+(defmeter story-scored "stories scored")
 
 (defbolt interest-reducer {"default" ["id" "user-id" "story" "score"]
                            "story"   ["id" "user-id" "story"]} {:prepare true}
@@ -50,6 +61,7 @@
                     (do
                       (emit-bolt! collector [id user-id story total-score] :anchor tuple)
                       (emit-bolt! collector [id user-id story] :stream "story" :anchor tuple)
+                      (mark! story-scored)
                       (swap! scores #(dissoc % [user-id story])))
                     (emit-bolt! collector [id user-id nil] :stream "story" :anchor tuple))))
               (ack! collector tuple)))))

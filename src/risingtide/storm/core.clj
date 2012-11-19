@@ -10,7 +10,8 @@
              [feed-bolts :refer [add-to-feed add-to-curated-feed]]
              [build-feed :as feed-building]]
             [risingtide.storm.drpc.local-server :as local-drpc-server]
-            [backtype.storm [clojure :refer [topology spout-spec bolt-spec]] [config :refer :all]])
+            [backtype.storm [clojure :refer [topology spout-spec bolt-spec]] [config :refer :all]]
+            [metrics.core :refer [report-to-console]])
   (:import [backtype.storm LocalCluster LocalDRPC]))
 
 (defn feed-generation-topology
@@ -62,14 +63,18 @@
                                  :p 12)}
        (feed-building/bolts)))))
 
-(defn run-local! [& {debug "debug" workers "workers" :or {debug "false" workers "4"}}]
+(defn run-local! [& {debug "debug" workers "workers"
+                     report-local-stats "report-local-stats"
+                     :or {debug "false" workers "4" report-local-stats "false"}}]
   (let [drpc (LocalDRPC.)]
     (doto (LocalCluster.)
       (.submitTopology "story"
                        {TOPOLOGY-DEBUG (Boolean/parseBoolean debug)
                         TOPOLOGY-WORKERS (Integer/parseInt workers)}
                       (feed-generation-topology drpc)))
-    (local-drpc-server/run! drpc (config/local-drpc-port))))
+    (local-drpc-server/run! drpc (config/local-drpc-port))
+    (when (Boolean/parseBoolean report-local-stats)
+      (report-to-console 10))))
 
 
 (comment

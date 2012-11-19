@@ -6,7 +6,10 @@
             [risingtide.action.persist
              [solr :as solr]
              [aof :as aof]]
-            [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]]) )
+            [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]]
+            [metrics.meters :refer [defmeter mark!]]))
+
+(defmeter action-saved "actions saved")
 
 (defn prepare-action [action]
   (assoc action
@@ -25,5 +28,6 @@
               (aof/write! syslog (json/json-str action))
               (solr/save! solr-conn action)
               (emit-bolt! collector [id action] :anchor tuple)
+              (mark! action-saved)
               (ack! collector tuple)))))
 

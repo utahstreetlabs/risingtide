@@ -10,7 +10,7 @@
 
 (defbolt like-interest-scorer ["id" "user-id" "story" "score" "type"]
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
-  (doseq [[user-id score] (bench "like scores query" (like-scores user-ids story))]
+  (doseq [[user-id score] (bench (str "like scores query for "id)  (like-scores user-ids story))]
     (emit-bolt! collector [id user-id story score :like] :anchor tuple))
   (ack! collector tuple))
 
@@ -19,7 +19,7 @@
 
 (defbolt follow-interest-scorer ["id" "user-id" "story" "score" "type"]
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
-  (doseq [[user-id score] (bench "follow scores query" (follow-scores user-ids story))]
+  (doseq [[user-id score] (bench (str "follow scores query for "id)  (follow-scores user-ids story))]
     (emit-bolt! collector [id user-id story score :follow] :anchor tuple))
   (ack! collector tuple))
 
@@ -28,7 +28,7 @@
 
 (defbolt seller-follow-interest-scorer ["id" "user-id" "story" "score" "type"]
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
-  (doseq [[user-id score] (bench "seller follow scores query" (seller-follow-scores user-ids story))]
+  (doseq [[user-id score] (bench (str "seller follow scores query for "id)  (seller-follow-scores user-ids story))]
     (emit-bolt! collector [id user-id story score :listing-seller] :anchor tuple))
   (ack! collector tuple))
 

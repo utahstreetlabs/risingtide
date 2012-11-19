@@ -4,7 +4,10 @@
             [risingtide.interests
              [brooklyn :refer [user-follows listings-for-sale]]
              [pyramid :refer [user-likes]]]
-            [backtype.storm [clojure :refer [defbolt bolt emit-bolt! ack!]]]))
+            [backtype.storm [clojure :refer [defbolt bolt emit-bolt! ack!]]]
+            [metrics
+             [timers :refer [deftimer time!]]
+             [histograms :refer [defhistogram update!]]]))
 
 (defn- find-actions [solr-conn user-id]
   (let [followee-ids (map :user_id (user-follows user-id config/recent-actions-max-follows))]
@@ -14,6 +17,9 @@
      :actors followee-ids
      :listings (concat (filter identity (map :listing_id (user-likes user-id config/recent-actions-max-likes)))
                        (map :id (listings-for-sale followee-ids config/recent-actions-max-seller-listings))))))
+
+(deftimer find-recent-actions-time)
+(defhistogram recent-actions-found)
 
 (defbolt recent-actions-bolt ["id" "user-ids" "action"] {:prepare true}
   [conf context collector]
@@ -25,23 +31,9 @@
               ;; the second value in the tuple coming off a drpc spout will be the
               ;; argument passed by the client
               (let [request-id (.getValue tuple 0)
-                    user-id (Integer/parseInt (.getString tuple 1))]
-               (doseq [action (find-actions solr-conn user-id)]
-                 (emit-bolt! collector [request-id user-id action] :anchor tuple)))
+                    user-id (Integer/parseInt (.getString tuple 1))
+                    actions (time! find-recent-actions-time (find-actions solr-conn user-id))]
+                (update! recent-actions-found (count actions))
+                (doseq [action actions]
+                  (emit-bolt! collector [request-id user-id action] :anchor tuple)))
               (ack! collector tuple)))))
-
-(comment
-
-  (def solr-conn (solr/connection))
-  (count
-   (let [user-id 34
-         followee-ids (map :user_id (user-follows user-id 100))
-         actors (risingtide.core/bench "follows" (doall followee-ids))
-         listings (risingtide.core/bench "likes" (doall (concat (filter identity (map :listing_id (user-likes user-id 100)))
-                                                                (map :id (listings-for-sale followee-ids 100)))))]
-     (risingtide.core/bench "searching"
-                            (solr/search-interests
-                             solr-conn
-                             :rows 100
-                             :actors actors
-                             :listings listings)))))

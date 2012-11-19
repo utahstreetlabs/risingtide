@@ -18,7 +18,10 @@
             [risingtide.model
              [timestamps :refer [min-timestamp max-timestamp]]]
             [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]]
-            [clojure.tools.logging :as log])
+            [clojure.tools.logging :as log]
+            [metrics
+             [meters :refer [defmeter mark!]]
+             [gauges :refer [gauge]]])
   (:import java.util.concurrent.ScheduledThreadPoolExecutor))
 
 (defn initialize-digest-feed [redii feed-key & stories]
@@ -44,13 +47,39 @@
   (doto (java.util.concurrent.ScheduledThreadPoolExecutor. 1)
     (.scheduleWithFixedDelay function interval interval java.util.concurrent.TimeUnit/SECONDS)))
 
+(defn feed-set-feed-sizes [feed-set]
+  (if (empty? feed-set)
+    [-1]
+    (map count (vals feed-set))))
+
+(defn mean
+  [& numbers]
+  (quot (apply + numbers) (count numbers)))
+
+(defn median [& ns]
+  "Thanks, http://rosettacode.org/wiki/Averages/Median#Clojure"
+  (let [ns (sort ns)
+        cnt (count ns)
+        mid (bit-shift-right cnt 1)]
+    (if (odd? cnt)
+      (nth ns mid)
+      (/ (+ (nth ns mid) (nth ns (dec mid))) 2))))
+
+(defmeter expiration-run "expiration runs")
+
 (defbolt add-to-feed ["id" "user-id" "feed"] {:prepare true}
   [conf context collector]
   (let [feed-set (atom {})
+        feed-set-size-gauge (gauge "feed-set-size" (count @feed-set))
+        feed-max-gauge (gauge "feed-set-feed-min-size" (apply max (feed-set-feed-sizes @feed-set)))
+        feed-min-gauge (gauge "feed-set-feed-max-size" (apply min (feed-set-feed-sizes @feed-set)))
+        feed-mean-gauge (gauge "feed-set-feed-mean-size" (apply mean (feed-set-feed-sizes @feed-set)))
+        feed-median-gauge (gauge "feed-set-feed-median-size" (apply median (feed-set-feed-sizes @feed-set)))
         redii (redis/redii)
         feed-expirer (schedule-with-delay
                        #(try
                           (expire-feeds! redii feed-set)
+                          (mark! expiration-run)
                           (catch Exception e (log-err "exception expiring cache" e *ns*)))
                        config/feed-expiration-delay)]
     (bolt

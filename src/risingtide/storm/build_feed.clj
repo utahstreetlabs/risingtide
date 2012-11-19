@@ -22,7 +22,7 @@
    "drpc-feed-build-requests"
    ["drpc-actions" recent-actions-bolt]
 
-   {"drpc-stories" [{"drpc-actions" :shuffle} create-story-bolt]}
+   {"drpc-stories" [{"drpc-actions" :shuffle} create-story-bolt :p 24]}
 
    {;; XXX: think about bringing this back if we get more
     ;; sophisticated scorers
@@ -44,11 +44,11 @@
 
     "drpc-feed-builder"  [{"drpc-stories" ["id" "user-ids"]}
                           (BatchBoltExecutor. (FeedBuilder. "story" "user-ids"))
-                          :p 4]
+                          :p 8]
 
     "drpc-serialize-feed" [{"drpc-feed-builder" ["id" "user-id"]}
                            serialize-feed
-                           :p 2]
+                           :p 4]
 
     }
    ["drpc-serialize-feed" "feed"]))

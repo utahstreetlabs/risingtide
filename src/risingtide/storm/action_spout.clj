@@ -31,4 +31,10 @@
          ;; You only need to define this method for reliable spouts
          ;; (such as one that reads off of a queue like Kestrel)
          ;; This is an unreliable spout, so it does nothing here
+         )
+    (fail [id]
+         (log/info "failed to process action " id)
+         ;; You only need to define this method for reliable spouts
+         ;; (such as one that reads off of a queue like Kestrel)
+         ;; This is an unreliable spout, so it does nothing here
          ))))

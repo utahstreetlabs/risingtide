@@ -21,11 +21,14 @@
             [clojure.tools.logging :as log]
             [metrics
              [meters :refer [defmeter mark!]]
+             [timers :refer [deftimer time!]]
              [gauges :refer [gauge]]])
   (:import java.util.concurrent.ScheduledThreadPoolExecutor))
 
+(deftimer feed-load-time)
+
 (defn initialize-digest-feed [redii feed-key & stories]
-  (let [initial-stories (feed redii feed-key (expiration-threshold) (now))]
+  (let [initial-stories (time! feed-load-time (feed redii feed-key (expiration-threshold) (now)))]
     (atom (apply new-digest-feed (concat initial-stories stories)))))
 
 (defn update-feed-set! [redii feed-set-atom user-id story]
@@ -50,7 +53,7 @@
 (defn feed-set-feed-sizes [feed-set]
   (if (empty? feed-set)
     [-1]
-    (map count (vals feed-set))))
+    (map count (deref (vals feed-set)))))
 
 (defn mean
   [& numbers]
@@ -66,6 +69,9 @@
       (/ (+ (nth ns mid) (nth ns (dec mid))) 2))))
 
 (defmeter expiration-run "expiration runs")
+(deftimer expiration-time)
+(defmeter feed-writes "feeds written")
+(deftimer feed-write-time)
 
 (defbolt add-to-feed ["id" "user-id" "feed"] {:prepare true}
   [conf context collector]
@@ -78,7 +84,7 @@
         redii (redis/redii)
         feed-expirer (schedule-with-delay
                        #(try
-                          (expire-feeds! redii feed-set)
+                          (time! expiration-time (expire-feeds! redii feed-set))
                           (mark! expiration-run)
                           (catch Exception e (log-err "exception expiring cache" e *ns*)))
                        config/feed-expiration-delay)]
@@ -89,7 +95,8 @@
               (when (or story (not (empty? new-feed)))
                (let [feed @(@feed-set user-id)]
                  (when (active? redii user-id)
-                   (write-feed! redii (key/user-feed user-id) feed))
+                   (mark! feed-writes)
+                   (time! feed-write-time (write-feed! redii (key/user-feed user-id) feed)))
                  (emit-bolt! collector [id user-id (seq feed)] :anchor tuple)))
               (ack! collector tuple))
      (cleanup [] (.shutdown feed-expirer)))))

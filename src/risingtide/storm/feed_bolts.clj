@@ -53,7 +53,7 @@
 (defn feed-set-feed-sizes [feed-set]
   (if (empty? feed-set)
     [-1]
-    (map count (map deref (vals feed-set)))))
+    (map count (map seq (map deref (vals feed-set))))))
 
 (defn mean
   [& numbers]

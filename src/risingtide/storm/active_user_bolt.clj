@@ -18,7 +18,7 @@
 (defbolt active-user-bolt ["id" "user-ids" "story"] {:prepare true}
   [conf context collector]
   (let [redii (redis/redii)
-        active-user-count (gauge "active-user-count" (active-users redii))]
+        active-user-count (gauge "active-user-count" (count (active-users redii)))]
     (bolt
      (execute [{id "id" story "story" :as tuple}]
               (when (for-user-feed? story)

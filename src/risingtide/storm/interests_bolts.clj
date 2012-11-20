@@ -6,7 +6,8 @@
             [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]]
             [metrics
              [timers :refer [deftimer time!]]
-             [meters :refer [defmeter mark!]]]))
+             [meters :refer [defmeter mark!]]
+             [gauges :refer [gauge]]]))
 
 (defn like-scores [user-ids story]
   (likes/like-counts (:listing-id story) user-ids))
@@ -55,7 +56,8 @@
               (swap! scores #(assoc-in % [[user-id story] type] score))
               (let [story-scores (get @scores [user-id story])
                     scored-types (set (keys story-scores))
-                    total-score (sum-scores story-scores)]
+                    total-score (sum-scores story-scores)
+                    interest-reducer-size-gauge (gauge "interest-reducer-size" (count @scores))]
                 (when (= scored-types #{:follow :like :listing-seller})
                   (if (>= total-score 1)
                     (do

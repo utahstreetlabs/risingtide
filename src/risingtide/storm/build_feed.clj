@@ -31,7 +31,7 @@
    ["drpc-request" drpc-request]
 
    {"drpc-feed-builder" [{"drpc-request" :shuffle}
-                         drpc-feed-build-bolt :p 4]}
+                         drpc-feed-build-bolt :p 3]}
 
    {
     ;; "drpc-serialize-feed" [{"drpc-feed-builder" :shuffle}

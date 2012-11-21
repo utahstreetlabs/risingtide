@@ -31,10 +31,10 @@
    ["drpc-request" drpc-request]
 
    {"drpc-feed-builder" [{"drpc-request" :shuffle}
-                         drpc-feed-build-bolt :p 24]}
+                         drpc-feed-build-bolt :p 2]}
 
    {"drpc-serialize-feed" [{"drpc-feed-builder" :shuffle}
-                           serialize-feed :p 24]}
+                           serialize-feed :p 2]}
    ["drpc-serialize-feed" "feed"]))
 
 (defn feed-build-topology [drpc]

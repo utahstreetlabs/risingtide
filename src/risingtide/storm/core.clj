@@ -55,7 +55,7 @@
                                        "follows" ["user-id"]
                                        "seller-follows" ["user-id"]}
                                       interest-reducer
-                                      :p 1)
+                                      :p 12)
 
         "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]
                                   "drpc-feed-builder" ["user-id"]}

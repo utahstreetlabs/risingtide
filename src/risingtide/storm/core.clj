@@ -63,7 +63,7 @@
 
         "drpc-acker" (bolt-spec {"drpc-feed-builder" :shuffle}
                                 drpc-acker
-                                :p 12)
+                                :p 4)
 
         "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]
                                   "drpc-acker" ["user-id"]

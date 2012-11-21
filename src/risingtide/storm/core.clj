@@ -51,11 +51,11 @@
                                     seller-follow-interest-scorer
                                     :p 12)
 
-        "interest-reducer" (bolt-spec {"likes" ["user-id"]
-                                       "follows" ["user-id"]
-                                       "seller-follows" ["user-id"]}
+        "interest-reducer" (bolt-spec {"likes" ["user-id" "story"]
+                                       "follows" ["user-id" "story"]
+                                       "seller-follows" ["user-id" "story"]}
                                       interest-reducer
-                                      :p 1)
+                                      :p 12)
 
         "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]
                                   "drpc-feed-builder" ["user-id"]}

@@ -59,11 +59,11 @@
                     total-score (sum-scores story-scores)
                     interest-reducer-size-gauge (gauge "interest-reducer-size" (count @scores))]
                 (when (= scored-types #{:follow :like :listing-seller})
+                  (swap! scores #(dissoc % [user-id story]))
                   (if (>= total-score 1)
                     (do
                       (emit-bolt! collector [id user-id story total-score] :anchor tuple)
                       (emit-bolt! collector [id user-id story] :stream "story" :anchor tuple)
-                      (mark! story-scored)
-                      (swap! scores #(dissoc % [user-id story])))
+                      (mark! story-scored))
                     (emit-bolt! collector [id user-id nil] :stream "story" :anchor tuple))))
               (ack! collector tuple)))))

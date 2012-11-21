@@ -55,10 +55,9 @@
      (execute [{id "id" user-id "user-id" story "story" type "type" score "score" :as tuple}]
               (swap! scores #(assoc-in % [[user-id story] type] score))
               (let [story-scores (get @scores [user-id story])
-                    scored-types (set (keys story-scores))
                     total-score (sum-scores story-scores)
                     interest-reducer-size-gauge (gauge "interest-reducer-size" (count @scores))]
-                (when (= scored-types #{:follow :like :listing-seller})
+                (when (= (set (keys story-scores)) #{:follow :like :listing-seller})
                   (swap! scores #(dissoc % [user-id story]))
                   (if (>= total-score 1)
                     (do

@@ -21,7 +21,7 @@
    (when (not (= (count scores) (count user-ids)))
      (log/error "got "count scores" like scores for "(count user-ids)" users"))
    (doseq [[user-id score] scores]
-     (emit-bolt! collector [id user-id story score :like] :anchor tuple)))
+     (emit-bolt! collector [id (Integer/parseInt (str user-id)) story score :like] :anchor tuple)))
   (ack! collector tuple))
 
 (defn follow-scores [user-ids story]
@@ -35,7 +35,7 @@
    (when (not (= (count scores) (count user-ids)))
      (log/error "got "count scores" follow scores for "(count user-ids)" users"))
    (doseq [[user-id score] scores]
-     (emit-bolt! collector [id user-id story score :follow] :anchor tuple)))
+     (emit-bolt! collector [id (Integer/parseInt (str user-id)) story score :follow] :anchor tuple)))
   (ack! collector tuple))
 
 (defn seller-follow-scores [user-ids story]
@@ -49,7 +49,7 @@
     (when (not (= (count scores) (count user-ids)))
       (log/error "got "count scores" seller follow scores for "(count user-ids)" users"))
     (doseq [[user-id score] scores]
-      (emit-bolt! collector [id user-id story score :listing-seller] :anchor tuple)))
+      (emit-bolt! collector [id (Integer/parseInt (str user-id)) story score :listing-seller] :anchor tuple)))
   (ack! collector tuple))
 
 (defn sum-scores [scores]

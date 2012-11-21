@@ -30,10 +30,10 @@
    "drpc-feed-build-requests"
    ["drpc-request" drpc-request]
 
-   {"drpc-feed-builder" [{"drpc-request" :shuffle}
+   {"drpc-feed-builder" [{"drpc-request" ["id"]}
                          drpc-feed-build-bolt :p 2]}
 
-   {"drpc-serialize-feed" [{"drpc-feed-builder" :shuffle}
+   {"drpc-serialize-feed" [{"drpc-feed-builder" ["id"]}
                            serialize-feed :p 2]}
    ["drpc-serialize-feed" "feed"]))
 

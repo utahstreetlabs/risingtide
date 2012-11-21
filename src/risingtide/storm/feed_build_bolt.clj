@@ -28,5 +28,5 @@
                      stories (map action-to-story actions)
                      feed (seq (apply new-digest-feed stories))]
                  (mark! feed-builds)
-                 (emit-bolt! collector [id user-id feed] :anchor tuple)))
+                 (emit-bolt! collector [id user-id feed])))
               (ack! collector tuple)))))

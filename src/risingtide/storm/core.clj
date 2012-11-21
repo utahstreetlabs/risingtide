@@ -10,9 +10,13 @@
              [feed-bolts :refer [add-to-feed add-to-curated-feed]]
              [build-feed :as feed-building]]
             [risingtide.storm.drpc.local-server :as local-drpc-server]
-            [backtype.storm [clojure :refer [topology spout-spec bolt-spec]] [config :refer :all]]
+            [backtype.storm [clojure :refer [defbolt bolt emit-bolt! ack! topology spout-spec bolt-spec]] [config :refer :all]]
             [metrics.core :refer [report-to-console]])
   (:import [backtype.storm LocalCluster LocalDRPC]))
+
+(defbolt drpc-acker ["id" "user-id" "feed"] [{id "id" user-id "user-id" feed "feed" :as tuple} collector]
+  (emit-bolt! collector [id user-id feed])
+  (ack! collector tuple))
 
 (defn feed-generation-topology
   ([] (feed-generation-topology nil))
@@ -57,8 +61,12 @@
                                       interest-reducer
                                       :p 12)
 
+        "drpc-acker" (bolt-spec {"drpc-feed-builder" :shuffle}
+                                drpc-acker
+                                :p 12)
+
         "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]
-                                  "drpc-feed-builder" ["user-id"]
+                                  "drpc-acker" ["user-id"]
                                   }
                                  add-to-feed
                                  :p 12)}

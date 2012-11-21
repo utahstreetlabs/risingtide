@@ -29,6 +29,5 @@
                     actions (find-recent-actions solr-conn user-id)
                     stories (map action-to-story actions)
                     feed (seq (apply new-digest-feed stories))]
-                (prn "ham feed: "feed)
                 (emit-bolt! collector [request-id user-id feed] :anchor tuple))
               (ack! collector tuple)))))

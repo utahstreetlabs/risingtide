@@ -61,7 +61,7 @@
                                       interest-reducer
                                       :p 12)
 
-        "drpc-acker" (bolt-spec {"drpc-feed-builder" :shuffle}
+        "drpc-acker" (bolt-spec {["drpc-feed-builder" "story"] :shuffle}
                                 drpc-acker
                                 :p 4)
 

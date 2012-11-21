@@ -17,8 +17,9 @@
 
 (deftimer feed-build-time)
 (defmeter feed-builds "feeds built")
-
-(defbolt drpc-feed-build-bolt ["id" "user-id" "feed"] {:prepare true}
+(defbolt drpc-feed-build-bolt {"default" ["id" "feed"]
+                               "story"   ["id" "user-id" "feed"]}
+  {:prepare true}
   [conf context collector]
   (let [solr-conn (solr/connection)]
     (bolt
@@ -28,5 +29,6 @@
                      stories (map action-to-story actions)
                      feed (seq (apply new-digest-feed stories))]
                  (mark! feed-builds)
-                 (emit-bolt! collector [id user-id feed])))
+                 (emit-bolt! collector [id (feed-to-json feed)] :anchor tuple)
+                 (emit-bolt! collector [id user-id feed] :stream "story")))
               (ack! collector tuple)))))

@@ -29,7 +29,8 @@
           (complete-topology cluster
                              (feed-generation-topology drpc)
                              :mock-sources {"actions" (map vector actions)
-                                            "drpc-feed-build-requests" feed-build-requests})]
+                                            "drpc-feed-build-requests" feed-build-requests
+                                            })]
       (Thread/sleep 5000)
       results)))
 
@@ -155,14 +156,6 @@
       ;;;; test feed building ;;;;
 
       (run-topology :feed-builds [[(str jon) (json/json-str {:id "12345" :host (.getServiceId drpc) :port 0})]])
-
-      (map last (bolt-output "drpc-actions")) =>
-      (contains
-       (map #(dissoc % :feed)
-            (concat
-             actions-rob-cares-about
-             more-actions-rob-cares-about))
-       :in-any-order)
 
       (seq (last (last (bolt-output "drpc-feed-builder")))) =>
       (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos

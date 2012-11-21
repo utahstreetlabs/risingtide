@@ -9,7 +9,7 @@
              [timers :refer [deftimer time!]]
              [histograms :refer [defhistogram update!]]]))
 
-(defn- find-actions [solr-conn user-id]
+(defn find-actions [solr-conn user-id]
   (let [followee-ids (map :user_id (user-follows user-id config/recent-actions-max-follows))]
     (solr/search-interests
      solr-conn
@@ -20,6 +20,11 @@
 
 (deftimer find-recent-actions-time)
 (defhistogram recent-actions-found)
+
+(defn find-recent-actions [solr-conn user-id]
+  (let [actions (time! find-recent-actions-time (find-actions solr-conn user-id))]
+    (update! recent-actions-found (count actions))
+    actions))
 
 (defbolt recent-actions-bolt ["id" "user-ids" "action"] {:prepare true}
   [conf context collector]
@@ -32,8 +37,7 @@
               ;; argument passed by the client
               (let [request-id (.getValue tuple 0)
                     user-id (Integer/parseInt (.getString tuple 1))
-                    actions (time! find-recent-actions-time (find-actions solr-conn user-id))]
-                (update! recent-actions-found (count actions))
+                    actions (find-recent-actions solr-conn user-id)]
                 (doseq [action actions]
                   (emit-bolt! collector [request-id user-id action] :anchor tuple)))
               (ack! collector tuple)))))

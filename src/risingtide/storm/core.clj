@@ -18,7 +18,7 @@
   ([] (feed-generation-topology nil))
   ([drpc]
      (topology
-      (merge {"actions" (spout-spec resque-spout)} (feed-building/spouts drpc))
+      (merge {"actions" (spout-spec resque-spout)} {} (feed-building/spouts drpc))
 
       (merge
        {"prepare-actions" (bolt-spec {"actions" :shuffle}
@@ -58,10 +58,11 @@
                                       :p 5)
 
         "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]
-                                  "drpc-feed-builder" ["user-id"]}
+                                  "drpc-feed-builder" ["user-id"]
+                                  }
                                  add-to-feed
                                  :p 12)}
-       (feed-building/bolts)))))
+       {} (feed-building/bolts)))))
 
 (defn run-local! [& {debug "debug" workers "workers"
                      report-local-stats "report-local-stats"

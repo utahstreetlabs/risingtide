@@ -46,8 +46,9 @@
 (defn run-topology [& args]
   (swap! topology-results (constantly (apply complete-feed-generation-topology args))))
 
-(defn bolt-output [name]
-  (read-tuples @topology-results name))
+(defn bolt-output
+  ([name] (bolt-output name "default"))
+  ([name stream] (read-tuples @topology-results name stream)))
 
 (defn copious-background [& {follows :follows likes :likes listings :listings active-users :active-users}]
   (let [users (distinct (concat (keys follows) (vals follows) (keys likes) (keys listings)))]
@@ -157,6 +158,6 @@
 
       (run-topology :feed-builds [[(str jon) (json/json-str {:id "12345" :host (.getServiceId drpc) :port 0})]])
 
-      (seq (last (last (bolt-output "drpc-feed-builder")))) =>
+      (seq (last (last (bolt-output "drpc-feed-builder" "story")))) =>
       (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos
                             cutter-liked-toast jim-liked-ham)))))

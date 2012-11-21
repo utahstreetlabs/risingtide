@@ -33,9 +33,11 @@
    {"drpc-feed-builder" [{"drpc-request" :shuffle}
                          drpc-feed-build-bolt :p 4]}
 
-   {"drpc-serialize-feed" [{"drpc-feed-builder" :shuffle}
-                           serialize-feed :p 4]}
-   ["drpc-serialize-feed" "feed"]))
+   {
+    ;; "drpc-serialize-feed" [{"drpc-feed-builder" :shuffle}
+    ;;                        serialize-feed :p 4]
+    }
+   ["drpc-feed-builder" "feed"]))
 
 (defn feed-build-topology [drpc]
   (topology (spouts drpc) (bolts)))

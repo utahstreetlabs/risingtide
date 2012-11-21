@@ -57,8 +57,7 @@
 
 (defmeter story-scored "stories scored")
 
-(defbolt interest-reducer {"default" ["id" "user-id" "story" "score"]
-                           "story"   ["id" "user-id" "story"]} {:prepare true}
+(defbolt interest-reducer {"default" ["id" "user-id" "story" "score"]} {:prepare true}
   [conf context collector]
   (let [scores (atom {})]
     (bolt
@@ -69,10 +68,7 @@
                     interest-reducer-size-gauge (gauge "interest-reducer-size" (count @scores))]
                 (when (= (set (keys story-scores)) #{:follow :like :listing-seller})
                   (swap! scores #(dissoc % [user-id story]))
-                  (if (>= total-score 1)
-                    (do
-                      (emit-bolt! collector [id user-id story total-score] :anchor tuple)
-                      (emit-bolt! collector [id user-id story] :stream "story" :anchor tuple)
-                      (mark! story-scored))
-                    (emit-bolt! collector [id user-id nil] :stream "story" :anchor tuple))))
+                  (mark! story-scored)
+                  (when (>= total-score 1)
+                    (emit-bolt! collector [id user-id story total-score] :anchor tuple))))
               (ack! collector tuple)))))

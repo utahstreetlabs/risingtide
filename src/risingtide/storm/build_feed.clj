@@ -2,7 +2,6 @@
   (:require [risingtide.model.story :refer [->ListingLikedStory]]
             [risingtide.storm
              [action-spout :refer [resque-spout]]
-             [recent-actions-bolt :refer [recent-actions-bolt]]
              [story-bolts :refer [create-story-bolt]]
              [active-user-bolt :refer [active-user-bolt]]
              [interests-bolts :refer [like-interest-scorer follow-interest-scorer
@@ -18,15 +17,24 @@
 (defn spouts [drpc]
   (drpc/topology-spouts drpc "build-feed" "drpc-feed-build-requests"))
 
+(defbolt drpc-request ["id" "user-id"] [tuple collector]
+  ;; the first value in the tuple coming off a drpc spout will be
+  ;; the request id
+  ;; the second value in the tuple coming off a drpc spout will be the
+  ;; argument passed by the client
+  (emit-bolt! collector [(.getValue tuple 0) (Integer/parseInt (.getString tuple 1))] :anchor tuple)
+  (ack! collector tuple))
+
 (defn bolts []
   (drpc/topology-bolts
    "drpc-feed-build-requests"
-   ["drpc-feed-builder" drpc-feed-build-bolt :p 24]
+   ["drpc-request" drpc-request]
+
+   {"drpc-feed-builder" [{"drpc-request" :shuffle}
+                         drpc-feed-build-bolt :p 24]}
 
    {"drpc-serialize-feed" [{"drpc-feed-builder" :shuffle}
                            serialize-feed :p 24]}
-
-   {}
    ["drpc-serialize-feed" "feed"]))
 
 (defn feed-build-topology [drpc]

@@ -13,22 +13,20 @@
             [backtype.storm [clojure :refer [defbolt bolt emit-bolt! ack!]]]
             [metrics
              [timers :refer [deftimer time!]]
-             [histograms :refer [defhistogram update!]]]))
+             [meters :refer [defmeter mark!]]]))
+
+(deftimer feed-build-time)
+(defmeter feed-builds "feeds built")
 
 (defbolt drpc-feed-build-bolt ["id" "user-id" "feed"] {:prepare true}
   [conf context collector]
   (let [solr-conn (solr/connection)]
     (bolt
-     (execute [tuple]
-              ;; the first value in the tuple coming off a drpc spout will be
-              ;; the request id
-              ;; the second value in the tuple coming off a drpc spout will be the
-              ;; argument passed by the client
-              (let [request-id (.getValue tuple 0)
-                    user-id (Integer/parseInt (.getString tuple 1))
-                    actions (find-recent-actions solr-conn user-id)
-                    stories (map action-to-story actions)
-                    feed (seq (apply new-digest-feed stories))]
-                (prn "ham feed: "feed)
-                (emit-bolt! collector [request-id user-id feed] :anchor tuple))
+     (execute [{id "id" user-id "user-id" :as tuple}]
+              (time! feed-build-time
+               (let [actions (find-recent-actions solr-conn user-id)
+                     stories (map action-to-story actions)
+                     feed (seq (apply new-digest-feed stories))]
+                 (mark! feed-builds)
+                 (emit-bolt! collector [id user-id feed] :anchor tuple)))
               (ack! collector tuple)))))

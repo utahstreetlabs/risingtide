@@ -32,6 +32,7 @@ A raw list of metrics that we should compile into a more useful format:
 (deftimer follow-interest-score-time)
 (deftimer seller-follow-interest-score-time)
 (deftimer find-recent-actions-time)
+(deftimer feed-build-time)
 
 (defmeter action-saved "actions saved")
 (defmeter action-created "actions created")
@@ -40,6 +41,7 @@ A raw list of metrics that we should compile into a more useful format:
 (defmeter expiration-run "expiration runs")
 (defmeter feed-writes "feeds written")
 (defmeter story-scored "stories scored")
+(defmeter feed-builds "feeds built")
 
 (gauge "active-user-count" (active-users redii))]
 (gauge "feed-set-size" (count @feed-set))

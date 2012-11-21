@@ -14,4 +14,8 @@ scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~u
 scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6301_mem.rb
 scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6302_mem.rb
 scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6303_mem.rb
+scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6300_feeds.rb
+scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6301_feeds.rb
+scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6302_feeds.rb
+scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6303_feeds.rb
 

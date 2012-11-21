@@ -123,7 +123,7 @@
   (with-out-str (print (encode-feed feed :include-ts true))))
 
 (defn serialize [{id "id" feed "feed" :as tuple} collector]
-  (emit-bolt! collector [id (feed-to-json feed)] :anchor tuple))
+  (emit-bolt! collector [id (feed-to-json feed)]))
 
 (defbolt serialize-feed ["id" "feed"] [tuple collector]
   (serialize tuple collector)

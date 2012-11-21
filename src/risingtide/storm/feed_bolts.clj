@@ -108,6 +108,7 @@
         feed-expirer (schedule-with-delay
                        #(try
                           (expire-feed! feed-atom)
+                          (log/info "now managing "(keys @feed-atom))
                           (catch Exception e (log-err "exception expiring cache" e *ns*)))
                        config/feed-expiration-delay)]
     (bolt

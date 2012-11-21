@@ -1,6 +1,7 @@
 require 'ladon'
 require 'kaminari'
 require 'storm/distributed_r_p_c'
+require 'thrift_client'
 
 module RisingTide
   class Feed < RedisModel
@@ -119,15 +120,14 @@ module RisingTide
     class StormService
       attr_reader :host, :port
 
-      def initialize(host, port)
+      def initialize(host, port, timeout)
         @host = host
         @port = port
+        @timeout = timeout
       end
 
       def feed_build_client
-        transport = Thrift::FramedTransport.new(Thrift::Socket.new(@host, @port))
-        transport.open
-        Storm::DistributedRPC::Client.new(Thrift::BinaryProtocol.new(transport))
+        @feed_build_client ||= ThriftClient.new(Storm::DistributedRPC::Client, "#{host}:#{port}", timeout: @timeout)
       end
 
       def build(user_id)

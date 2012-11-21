@@ -1,0 +1,17 @@
+#!/bin/bash
+HOST=$1
+echo "Copying scout plugins and configuration to $HOST.copious.com"
+if [ -z "$HOST" ]; then
+    echo "Please name a machine. copious.com will be appended to the value you provide, so don't include that"
+    exit 1
+fi
+scp etc/scout/jmx_agents.yml utah@`ec2-host $HOST.copious.com`:~utah/.scout
+scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6300.rb
+scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6301.rb
+scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6302.rb
+scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6303.rb
+scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6300_mem.rb
+scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6301_mem.rb
+scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6302_mem.rb
+scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6303_mem.rb
+

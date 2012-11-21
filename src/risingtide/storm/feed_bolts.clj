@@ -119,8 +119,11 @@
                 (emit-bolt! collector [id (seq @feed-atom)] :anchor tuple))
               (ack! collector tuple)))))
 
+(defn feed-to-json [feed]
+  (with-out-str (print (encode-feed feed :include-ts true))))
+
 (defn serialize [{id "id" feed "feed" :as tuple} collector]
-  (emit-bolt! collector [id (with-out-str (print (encode-feed feed :include-ts true)))] :anchor tuple))
+  (emit-bolt! collector [id (feed-to-json feed)] :anchor tuple))
 
 (defbolt serialize-feed ["id" "feed"] [tuple collector]
   (serialize tuple collector)

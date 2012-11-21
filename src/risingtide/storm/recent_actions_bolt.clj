@@ -26,18 +26,3 @@
     (update! recent-actions-found (count actions))
     actions))
 
-(defbolt recent-actions-bolt ["id" "user-ids" "action"] {:prepare true}
-  [conf context collector]
-  (let [solr-conn (solr/connection)]
-    (bolt
-     (execute [tuple]
-              ;; the first value in the tuple coming off a drpc spout will be
-              ;; the request id
-              ;; the second value in the tuple coming off a drpc spout will be the
-              ;; argument passed by the client
-              (let [request-id (.getValue tuple 0)
-                    user-id (Integer/parseInt (.getString tuple 1))
-                    actions (find-recent-actions solr-conn user-id)]
-                (doseq [action actions]
-                  (emit-bolt! collector [request-id user-id action] :anchor tuple)))
-              (ack! collector tuple)))))

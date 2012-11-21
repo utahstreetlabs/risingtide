@@ -4,6 +4,7 @@
              [brooklyn :as brooklyn]
              [pyramid :as likes]]
             [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]]
+            [clojure.tools.logging :as log]
             [metrics
              [timers :refer [deftimer time!]]
              [meters :refer [defmeter mark!]]
@@ -16,8 +17,11 @@
 
 (defbolt like-interest-scorer ["id" "user-id" "story" "score" "type"]
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
-  (doseq [[user-id score] (time! like-interest-score-time  (like-scores user-ids story))]
-    (emit-bolt! collector [id user-id story score :like] :anchor tuple))
+  (let [scores (time! like-interest-score-time (like-scores user-ids story))]
+   (when (not (= (count scores) (count user-ids)))
+     (log/error "got "count scores" like scores for "(count user-ids)" users"))
+   (doseq [[user-id score] scores]
+     (emit-bolt! collector [id user-id story score :like] :anchor tuple)))
   (ack! collector tuple))
 
 (defn follow-scores [user-ids story]
@@ -27,8 +31,11 @@
 
 (defbolt follow-interest-scorer ["id" "user-id" "story" "score" "type"]
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
-  (doseq [[user-id score] (time! follow-interest-score-time (follow-scores user-ids story))]
-    (emit-bolt! collector [id user-id story score :follow] :anchor tuple))
+  (let [scores (time! follow-interest-score-time (follow-scores user-ids story))]
+   (when (not (= (count scores) (count user-ids)))
+     (log/error "got "count scores" follow scores for "(count user-ids)" users"))
+   (doseq [[user-id score] scores]
+     (emit-bolt! collector [id user-id story score :follow] :anchor tuple)))
   (ack! collector tuple))
 
 (defn seller-follow-scores [user-ids story]
@@ -38,8 +45,11 @@
 
 (defbolt seller-follow-interest-scorer ["id" "user-id" "story" "score" "type"]
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
-  (doseq [[user-id score] (bench (str "seller follow scores query for "id)  (seller-follow-scores user-ids story))]
-    (emit-bolt! collector [id user-id story score :listing-seller] :anchor tuple))
+  (let [scores (time! seller-follow-interest-score-time (seller-follow-scores user-ids story))]
+    (when (not (= (count scores) (count user-ids)))
+      (log/error "got "count scores" seller follow scores for "(count user-ids)" users"))
+    (doseq [[user-id score] scores]
+      (emit-bolt! collector [id user-id story score :listing-seller] :anchor tuple)))
   (ack! collector tuple))
 
 (defn sum-scores [scores]

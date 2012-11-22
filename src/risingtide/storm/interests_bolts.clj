@@ -1,5 +1,8 @@
 (ns risingtide.storm.interests-bolts
-  (:require [risingtide.core :refer [bench]]
+  (:require [risingtide
+             [core :refer [bench]]
+             [dedupe :refer [dedupe]]]
+
             [risingtide.interests
              [brooklyn :as brooklyn]
              [pyramid :as likes]]
@@ -63,7 +66,7 @@
     (bolt
      (execute [{id "id" user-id "user-id" story "story" type "type" score "score" :as tuple}]
               (swap! scores #(assoc-in % [[user-id story] type] score))
-              (let [story-scores (get @scores [user-id story])
+              (let [story-scores (get @scores [user-id (dedupe story)])
                     total-score (sum-scores story-scores)
                     interest-reducer-size-gauge (gauge "interest-reducer-size" (count @scores))]
                 (when (= (set (keys story-scores)) #{:follow :like :listing-seller})

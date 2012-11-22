@@ -1,6 +1,7 @@
 (ns risingtide.storm.feed-bolts
   (:require [risingtide
              [core :refer [now log-err]]
+             [dedupe :refer [dedupe]]
              [config :as config]
              [redis :as redis]
              [key :as key]
@@ -91,7 +92,7 @@
     (bolt
      (execute [{id "id" user-id "user-id" story "story" new-feed "feed" :as tuple}]
               (doseq [s (if story [story] new-feed)]
-                (update-feed-set! redii feed-set user-id s))
+                (update-feed-set! redii feed-set user-id (dedupe s)))
               (when (or story (not (empty? new-feed)))
                (let [feed @(@feed-set user-id)]
                  (when (active? redii user-id)
@@ -114,7 +115,7 @@
     (bolt
      (execute [{id "id" story "story" :as tuple}]
               (when (for-everything-feed? story)
-                (swap! feed-atom add story)
+                (swap! feed-atom add (dedupe story))
                 (write-feed! redii (key/everything-feed) @feed-atom)
                 (emit-bolt! collector [id (seq @feed-atom)] :anchor tuple))
               (ack! collector tuple)))))

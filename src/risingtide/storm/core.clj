@@ -28,7 +28,7 @@
        {"prepare-actions" (bolt-spec {"actions" :shuffle}
                                      prepare-action-bolt)
 
-        "save-actions" (bolt-spec {"actions" :shuffle}
+        "save-actions" (bolt-spec {"prepare-actions" :shuffle}
                                   save-action-bolt)
 
         "stories" (bolt-spec {"prepare-actions" :shuffle}

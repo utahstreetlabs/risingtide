@@ -29,6 +29,6 @@
                      stories (map action-to-story actions)
                      feed (seq (apply new-digest-feed stories))]
                  (mark! feed-builds)
-                 (emit-bolt! collector [id (feed-to-json feed)] :anchor tuple)
+                 (emit-bolt! collector [id (feed-to-json (take config/drpc-max-stories feed))] :anchor tuple)
                  (emit-bolt! collector [id user-id feed] :stream "story")))
               (ack! collector tuple)))))

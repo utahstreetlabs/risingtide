@@ -5,7 +5,8 @@
              [config :as config]
              [redis :as redis]
              [key :as key]
-             [active-users :refer [active-users active?]]]
+             [active-users :refer [active-users active?]]
+             [metrics :refer [mean median]]]
             [risingtide.model [feed :refer [add]]]
             [risingtide.interests
              [brooklyn :as follows]
@@ -55,19 +56,6 @@
   (if (empty? feed-set)
     [-1]
     (map count (map seq (map deref (vals feed-set))))))
-
-(defn mean
-  [& numbers]
-  (quot (apply + numbers) (count numbers)))
-
-(defn median [& ns]
-  "Thanks, http://rosettacode.org/wiki/Averages/Median#Clojure"
-  (let [ns (sort ns)
-        cnt (count ns)
-        mid (bit-shift-right cnt 1)]
-    (if (odd? cnt)
-      (nth ns mid)
-      (/ (+ (nth ns mid) (nth ns (dec mid))) 2))))
 
 (defmeter expiration-run "expiration runs")
 (deftimer expiration-time)

@@ -134,8 +134,8 @@
       (contains [[nil (seq (new-digest-feed jim-activated-bacon jim-liked-ham jim-liked-toast
                                             jim-shared-toast cutter-liked-breakfast-tacos))]])
 
-      (map second (bolt-output "save-actions")) =>
-      actions
+      (strip-timestamps (map second (bolt-output "save-actions"))) =>
+      (strip-timestamps actions)
 
       (feed-for rob) =>
       (contains

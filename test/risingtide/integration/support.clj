@@ -154,3 +154,6 @@ usable in backgrounds yet.
   [& statements]
   `(with-increasing-seconds-timeline
      [~@(map swap-subject-action statements)]))
+
+(defn strip-timestamps [stories]
+  (map #(dissoc % :timestamp) stories))

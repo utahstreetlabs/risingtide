@@ -113,7 +113,7 @@
         (fn [jedis] (.zrangeByScoreWithScores jedis key (double since) (double until))))))
   ([conn key] (stories conn key 0 (now))))
 
-(defn feed
+(defn load-feed
   [conn-spec feed-key since until]
   (try
     (shard/with-connection-for-feed conn-spec feed-key

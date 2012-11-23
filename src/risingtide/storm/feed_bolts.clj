@@ -14,7 +14,7 @@
             [risingtide.feed
              [expiration :refer [expire expiration-threshold]]
              [filters :refer [for-everything-feed?]]
-             [persist :refer [encode-feed write-feed! feed delete-feeds!]]]
+             [persist :refer [encode-feed write-feed! load-feed delete-feeds!]]]
             [risingtide.feed.persist.shard :as shard]
             [risingtide.model.feed.digest :refer [new-digest-feed]]
             [risingtide.model
@@ -30,7 +30,7 @@
 (deftimer feed-load-time)
 
 (defn initialize-digest-feed [redii feed-key & stories]
-  (let [initial-stories (time! feed-load-time (feed redii feed-key (expiration-threshold) (now)))]
+  (let [initial-stories (time! feed-load-time (load-feed redii feed-key (expiration-threshold) (now)))]
     (atom (apply new-digest-feed (concat initial-stories stories)))))
 
 (defn update-feed-set! [redii feed-set-atom user-id story]

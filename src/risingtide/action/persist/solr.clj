@@ -58,9 +58,9 @@
   (str/join " " (concat (map #(str "a_" %) actors)
                         (map #(str "l_" %) listings))))
 
-(defn search-interests [connection & {actors :actors listings :listings rows :rows}]
+(defn search-interests [connection & {actors :actors listings :listings rows :rows sort :sort}]
   (solr/with-connection connection
-    (doall (map decode (solr/search (interests-string :actors actors :listings listings) :df "interests" :rows rows)))))
+    (doall (map decode (solr/search (interests-string :actors actors :listings listings) :df "interests" :rows rows :sort sort)))))
 
 (defn find [connection id]
   (solr/with-connection connection
@@ -75,7 +75,5 @@
   (save! (connection) {:id 1 :actor_id 6 :listing_id 2 :tag_ids [1 2] :type :listing_activated :timestamp 4})
   (delete-actions! (connection))
   (search-interests (connection) :actors [1])
-
-
 
   )

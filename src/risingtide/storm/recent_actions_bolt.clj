@@ -9,11 +9,14 @@
              [timers :refer [deftimer time!]]
              [histograms :refer [defhistogram update!]]]))
 
-(defn find-actions [solr-conn user-id]
+(defn find-actions [solr-conn user-id & {rows :rows sort :sort
+                                         :or {rows config/recent-actions-max-recent-stories
+                                              sort "timestamp_i desc"}}]
   (let [followee-ids (map :user_id (user-follows user-id config/recent-actions-max-follows))]
     (solr/search-interests
      solr-conn
-     :rows config/recent-actions-max-recent-stories
+     :rows rows
+     :sort sort
      :actors followee-ids
      :listings (concat (filter identity (map :listing_id (user-likes user-id config/recent-actions-max-likes)))
                        (map :id (listings-for-sale followee-ids config/recent-actions-max-seller-listings))))))

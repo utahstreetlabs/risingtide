@@ -66,7 +66,7 @@
     (bolt
      (execute [{id "id" user-id "user-id" story "story" type "type" score "score" :as tuple}]
               (swap! scores #(assoc-in % [[user-id story] type] score))
-              (let [story-scores (get @scores [user-id (dedupe story)])
+              (let [story-scores (get @scores [user-id story])
                     total-score (sum-scores story-scores)
                     interest-reducer-size-gauge (gauge "interest-reducer-size" (count @scores))]
                 (when (= (set (keys story-scores)) #{:follow :like :listing-seller})

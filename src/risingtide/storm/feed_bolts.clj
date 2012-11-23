@@ -31,7 +31,7 @@
 
 (defn initialize-digest-feed [redii feed-key & stories]
   (let [initial-stories (time! feed-load-time (load-feed redii feed-key (expiration-threshold) (now)))]
-    (atom (apply new-digest-feed (concat initial-stories stories)))))
+    (atom (apply new-digest-feed (map dedupe (concat initial-stories stories))))))
 
 (defn update-feed-set! [redii feed-set-atom user-id story]
   (if-let [feed-atom (@feed-set-atom user-id)]

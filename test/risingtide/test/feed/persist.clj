@@ -12,8 +12,8 @@
    '(do)
    (for [story stories]
      `(fact (str story "doesn't change during serialization")
-        (decode (encode ~story)) =>
-        ~story))))
+        (decode (encode ~story))
+        => ~story))))
 
 (facts:dont-change-during-serialization
  (tag-liked 1 2)

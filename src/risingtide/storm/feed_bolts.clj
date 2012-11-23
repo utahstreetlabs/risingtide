@@ -1,10 +1,12 @@
 (ns risingtide.storm.feed-bolts
   (:require [risingtide
              [core :refer [now log-err]]
+             [dedupe :refer [dedupe]]
              [config :as config]
              [redis :as redis]
              [key :as key]
-             [active-users :refer [active-users active?]]]
+             [active-users :refer [active-users active?]]
+             [metrics :refer [mean median]]]
             [risingtide.model [feed :refer [add]]]
             [risingtide.interests
              [brooklyn :as follows]
@@ -12,7 +14,7 @@
             [risingtide.feed
              [expiration :refer [expire expiration-threshold]]
              [filters :refer [for-everything-feed?]]
-             [persist :refer [encode-feed write-feed! feed delete-feeds!]]]
+             [persist :refer [encode-feed write-feed! load-feed delete-feeds!]]]
             [risingtide.feed.persist.shard :as shard]
             [risingtide.model.feed.digest :refer [new-digest-feed]]
             [risingtide.model
@@ -28,8 +30,8 @@
 (deftimer feed-load-time)
 
 (defn initialize-digest-feed [redii feed-key & stories]
-  (let [initial-stories (time! feed-load-time (feed redii feed-key (expiration-threshold) (now)))]
-    (atom (apply new-digest-feed (concat initial-stories stories)))))
+  (let [initial-stories (time! feed-load-time (load-feed redii feed-key (expiration-threshold) (now)))]
+    (atom (apply new-digest-feed (map dedupe (concat initial-stories stories))))))
 
 (defn update-feed-set! [redii feed-set-atom user-id story]
   (if-let [feed-atom (@feed-set-atom user-id)]
@@ -55,19 +57,6 @@
     [-1]
     (map count (map seq (map deref (vals feed-set))))))
 
-(defn mean
-  [& numbers]
-  (quot (apply + numbers) (count numbers)))
-
-(defn median [& ns]
-  "Thanks, http://rosettacode.org/wiki/Averages/Median#Clojure"
-  (let [ns (sort ns)
-        cnt (count ns)
-        mid (bit-shift-right cnt 1)]
-    (if (odd? cnt)
-      (nth ns mid)
-      (/ (+ (nth ns mid) (nth ns (dec mid))) 2))))
-
 (defmeter expiration-run "expiration runs")
 (deftimer expiration-time)
 (defmeter feed-writes "feeds written")
@@ -91,7 +80,7 @@
     (bolt
      (execute [{id "id" user-id "user-id" story "story" new-feed "feed" :as tuple}]
               (doseq [s (if story [story] new-feed)]
-                (update-feed-set! redii feed-set user-id s))
+                (update-feed-set! redii feed-set user-id (dedupe s)))
               (when (or story (not (empty? new-feed)))
                (let [feed @(@feed-set user-id)]
                  (when (active? redii user-id)
@@ -101,6 +90,8 @@
               (ack! collector tuple))
      (cleanup [] (.shutdown feed-expirer)))))
 
+(defmeter curated-feed-writes "stories written to curated feed")
+
 (defbolt add-to-curated-feed ["id" "feed"] {:prepare true}
   [conf context collector]
   (let [redii (redis/redii)
@@ -108,14 +99,15 @@
         feed-expirer (schedule-with-delay
                        #(try
                           (expire-feed! feed-atom)
-                          (log/info "now managing "(keys @feed-atom))
                           (catch Exception e (log-err "exception expiring cache" e *ns*)))
-                       config/feed-expiration-delay)]
+                       config/feed-expiration-delay)
+        curated-feed-size-gauge (gauge "curated-feed-size" (count (seq @feed-atom)))]
     (bolt
      (execute [{id "id" story "story" :as tuple}]
               (when (for-everything-feed? story)
-                (swap! feed-atom add story)
+                (swap! feed-atom add (dedupe story))
                 (write-feed! redii (key/everything-feed) @feed-atom)
+                (mark! curated-feed-writes)
                 (emit-bolt! collector [id (seq @feed-atom)] :anchor tuple))
               (ack! collector tuple)))))
 

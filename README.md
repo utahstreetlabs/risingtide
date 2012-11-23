@@ -42,6 +42,7 @@ A raw list of metrics that we should compile into a more useful format:
 (defmeter feed-writes "feeds written")
 (defmeter story-scored "stories scored")
 (defmeter feed-builds "feeds built")
+(defmeter curated-feed-writes "stories written to curated feed")
 
 (gauge "active-user-count" (active-users redii))]
 (gauge "feed-set-size" (count @feed-set))
@@ -50,6 +51,7 @@ A raw list of metrics that we should compile into a more useful format:
 (gauge "feed-set-feed-mean-size" (apply mean (feed-set-feed-sizes @feed-set)))
 (gauge "feed-set-feed-median-size" (apply median (feed-set-feed-sizes @feed-set)))
 (gauge "interest-reducer-size" (count @scores))]
+(gauge "curated-feed-size" (count (seq @feed-atom)))
 
 (defhistogram recent-actions-found)
 

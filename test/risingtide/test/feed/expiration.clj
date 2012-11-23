@@ -21,5 +21,6 @@
 (with-redefs [config/*digest-cache-ttl* 50
               now (constantly now-in-seconds)]
   (fact
-    (expire feed) => [(stories/listing-liked 7 8 nil nil) (stories/listing-liked 5 6 nil nil)]))
+    (expire feed)
+    => [(stories/listing-liked 7 8 nil nil) (stories/listing-liked 5 6 nil nil)]))
 

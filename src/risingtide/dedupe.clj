@@ -38,8 +38,8 @@ Expiration is done by a background thread run, by default, every minute.
 
 (defn expired?
   ([obj time]
-     (<= (expiry obj) (now)))
-  ([obj] (expired? obj now)))
+     (<= (expiry obj) time))
+  ([obj] (expired? obj (now))))
 
 (defn- expired-cache [cache-map]
   (apply dissoc cache-map (filter #(expired? % (now)) (keys cache-map))))

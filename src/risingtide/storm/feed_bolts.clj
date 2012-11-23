@@ -90,6 +90,8 @@
               (ack! collector tuple))
      (cleanup [] (.shutdown feed-expirer)))))
 
+(defmeter curated-feed-writes "stories written to curated feed")
+
 (defbolt add-to-curated-feed ["id" "feed"] {:prepare true}
   [conf context collector]
   (let [redii (redis/redii)
@@ -97,14 +99,15 @@
         feed-expirer (schedule-with-delay
                        #(try
                           (expire-feed! feed-atom)
-                          (log/info "now managing "(keys @feed-atom))
                           (catch Exception e (log-err "exception expiring cache" e *ns*)))
-                       config/feed-expiration-delay)]
+                       config/feed-expiration-delay)
+        curated-feed-size-gauge (gauge "curated-feed-size" (count (seq @feed-atom)))]
     (bolt
      (execute [{id "id" story "story" :as tuple}]
               (when (for-everything-feed? story)
                 (swap! feed-atom add (dedupe story))
                 (write-feed! redii (key/everything-feed) @feed-atom)
+                (mark! curated-feed-writes)
                 (emit-bolt! collector [id (seq @feed-atom)] :anchor tuple))
               (ack! collector tuple)))))
 

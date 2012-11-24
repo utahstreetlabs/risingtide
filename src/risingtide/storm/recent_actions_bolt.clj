@@ -24,8 +24,14 @@
 (deftimer find-recent-actions-time)
 (defhistogram recent-actions-found)
 
+(defn backfill-actions [solr-conn actions]
+  (let [shortfall (- config/minimum-drpc-actions (count actions))]
+    (if (> shortfall 0)
+      (solr/recent-curated-actions solr-conn shortfall)
+      [])))
+
 (defn find-recent-actions [solr-conn user-id]
   (let [actions (time! find-recent-actions-time (find-actions solr-conn user-id))]
     (update! recent-actions-found (count actions))
-    actions))
+    (concat actions (backfill-actions solr-conn actions))))
 

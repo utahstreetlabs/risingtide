@@ -58,9 +58,13 @@
   (str/join " " (concat (map #(str "a_" %) actors)
                         (map #(str "l_" %) listings))))
 
-(defn search-interests [connection & {actors :actors listings :listings rows :rows sort :sort}]
-  (solr/with-connection connection
+(defn search-interests [conn & {actors :actors listings :listings rows :rows sort :sort}]
+  (solr/with-connection conn
     (doall (map decode (solr/search (interests-string :actors actors :listings listings) :df "interests" :rows rows :sort sort)))))
+
+(defn recent-curated-actions [conn rows]
+  (solr/with-connection conn
+    (doall (map decode (solr/search "ev" :df "feed_ss" :rows rows :sort "timestamp_i desc")))))
 
 (defn find [connection id]
   (solr/with-connection connection

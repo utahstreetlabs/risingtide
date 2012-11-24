@@ -30,9 +30,7 @@
          (let [id (str (java.util.UUID/randomUUID))]
            (log/info "processing action "action" with id "id)
            (mark! action-created)
-           ;; disable reliability for now by removing ":id id"
-           ;; add this back whenever we want to make things more bulletproof
-           (emit-spout! collector [action]))
+           (emit-spout! collector [action] :id id))
          (log/info "action spout ignoring" string))))
     (ack [id]
          (log/info "finished processing action " id)

@@ -120,14 +120,14 @@ module RisingTide
     class StormService
       attr_reader :host, :port
 
-      def initialize(host, port, timeout)
-        @host = host
-        @port = port
+      def initialize(servers, timeout = 2, retries = 2)
+        @servers = servers
         @timeout = timeout
+        @retries = retries
       end
 
       def feed_build_client
-        @feed_build_client ||= ThriftClient.new(Storm::DistributedRPC::Client, "#{host}:#{port}", timeout: @timeout)
+        @feed_build_client ||= ThriftClient.new(Storm::DistributedRPC::Client, @servers, timeout: @timeout, retries: @retries)
       end
 
       def build(user_id)

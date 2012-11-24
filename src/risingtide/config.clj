@@ -82,9 +82,9 @@
 ;;; storm topology config ;;;
 
 (def active-user-bolt-batch-size 500)
-(def recent-actions-max-follows 100)
-(def recent-actions-max-likes 100)
-(def recent-actions-max-seller-listings 100)
+(def recent-actions-max-follows 200)
+(def recent-actions-max-likes 200)
+(def recent-actions-max-seller-listings 200)
 (def drpc-max-stories 60)
 (def recent-actions-max-recent-stories 2000)
 ;; linda and ajm - blacklist them because they list too much and break

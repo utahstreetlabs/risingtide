@@ -18,12 +18,13 @@
 
 (deftimer like-interest-score-time)
 
-(defbolt like-interest-scorer ["id" "user-ids-hash" "story" "scores" "type"]
+(defbolt like-interest-scorer ["id" "user-id" "story" "score" "type"]
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
   (let [scores (time! like-interest-score-time (like-scores user-ids story))]
    (when (not (= (count scores) (count user-ids)))
      (log/error "got "count scores" like scores for "(count user-ids)" users"))
-   (emit-bolt! collector [id (.hashCode user-ids) story scores :like] :anchor tuple))
+   (doseq [[user-id score] scores]
+     (emit-bolt! collector [id (Integer/parseInt (str user-id)) story score :like] :anchor tuple)))
   (ack! collector tuple))
 
 (defn follow-scores [user-ids story]
@@ -31,12 +32,13 @@
 
 (deftimer follow-interest-score-time)
 
-(defbolt follow-interest-scorer ["id" "user-ids-hash" "story" "scores" "type"]
+(defbolt follow-interest-scorer ["id" "user-id" "story" "score" "type"]
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
   (let [scores (time! follow-interest-score-time (follow-scores user-ids story))]
    (when (not (= (count scores) (count user-ids)))
      (log/error "got "count scores" follow scores for "(count user-ids)" users"))
-   (emit-bolt! collector [id (.hashCode user-ids) story scores :follow] :anchor tuple))
+   (doseq [[user-id score] scores]
+     (emit-bolt! collector [id (Integer/parseInt (str user-id)) story score :follow] :anchor tuple)))
   (ack! collector tuple))
 
 (defn seller-follow-scores [user-ids story]
@@ -44,12 +46,13 @@
 
 (deftimer seller-follow-interest-score-time)
 
-(defbolt seller-follow-interest-scorer ["id" "user-ids-hash" "story" "scores" "type"]
+(defbolt seller-follow-interest-scorer ["id" "user-id" "story" "score" "type"]
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
   (let [scores (time! seller-follow-interest-score-time (seller-follow-scores user-ids story))]
     (when (not (= (count scores) (count user-ids)))
       (log/error "got "count scores" seller follow scores for "(count user-ids)" users"))
-    (emit-bolt! collector [id (.hashCode user-ids) story scores :listing-seller] :anchor tuple))
+    (doseq [[user-id score] scores]
+      (emit-bolt! collector [id (Integer/parseInt (str user-id)) story score :listing-seller] :anchor tuple)))
   (ack! collector tuple))
 
 (defn sum-scores [scores]
@@ -59,17 +62,16 @@
 
 (defbolt interest-reducer {"default" ["id" "user-id" "story" "score"]} {:prepare true}
   [conf context collector]
-  (let [scores-atom (atom {})]
+  (let [scores (atom {})]
     (bolt
-     (execute [{id "id" user-ids-hash "user-ids-hash" story "story" type "type" scores "scores" :as tuple}]
-              (swap! scores-atom #(reduce (fn [h [user-id score]] (assoc-in h [[user-id story] type] score)) % scores))
-              (doseq [user-id (keys scores)]
-                (let [story-scores (get @scores-atom [user-id story])
-                      total-score (sum-scores story-scores)
-                      interest-reducer-size-gauge (gauge "interest-reducer-size" (count @scores-atom))]
-                  (when (= (set (keys story-scores)) #{:follow :like :listing-seller})
-                    (swap! scores-atom #(dissoc % [user-id story]))
-                    (mark! story-scored)
-                    (when (>= total-score 1)
-                      (emit-bolt! collector [id user-id story total-score] :anchor tuple)))))
+     (execute [{id "id" user-id "user-id" story "story" type "type" score "score" :as tuple}]
+              (swap! scores #(assoc-in % [[user-id story] type] score))
+              (let [story-scores (get @scores [user-id story])
+                    total-score (sum-scores story-scores)
+                    interest-reducer-size-gauge (gauge "interest-reducer-size" (count @scores))]
+                (when (= (set (keys story-scores)) #{:follow :like :listing-seller})
+                  (swap! scores #(dissoc % [user-id story]))
+                  (mark! story-scored)
+                  (when (>= total-score 1)
+                    (emit-bolt! collector [id user-id story total-score] :anchor tuple))))
               (ack! collector tuple)))))

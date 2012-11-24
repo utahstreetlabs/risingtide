@@ -6,6 +6,7 @@
              [core :refer [log-err]]
              [config :as config]
              [redis :as redis]]
+            [clj-time.format :refer [parse formatter]]
             [risingtide.action.persist.solr :as solr]))
 
 ;; migrate staging keys to development.
@@ -43,6 +44,21 @@ run like:
             (range)
             (line-seq rdr))))))
 
+
+(defn add-timestamps-to-stories [log]
+  "Given a recent stories log, add a timestamp based on the syslog timestamp
+
+Should never actually be needed ever again, since we log timestamps now, but commit for posterity
+"
+  (spit "timestamped-stories.log"
+   (clojure.string/join
+    "\n"
+    (for [[time story] (map #(vec (.split % " rt-storm4 java: ")) (.split (slurp log) "\n"))]
+      (do
+       (prn story)
+       (json/json-str
+        (assoc (json/read-json story) :timestamp
+               (long (/ (.getMillis (parse (formatter "YYYY MMM dd HH:mm:ss") (str "2012 "time))) 1000)))))))))
 
 ;;;; define "runnable jobs" suitable for using with lein run ;;;;
 ;;

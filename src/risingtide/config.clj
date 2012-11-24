@@ -86,7 +86,7 @@
 (def recent-actions-max-likes 100)
 (def recent-actions-max-seller-listings 100)
 (def drpc-max-stories 60)
-(def recent-actions-max-recent-stories 500)
+(def recent-actions-max-recent-stories 2000)
 
 
 (def local-drpc-port-config

@@ -90,6 +90,7 @@
 ;; linda and ajm - blacklist them because they list too much and break
 ;; drpc builds
 (def drpc-blacklist #{38319 11089})
+(def minimum-drpc-actions 300)
 
 
 (def local-drpc-port-config

@@ -11,6 +11,7 @@
                  [mysql/mysql-connector-java "5.1.20"]
                  [org.syslog4j/syslog4j "0.9.30"]
                  [net.java.dev.jna/jna "3.4.0"]
+                 [clj-time "0.4.4"]
 
                  [compojure "1.1.0"]
                  [ring/ring-jetty-adapter "1.1.6"]

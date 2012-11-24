@@ -16,16 +16,16 @@
                  [ring/ring-jetty-adapter "1.1.6"]
                  [enlive "1.0.0"]
 
-                 [utahstreetlabs/clojure-solr "0.3.0"]
+                 [utahstreetlabs/clojure-solr "0.3.0" :exclusions [org.slf4j/slf4j-jcl org.slf4j/slf4j-api]]
                  [risingtide-model "2.0.2"]
 
-                 [metrics-clojure "0.9.2"]]
+                 [metrics-clojure "0.9.2" :exclusions [org.slf4j/slf4j-api]]]
   :java-source-paths ["java-src"]
   :profiles {:dev {:dependencies [[midje "1.4.0"]
                                   ;; storm dependency only in dev
                                   ;; cause production storm cluster
                                   ;; provide it
-                                  [storm "0.8.1" :exclusions [org.slf4j/slf4j-api org.slf4j/slf4j-log4j12]]]}}
+                                  [storm "0.8.1"]]}}
   :aliases {"local-topology" ["run" "-m" "risingtide.storm.core/run-local!"]}
   :main risingtide
   :min-lein-version "2.0.0"

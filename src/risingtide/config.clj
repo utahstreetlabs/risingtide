@@ -87,6 +87,9 @@
 (def recent-actions-max-seller-listings 100)
 (def drpc-max-stories 60)
 (def recent-actions-max-recent-stories 2000)
+;; linda and ajm - blacklist them because they list too much and break
+;; drpc builds
+(def drpc-blacklist #{38319 11089})
 
 
 (def local-drpc-port-config

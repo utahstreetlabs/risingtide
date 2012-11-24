@@ -12,7 +12,7 @@
 (defn find-actions [solr-conn user-id & {rows :rows sort :sort
                                          :or {rows config/recent-actions-max-recent-stories
                                               sort "timestamp_i desc"}}]
-  (let [followee-ids (map :user_id (user-follows user-id config/recent-actions-max-follows))]
+  (let [followee-ids (filter (comp not config/drpc-blacklist) (map :user_id (user-follows user-id config/recent-actions-max-follows)))]
     (solr/search-interests
      solr-conn
      :rows rows

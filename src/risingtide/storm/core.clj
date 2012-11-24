@@ -55,9 +55,9 @@
                                     seller-follow-interest-scorer
                                     :p 12)
 
-        "interest-reducer" (bolt-spec {"likes" ["user-ids-hash"]
-                                       "follows" ["user-ids-hash"]
-                                       "seller-follows" ["user-ids-hash"]}
+        "interest-reducer" (bolt-spec {"likes" ["user-id"]
+                                       "follows" ["user-id"]
+                                       "seller-follows" ["user-id"]}
                                       interest-reducer
                                       :p 12)
 

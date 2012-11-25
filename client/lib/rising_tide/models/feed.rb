@@ -101,11 +101,7 @@ module RisingTide
 
     def self.shard(options = {})
       if options[:interested_user_id]
-        if options[:new_feeds]
-          "feed_#{shard_number(options[:interested_user_id])}".to_sym
-        else
-          "card_feed_#{shard_key(options[:interested_user_id])}".to_sym
-        end
+        "feed_#{shard_number(options[:interested_user_id])}".to_sym
       else
         :everything_card_feed
       end

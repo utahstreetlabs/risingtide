@@ -5,17 +5,24 @@ if [ -z "$HOST" ]; then
     echo "Please name a machine. copious.com will be appended to the value you provide, so don't include that"
     exit 1
 fi
-scp etc/scout/jmx_agents.yml utah@`ec2-host $HOST.copious.com`:~utah/.scout
-scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6300.rb
-scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6301.rb
-scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6302.rb
-scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6303.rb
-scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6300_mem.rb
-scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6301_mem.rb
-scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6302_mem.rb
-scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6303_mem.rb
-scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6300_feeds.rb
-scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6301_feeds.rb
-scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6302_feeds.rb
-scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6303_feeds.rb
 
+for HOST in $@
+do
+    scp etc/scout/jmx_agents.yml utah@`ec2-host $HOST.copious.com`:~utah/.scout
+    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6700.rb
+    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6701.rb
+    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6702.rb
+    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6703.rb
+    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6700_mem.rb
+    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6701_mem.rb
+    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6702_mem.rb
+    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6703_mem.rb
+    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6700_feeds.rb
+    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6701_feeds.rb
+    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6702_feeds.rb
+    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6703_feeds.rb
+    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6700_timing.rb
+    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6701_timing.rb
+    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6702_timing.rb
+    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6703_timing.rb
+done

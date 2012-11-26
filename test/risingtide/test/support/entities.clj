@@ -37,3 +37,6 @@
 ;; tags
 
 (def breakfast 200)
+(def lunch 201)
+(def dinner 202)
+(def dangerous 203)

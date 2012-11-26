@@ -24,12 +24,18 @@
      0))
 
 (defn like-counts [listing-id user-ids]
-  (dissoc
-   (->> (select likes (fields :user_id (raw "COUNT(*) AS cnt")) (where {:user_id [in user-ids] :listing_id listing-id}))
-        (map (fn [{cnt :cnt user-id :user_id}] [user-id cnt]))
-        (into {})
-        (merge (reduce #(assoc %1 %2 0) {} user-ids)))
-   nil))
+  (when (and listing-id user-ids)
+    (select likes
+            (fields :user_id (raw "COUNT(*) AS cnt"))
+            (where {:user_id [in user-ids] :listing_id listing-id})
+            (group :user_id))))
+
+(defn tag-like-counts [tag-ids user-ids]
+  (when (and tag-ids user-ids)
+    (select likes
+            (fields :user_id (raw "COUNT(*) AS cnt"))
+            (where {:user_id [in user-ids] :tag_id [in tag-ids]})
+            (group :user_id))))
 
 ;;; mutating methods - should only be used in test!!!
 

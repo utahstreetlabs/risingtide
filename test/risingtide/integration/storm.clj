@@ -50,24 +50,6 @@
   ([name] (bolt-output name "default"))
   ([name stream] (read-tuples @topology-results name stream)))
 
-(defn copious-background [& {follows :follows likes :likes listings :listings active-users :active-users}]
-  (let [users (distinct (concat (keys follows) (vals follows) (keys likes) (keys listings)))]
-    (doseq [user users]
-      (is-a-user user))
-    (doseq [[seller-id listing-id] listings]
-      (is-a-listing listing-id seller-id))
-    (doseq [[follower followee] follows]
-      (creates-user-follow follower followee))
-    (doseq [[liker listing] likes]
-      (creates-listing-like liker listing))
-    (apply add-active-users (redis/redii) (* 60 10) active-users)))
-
-
-(do
-  (clear-mysql-dbs!)
-  (clear-action-solr!)
-  (clear-redis!))
-
 (let [actions-rob-cares-about
       (on-copious
        (jim likes ham)

@@ -9,5 +9,6 @@
   (StormSubmitter/submitTopology
    "feed topology"
    {TOPOLOGY-DEBUG (Boolean/parseBoolean debug)
-    TOPOLOGY-WORKERS (Integer/parseInt workers)}
+    TOPOLOGY-WORKERS (Integer/parseInt workers)
+    TOPOLOGY-MAX-SPOUT-PENDING 2}
    (feed-generation-topology)))

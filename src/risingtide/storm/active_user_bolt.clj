@@ -24,6 +24,9 @@
               (when (for-user-feed? story)
                 (time! active-user-fanout-time
                  (doseq [user-ids (partition-all config/active-user-bolt-batch-size
-                                                 (time! active-user-fetch-time (active-users redii)))]
+                                                 (time! active-user-fetch-time
+                                                        (filter
+                                                         #(not (= (:actor-id story) %))
+                                                         (active-users redii))))]
                    (emit-bolt! collector [id user-ids story] :anchor tuple))))
               (ack! collector tuple)))))

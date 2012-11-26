@@ -83,8 +83,6 @@
   (let [scores-atom (atom {})]
     (bolt
      (execute [{id "id" user-ids-hash "user-ids-hash" story "story" type "type" scores "scores" :as tuple}]
-
-
               (swap! scores-atom #(reduce (fn [h [user-id score]] (assoc-in h [[user-id story] type] score)) % scores))
               (doseq [user-id (keys scores)]
                 (let [story-scores (get @scores-atom [user-id story])

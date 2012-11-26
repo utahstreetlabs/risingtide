@@ -39,18 +39,16 @@
      0))
 
 (defn follow-counts [followee-id follower-ids]
-  (dissoc
-   (->> (select follows (fields :follower_id (raw "COUNT(*) AS cnt"))
-                (where {:user_id followee-id
-                        :follower_id [in follower-ids]}))
-        (map (fn [{cnt :cnt follower-id :follower_id}] [follower-id cnt]))
-        (into {})
-        (merge (reduce #(assoc %1 %2 0) {} follower-ids)))
-   nil))
+  (when (and followee-id follower-ids)
+   (select follows (fields [:follower_id :user_id] (raw "COUNT(*) AS cnt"))
+           (where {:user_id followee-id
+                   :follower_id [in follower-ids]})
+           (group :follower_id))))
 
 (defn find-listing [listing-id]
-  (first (select listings
-                 (where {:id listing-id}))))
+  (when listing-id
+   (first (select listings
+                  (where {:id listing-id})))))
 
 (defn listings-for-sale [seller-ids lim]
   (select listings

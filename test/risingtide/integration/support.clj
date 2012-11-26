@@ -6,7 +6,8 @@
     [test :refer :all]
     [redis :as redis]
     [config :as config]
-    [key :as key]]
+    [key :as key]
+    [active-users :refer [add-active-users]]]
    [risingtide.feed.persist :refer [encode]]
    [risingtide.feed.persist.shard :as shard]
    [risingtide.feed.persist.shard.config :as shard-config]
@@ -31,21 +32,7 @@
       [pool]
       (stories pool feed-key))))
 
-;; users
-#_(defmacro defuser
-  [n id]
-  `(do
-    (def ~n ~id)
-    (defn ~(symbol (str "feed-for-" n))
-      [type#]
-      (feed-for-user* ~id type#))
-    (defn ~(symbol (str "stories-about-" n))
-      [type#]
-      (stories-about-user ~id type#))))
-
 ;; feeds
-
-#_(expose persist/encode)
 
 (defn encoded-feed
   [& stories]
@@ -67,6 +54,9 @@
 
 (defn creates-listing-like [liker-id listing-id]
   (pyramid/create-like liker-id :listing listing-id))
+
+(defn creates-tag-like [liker-id tag-id]
+  (pyramid/create-like liker-id :tag tag-id))
 
 (defn is-a-user [user-id]
   (brooklyn/create-user user-id))
@@ -157,3 +147,21 @@ usable in backgrounds yet.
 
 (defn strip-timestamps [stories]
   (map #(dissoc % :timestamp) stories))
+
+(defn copious-background [& {follows :follows likes :likes listings :listings
+                             tag-likes :tag-likes active-users :active-users}]
+  (clear-mysql-dbs!)
+  (clear-action-solr!)
+  (clear-redis!)
+  (let [users (distinct (concat (keys follows) (vals follows) (keys likes) (keys listings) (keys tag-likes)))]
+    (doseq [user users]
+      (is-a-user user))
+    (doseq [[seller-id listing-id] listings]
+      (is-a-listing listing-id seller-id))
+    (doseq [[follower followee] follows]
+      (creates-user-follow follower followee))
+    (doseq [[liker listing] likes]
+      (creates-listing-like liker listing))
+    (doseq [[liker tag] tag-likes]
+      (creates-tag-like liker tag))
+    (apply add-active-users (redis/redii) (* 60 10) active-users)))

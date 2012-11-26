@@ -10,5 +10,5 @@
    "feed topology"
    {TOPOLOGY-DEBUG (Boolean/parseBoolean debug)
     TOPOLOGY-WORKERS (Integer/parseInt workers)
-    TOPOLOGY-MAX-SPOUT-PENDING 2}
+    TOPOLOGY-MAX-SPOUT-PENDING 1}
    (feed-generation-topology)))

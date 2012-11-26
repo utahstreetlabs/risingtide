@@ -32,6 +32,10 @@
       [pool]
       (stories pool feed-key))))
 
+(defn stories-about
+  [listing-id]
+  (stories (:stories (redis/redii)) (key/card-listing-story listing-id)))
+
 ;; feeds
 
 (defn encoded-feed

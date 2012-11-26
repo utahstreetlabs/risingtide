@@ -1,10 +1,13 @@
 (ns risingtide.storm.story-bolts
   (:require
-   [risingtide.core :refer [now]]
+   [risingtide
+    [core :refer [now]]
+    [redis :as redis]]
+   [risingtide.story.persist.browse-cache :as browse-cache]
    [risingtide.model
     [story :as story]
     [timestamps :refer [with-timestamp]]]
-   [backtype.storm [clojure :refer [ack! defbolt emit-bolt!]]]
+   [backtype.storm [clojure :refer [ack! defbolt bolt emit-bolt!]]]
    [clojure.string :as str]))
 
 (defn dash-case-keys [story]
@@ -22,3 +25,12 @@
   (emit-bolt! collector [id user-ids (action-to-story action)] :anchor tuple)
   (ack! collector tuple))
 
+(defbolt save-story-bolt ["id" "story"] {:prepare true}
+  [conf context collector]
+  (let [redii (redis/redii)]
+    (bolt
+     (execute [{id "id" story "story" :as tuple}]
+              (prn "HAMS" story)
+              (browse-cache/add! redii story)
+              (emit-bolt! collector [id story] :anchor tuple)
+              (ack! collector tuple)))))

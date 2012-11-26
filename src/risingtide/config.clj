@@ -8,28 +8,32 @@
                  :everything-card-feed {}
                  :card-feeds-1 {}
                  :card-feeds-2 {:db 1}
+                 :stories {}
                  :shard-config {}
                  :active-users {}}
    :test {:resque {}
           :everything-card-feed {} :card-feeds-1 {}
-          :active-users {}
-          :shard-config {}}
+          :stories {}
+          :active-users {} :shard-config {}}
    :staging {:resque {:host "staging3.copious.com"}
              :everything-card-feed {:host "staging4.copious.com"}
              :card-feeds-1 {:host "staging4.copious.com" :db 2}
              :card-feeds-2 {:host "staging4.copious.com" :db 3}
              :active-users {:host "staging4.copious.com"}
-             :shard-config {:host "staging4.copious.com"}}
+             :shard-config {:host "staging4.copious.com"}
+             :stories {:host "staging4.copious.com"}}
    :demo {:resque {:host "demo1.copious.com"}
           :everything-card-feed {:host "demo1.copious.com"}
           :card-feeds-1 {:host "demo1.copious.com"}
           :card-feeds-2 {:host "demo1.copious.com" :db 1}
+          :stories {:host "demo1.copious.com"}
           :active-users {:host "demo1.copious.com"}
           :shard-config {:host "demo1.copious.com"}}
    :production {:resque {:host "resque-redis-master.copious.com"}
                 :everything-card-feed {:host "rt-feeds-1-redis.copious.com"}
                 :card-feeds-1 {:host "rt-feeds-1-redis.copious.com"}
                 :card-feeds-2 {:host "rt-feeds-2-redis.copious.com"}
+                :stories {:host "rt-stories-redis.copious.com"}
                 :active-users {:host "rt-active-users-redis.copious.com"}
                 :shard-config {:host "rt-shard-config-redis.copious.com"}}})
 

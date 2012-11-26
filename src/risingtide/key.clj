@@ -31,3 +31,12 @@
   [key]
   (let [parts (.split key ":")] [(feed-type (aget parts 4)) (aget parts 3)]))
 
+;; storys
+
+(defn card-story
+  [& parts]
+  (apply format-key "c" parts))
+
+(defn card-listing-story
+  [listing-id]
+  (card-story "l" listing-id))

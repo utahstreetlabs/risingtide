@@ -2,7 +2,7 @@
   (:require [risingtide.config :as config]
             [risingtide.storm
              [action-spout :refer [resque-spout]]
-             [story-bolts :refer [create-story-bolt]]
+             [story-bolts :refer [create-story-bolt save-story-bolt]]
              [action-bolts :refer [prepare-action-bolt save-action-bolt]]
              [active-user-bolt :refer [active-user-bolt]]
              [interests-bolts :refer [like-interest-scorer follow-interest-scorer
@@ -39,6 +39,11 @@
         "curated-feed" (bolt-spec {"stories" :global}
                                   add-to-curated-feed
                                   :p 1)
+
+        ;; search and browse cache
+        "search-and-browse" (bolt-spec {"stories" :global}
+                                       save-story-bolt
+                                       :p 1)
 
         ;; user feeds
 

@@ -59,7 +59,7 @@
 
         "active-users" (bolt-spec {"stories" :shuffle}
                                   active-user-bolt
-                                  :p 4)
+                                  :p 3)
 
         "likes" (bolt-spec {"active-users" :shuffle}
                            like-interest-scorer
@@ -83,7 +83,7 @@
 
         "drpc-acker" (bolt-spec {["drpc-feed-builder" "story"] :shuffle}
                                 drpc-acker
-                                :p 4)
+                                :p 3)
 
         "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]
                                   "drpc-acker" ["user-id"]

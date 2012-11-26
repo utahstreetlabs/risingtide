@@ -11,5 +11,7 @@
    (merge
     standard-topology-config
     {TOPOLOGY-DEBUG (Boolean/parseBoolean debug)
-     TOPOLOGY-WORKERS (Integer/parseInt workers)})
+     TOPOLOGY-WORKERS (Integer/parseInt workers)
+     TOPOLOGY-MAX-SPOUT-PENDING 1
+     TOPOLOGY-MESSAGE-TIMEOUT-SECS 60})
    (feed-generation-topology)))

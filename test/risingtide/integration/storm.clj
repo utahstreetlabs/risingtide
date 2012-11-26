@@ -40,6 +40,7 @@
 (def jim-shared-toast (listing-shared jim toast nil nil nil))
 (def cutter-liked-breakfast-tacos (listing-liked cutter breakfast-tacos nil nil))
 (def cutter-liked-toast (listing-liked cutter toast nil nil))
+(def rob-liked-toast (listing-liked rob toast nil nil))
 
 (def topology-results (atom nil))
 
@@ -59,7 +60,8 @@
 
       actions-rob-doesnt-care-about
       (on-copious
-       (jim activates bacon))
+       (jim activates bacon)
+       (rob likes toast))
 
       more-actions-rob-cares-about
       (on-copious
@@ -86,6 +88,7 @@
 
       (bolt-output "stories") =>
       [[nil nil jim-activated-bacon]
+       [nil nil rob-liked-toast]
        [nil nil jim-liked-ham]
        [nil nil jim-liked-toast]
        [nil nil jim-shared-toast]
@@ -113,7 +116,7 @@
       (contains [[nil rob (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham))]])
 
       (bolt-output "curated-feed") =>
-      (contains [[nil (seq (new-digest-feed jim-activated-bacon jim-liked-ham jim-liked-toast
+      (contains [[nil (seq (new-digest-feed jim-activated-bacon jim-liked-ham rob-liked-toast jim-liked-toast
                                             jim-shared-toast cutter-liked-breakfast-tacos))]])
 
       (strip-timestamps (map second (bolt-output "save-actions"))) =>
@@ -142,4 +145,4 @@
 
       (seq (last (last (bolt-output "drpc-feed-builder" "story")))) =>
       (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos
-                            cutter-liked-toast jim-liked-ham)))))
+                            cutter-liked-toast jim-liked-ham rob-liked-toast)))))

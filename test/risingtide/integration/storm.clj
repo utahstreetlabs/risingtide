@@ -127,6 +127,22 @@
        (apply encoded-feed (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham)))
        :in-any-order)
 
+      (stories-about breakfast-tacos)
+      => (encoded-feed cutter-liked-breakfast-tacos)
+
+      (stories-about ham)
+      => (encoded-feed jim-liked-ham)
+
+      (stories-about bacon)
+      => (encoded-feed jim-activated-bacon)
+
+      ;; which story is "last" is indeterminate, but it should be one
+      ;; of these
+      (stories-about toast)
+      => (some-checker (just (encoded-feed jim-shared-toast))
+                       (just (encoded-feed rob-liked-toast))
+                       (just (encoded-feed jim-liked-toast)))
+
        ;;;; test loading feeds from redis ;;;;
 
       (run-topology :actions more-actions-rob-cares-about)

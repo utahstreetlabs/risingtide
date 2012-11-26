@@ -69,8 +69,8 @@ namespace :deploy do
   task :restart, :roles => :app, :except => { :no_release => true } do
     stop
     # wait maximum amount of time for topology to stop
-    # should match topology.message.timeout.secs in storm.yaml
-    sleep 30
+    # should match topology.message.timeout.secs in topology config
+    sleep 60
     start
   end
 end

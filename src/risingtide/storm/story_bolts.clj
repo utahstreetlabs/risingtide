@@ -30,7 +30,6 @@
   (let [redii (redis/redii)]
     (bolt
      (execute [{id "id" story "story" :as tuple}]
-              (prn "HAMS" story)
               (browse-cache/add! redii story)
               (emit-bolt! collector [id story] :anchor tuple)
               (ack! collector tuple)))))

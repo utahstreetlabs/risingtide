@@ -4,12 +4,6 @@
 
 (defn now [] (long (/ (.getTime (java.util.Date.)) 1000)))
 
-(def env (keyword (or (System/getenv "RISINGTIDE_ENV") (System/getenv "RT_ENV") "development")))
-
-(defn first-char
-  [string-or-keyword]
-  (first (name string-or-keyword)))
-
 (defn safe-print-stack-trace
   [throwable]
   (try (let [w (java.io.PrintWriter. *out*)]
@@ -36,3 +30,7 @@
      (pmap #(doall (map f %)) (partition-all n coll)))
   ([f coll]
      (pmap-in-batches f coll 1000)))
+
+(defn log-err [message e ns]
+  (log/error message e)
+  (.printStackTrace e (log/log-stream :error ns)))

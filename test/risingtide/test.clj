@@ -1,28 +1,19 @@
 (ns risingtide.test
-  (:use risingtide.core
-        midje.sweet)
-  (:require [clj-logging-config.log4j :as log-config]))
+  (:require
+   [risingtide.core :refer :all]
+   [risingtide.config]
+   [risingtide.model
+    [story :as story]
+    [timestamps :refer [with-timestamp timestamp]]]
+   [carbonite
+    [api :refer [default-registry register-serializers]]
+    [buffer :refer [read-bytes write-bytes]]]
+   risingtide.model.story
+   [midje.sweet :refer :all])
+  (:import [risingtide.serializers TagLikedStory ListingLikedStory ListingCommentedStory
+            ListingActivatedStory ListingSoldStory ListingSharedStory]))
 
-(log-config/set-logger! :level :debug)
-(alter-var-root #'risingtide.core/env (constantly :test))
-
-(defn listing-story
-  ([type actor-id listing-id args]
-     (merge {:type type :actor_id actor-id :listing_id listing-id} args))
-  ([type actor-id listing-id] (listing-story type actor-id listing-id nil)))
-
-(defmacro listing-story-helper
-  [name]
-  `(defn ~name
-     ([actor-id# listing-id# args#]
-        (listing-story ~(.replace (str name) "-" "_") actor-id# listing-id# args#))
-     ([actor-id# listing-id#] (~name actor-id# listing-id# {:score (now)}))))
-
-(listing-story-helper listing-activated)
-(listing-story-helper listing-liked)
-(listing-story-helper listing-shared)
-(listing-story-helper listing-sold)
-(listing-story-helper listing-commented)
+(alter-var-root #'risingtide.config/env (constantly :test))
 
 (defmacro expose
   "def a variable in the current namespace. This can be used to expose a private function."
@@ -31,32 +22,23 @@
      ~@(for [var vars]
          `(def ~(symbol (name var)) (var ~var)))))
 
-(defn tag-liked
-  ([actor-id tag-id score]
-     {:type :tag_liked :actor_id actor-id :tag_id tag-id :score score})
-  ([actor-id tag-id] (tag-liked actor-id tag-id (now))))
 
-(defn user-joined
-  ([actor-id score]
-     {:type :user_joined :actor_id actor-id :score score})
-  ([actor-id] (user-joined actor-id (now))))
 
-(defn user-followed
-  ([actor-id followee-id score]
-     {:type :user_followed :actor_id actor-id :followee_id followee-id :score score})
-  ([actor-id followee-id] (user-followed actor-id followee-id (now))))
+(def serialization-registry
+  (doto (default-registry)
+    (register-serializers {risingtide.model.story.TagLikedStory (risingtide.serializers.TagLikedStory.)
+                           risingtide.model.story.ListingLikedStory (risingtide.serializers.ListingLikedStory.)
+                           risingtide.model.story.ListingCommentedStory (risingtide.serializers.ListingCommentedStory.)
+                           risingtide.model.story.ListingActivatedStory (risingtide.serializers.ListingActivatedStory.)
+                           risingtide.model.story.ListingSoldStory (risingtide.serializers.ListingSoldStory.)
+                           risingtide.model.story.ListingSharedStory (risingtide.serializers.ListingSharedStory.)
+                           risingtide.model.story.MultiActorMultiActionStory (risingtide.serializers.MultiActorMultiActionStory.)
+                           risingtide.model.story.MultiActionStory (risingtide.serializers.MultiActionStory.)
+                           risingtide.model.story.MultiActorStory (risingtide.serializers.MultiActorStory.)
+                           risingtide.model.story.MultiListingStory (risingtide.serializers.MultiListingStory.)})))
 
-(defn user-invited
-  ([actor-id invitee-profile-id score]
-     {:type :user_invited :actor_id actor-id :invitee_profile_id invitee-profile-id :score score})
-  ([actor-id invitee-profile-id] (user-followed actor-id invitee-profile-id (now))))
+(defn serialize-deserialize [story]
+  (->> story
+       (write-bytes serialization-registry)
+       (read-bytes serialization-registry)))
 
-(defn user-piled-on
-  ([actor-id invitee-profile-id score]
-     {:type :user_piled_on :actor_id actor-id :invitee_profile_id invitee-profile-id :score score})
-  ([actor-id invitee-profile-id] (user-followed actor-id invitee-profile-id (now))))
-
-(defmacro test-background
-  [& background-forms]
-  `(background ~@background-forms
-               (around :facts (with-redefs [risingtide.core/env :test] ?form))))

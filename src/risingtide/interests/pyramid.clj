@@ -1,7 +1,8 @@
 (ns risingtide.interests.pyramid
-  (:use korma.db
-        korma.core)
-  (:require [risingtide.config :as config]))
+  (:require [risingtide.config :as config]
+            [korma
+             [db :refer :all]
+             [core :refer :all]]))
 
 (ns-unmap *ns* 'pyramid)
 
@@ -12,17 +13,29 @@
   (table :likes)
   (database pyramid))
 
-(defn like-to-interest [like]
-  (if (:listing_id like)
-    (str "l:" (:listing_id like))
-    (str "t:" (:tag_id like))))
+(defn user-likes [user-id lim]
+  (select likes
+          (where {:user_id user-id})
+          (fields :listing_id :tag_id)
+          (limit lim)))
 
-(defn user-likes [user-id]
-  (map like-to-interest
-       (select likes
-               (where {:user_id user-id})
-               (fields :listing_id :tag_id))))
+(defn likes? [user-id listing-id]
+  (> (:cnt (first (select likes (fields :user_id (raw "COUNT(*) AS cnt"))  (where {:user_id user-id :listing_id listing-id}))))
+     0))
 
+(defn like-counts [listing-id user-ids]
+  (when (and listing-id user-ids)
+    (select likes
+            (fields :user_id (raw "COUNT(*) AS cnt"))
+            (where {:user_id [in user-ids] :listing_id listing-id})
+            (group :user_id))))
+
+(defn tag-like-counts [tag-ids user-ids]
+  (when (and tag-ids user-ids)
+    (select likes
+            (fields :user_id (raw "COUNT(*) AS cnt"))
+            (where {:user_id [in user-ids] :tag_id [in tag-ids]})
+            (group :user_id))))
 
 ;;; mutating methods - should only be used in test!!!
 

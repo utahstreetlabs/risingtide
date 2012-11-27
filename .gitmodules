@@ -1,0 +1,3 @@
+[submodule "actions-solr"]
+	path = actions-solr
+	url = git@github.com:utahstreetlabs/risingtide-solr.git

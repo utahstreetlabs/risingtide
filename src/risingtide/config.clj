@@ -81,7 +81,7 @@
 (def default-card-shard "1")
 (def ^:dynamic *digest-cache-ttl* (* 6 60 60))
 ;; number of seconds to wait between expiring stories in feed sets
-(def feed-expiration-delay 60)
+(def feed-expiration-delay 120)
 
 ;;; storm topology config ;;;
 

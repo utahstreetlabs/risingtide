@@ -33,7 +33,8 @@
                              :mock-sources {"actions" (map vector actions)
                                             "drpc-feed-build-requests" feed-build-requests}
                              ;; turn up parallelism to force serialization
-                             :storm-conf {TOPOLOGY-WORKERS 6})]
+                             ;;:storm-conf {TOPOLOGY-WORKERS 6}
+                             )]
       (Thread/sleep 5000)
       results)))
 

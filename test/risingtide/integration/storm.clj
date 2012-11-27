@@ -7,7 +7,7 @@
     [redis :as redis]
     [active-users :refer [add-active-users]]]
    [risingtide.storm
-    [core :refer [feed-generation-topology standard-topology-config]]]
+    [core :refer [feed-generation-topology]]]
    [risingtide.model.feed.digest :refer [new-digest-feed]]
 
    [risingtide.test.support
@@ -29,8 +29,8 @@
           (complete-topology cluster
                              (feed-generation-topology drpc)
                              :mock-sources {"actions" (map vector actions)
-                                            "drpc-feed-build-requests" feed-build-requests}
-                             :storm-conf standard-topology-config)]
+                                            "drpc-feed-build-requests" feed-build-requests
+                                            })]
       (Thread/sleep 5000)
       results)))
 

@@ -20,9 +20,7 @@
                  [utahstreetlabs/clojure-solr "0.3.0" :exclusions [org.slf4j/slf4j-jcl org.slf4j/slf4j-api]]
                  [risingtide-model "2.0.2"]
 
-                 [metrics-clojure "0.9.2" :exclusions [org.slf4j/slf4j-api]]
-
-                 [storm/carbonite "1.5.0"]]
+                 [metrics-clojure "0.9.2" :exclusions [org.slf4j/slf4j-api]]]
   :java-source-paths ["java-src"]
   :profiles {:dev {:dependencies [[midje "1.4.0"]
                                   ;; storm dependency only in dev
@@ -41,10 +39,14 @@
                  {:url "http://ci.copious.com:8082/nexus/content/repositories/releases/"
                   :username "deployment" :password "Q5Erm4JqFppGSf"}}
 
-  :aot [risingtide.serializers.TagLikedStory
-        risingtide.serializers.ListingLikedStory
-        risingtide.serializers.ListingCommentedStory
-        risingtide.serializers.ListingActivatedStory
-        risingtide.serializers.ListingSoldStory
-        risingtide.serializers.ListingSharedStory
-        risingtide.storm.FeedTopology])
+  :aot [risingtide.storm.FeedTopology])
+
+
+
+
+
+
+
+
+
+

@@ -29,9 +29,9 @@
     {"risingtide.model.story.ListingSoldStory" "risingtide.serializers.ListingSoldStory"}
     {"risingtide.model.story.ListingSharedStory" "risingtide.serializers.ListingSharedStory"}
     {"risingtide.model.story.MultiActorMultiActionStory" "risingtide.serializers.MultiActorMultiActionStory"}
-    {"risingtide.model.story.MultiActorStory" "risingtide.serializers.MultiActorMultiActionStory"}
-    {"risingtide.model.story.MultiActionStory" "risingtide.serializers.MultiActorMultiActionStory"}
-    {"risingtide.model.story.MultiListingStory" "risingtide.serializers.MultiActorMultiActionStory"}]})
+    {"risingtide.model.story.MultiActorStory" "risingtide.serializers.MultiActorStory"}
+    {"risingtide.model.story.MultiActionStory" "risingtide.serializers.MultiActionStory"}
+    {"risingtide.model.story.MultiListingStory" "risingtide.serializers.MultiListingStory"}]})
 
 (defn feed-generation-topology
   ([] (feed-generation-topology nil))

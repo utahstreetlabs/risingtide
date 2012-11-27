@@ -15,8 +15,10 @@
     [stories :refer :all]
     [actions :refer :all]]
    [risingtide.integration.support :refer :all]
-   [backtype.storm [testing :refer
-                    [with-local-cluster with-simulated-time-local-cluster ms= complete-topology read-tuples]]]
+   [backtype.storm
+    [config :refer :all]
+    [testing :refer
+     [with-local-cluster with-simulated-time-local-cluster ms= complete-topology read-tuples]]]
    [midje.sweet :refer :all])
   (:import [backtype.storm LocalDRPC]))
 
@@ -24,13 +26,14 @@
 
 (defn complete-feed-generation-topology [& {actions :actions feed-build-requests :feed-builds
                                             :or {actions [] feed-build-requests []}}]
-  (with-local-cluster [cluster]
+  (with-local-cluster [cluster :daemon-conf (merge standard-topology-config)]
     (let [results
           (complete-topology cluster
                              (feed-generation-topology drpc)
                              :mock-sources {"actions" (map vector actions)
                                             "drpc-feed-build-requests" feed-build-requests}
-                             :storm-conf standard-topology-config)]
+                             ;; turn up parallelism to force serialization
+                             :storm-conf {TOPOLOGY-WORKERS 6})]
       (Thread/sleep 5000)
       results)))
 

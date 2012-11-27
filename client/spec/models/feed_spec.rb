@@ -2,12 +2,12 @@ require 'spec_helper'
 require 'rising_tide/models/feed'
 
 describe RisingTide::Feed do
-  let(:shard_config_redis) { stub_redis(RisingTide::ShardConfig, {}) }
+  let(:active_users_redis) { stub_redis(RisingTide::ActiveUsers, {}) }
   let(:card_redis) { stub_redis(RisingTide::CardFeed, {everything_card_feed: {}, card_feed_1: {}}) }
   let(:user_id) { 10 }
 
   def expects_card_shard_key_lookup
-    shard_config_redis.expects(:hget).with(RisingTide::CardFeed.shard_config_bucket, user_id).returns(nil)
+    active_users_redis.expects(:hget).with(RisingTide::ActiveUsers.active_user_key(user_id), RisingTide::ActiveUsers::SHARD_KEY).returns(nil)
   end
 
   describe '#find_slice' do

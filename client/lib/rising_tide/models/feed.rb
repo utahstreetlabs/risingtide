@@ -1,6 +1,7 @@
 require 'ladon'
 require 'kaminari'
 require 'storm/distributed_r_p_c'
+require 'thrift_client'
 
 module RisingTide
   class Feed < RedisModel
@@ -100,11 +101,7 @@ module RisingTide
 
     def self.shard(options = {})
       if options[:interested_user_id]
-        if options[:new_feeds]
-          "feed_#{shard_number(options[:interested_user_id])}".to_sym
-        else
-          "card_feed_#{shard_key(options[:interested_user_id])}".to_sym
-        end
+        "feed_#{shard_number(options[:interested_user_id])}".to_sym
       else
         :everything_card_feed
       end
@@ -119,15 +116,14 @@ module RisingTide
     class StormService
       attr_reader :host, :port
 
-      def initialize(host, port)
-        @host = host
-        @port = port
+      def initialize(servers, timeout = 2, retries = 2)
+        @servers = servers
+        @timeout = timeout
+        @retries = retries
       end
 
       def feed_build_client
-        transport = Thrift::FramedTransport.new(Thrift::Socket.new(@host, @port))
-        transport.open
-        Storm::DistributedRPC::Client.new(Thrift::BinaryProtocol.new(transport))
+        @feed_build_client ||= ThriftClient.new(Storm::DistributedRPC::Client, @servers, timeout: @timeout, retries: @retries)
       end
 
       def build(user_id)

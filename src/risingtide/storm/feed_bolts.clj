@@ -87,8 +87,7 @@
                        (let [feed @(@feed-set user-id)]
                          (mark! feed-writes)
                          (time! feed-write-time
-                                (write-feed! redii (key/user-feed user-id) feed))
-                         (emit-bolt! collector [id user-id (seq feed)] :anchor tuple)))
+                                (write-feed! redii (key/user-feed user-id) feed))))
                      (ack! collector tuple)))
      (cleanup [] (.shutdown feed-expirer)))))
 

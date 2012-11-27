@@ -66,31 +66,31 @@
 
         "active-users" (bolt-spec {"stories" :shuffle}
                                   active-user-bolt
-                                  :p 5)
+                                  :p 3)
 
         "likes" (bolt-spec {"active-users" :shuffle}
                            like-interest-scorer
-                           :p 10)
+                           :p 6)
         "tag-likes" (bolt-spec {"active-users" :shuffle}
                                tag-like-interest-scorer
-                               :p 10)
+                               :p 6)
         "follows" (bolt-spec {"active-users" :shuffle}
                              follow-interest-scorer
-                             :p 10)
+                             :p 6)
         "seller-follows" (bolt-spec {"active-users" :shuffle}
                                     seller-follow-interest-scorer
-                                    :p 10)
+                                    :p 6)
 
         "interest-reducer" (bolt-spec {"likes" ["user-ids-hash"]
                                        "tag-likes" ["user-ids-hash"]
                                        "follows" ["user-ids-hash"]
                                        "seller-follows" ["user-ids-hash"]}
                                       interest-reducer
-                                      :p 10)
+                                      :p 4)
 
         "drpc-acker" (bolt-spec {["drpc-feed-builder" "story"] :shuffle}
                                 drpc-acker
-                                :p 5)
+                                :p 1)
 
         "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]
                                   "drpc-acker" ["user-id"]

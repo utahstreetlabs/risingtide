@@ -8,16 +8,6 @@ storm_worker_6701:
   mbeans_attributes: Count,OneMinuteRate@default:name=action-saved,type=default|Count,OneMinuteRate@default:name=action-created,type=default|Count,OneMinuteRate@default:name=action-processed,type=default|Count,OneMinuteRate@default:name=action-processing-failed,type=default|Value@default:name=active-user-count,type=default|Count,OneMinuteRate@default:name=story-scored,type=default|OneMinuteRate@default:name=find-recent-actions-time,type=default|Mean,StdDev@default:name=recent-actions-found,type=default|Value@default:name=interest-reducer-size,type=default
   jmxterm_uberjar: /opt/jmxterm/jmxterm-1.0-alpha-4-uber.jar
 
-storm_worker_6702:
-  mbean_server_url: service:jmx:rmi:///jndi/rmi://localhost:16702/jmxrmi
-  mbeans_attributes: Count,OneMinuteRate@default:name=action-saved,type=default|Count,OneMinuteRate@default:name=action-created,type=default|Count,OneMinuteRate@default:name=action-processed,type=default|Count,OneMinuteRate@default:name=action-processing-failed,type=default|Value@default:name=active-user-count,type=default|Count,OneMinuteRate@default:name=story-scored,type=default|OneMinuteRate@default:name=find-recent-actions-time,type=default|Mean,StdDev@default:name=recent-actions-found,type=default|Value@default:name=interest-reducer-size,type=default
-  jmxterm_uberjar: /opt/jmxterm/jmxterm-1.0-alpha-4-uber.jar
-
-storm_worker_6703:
-  mbean_server_url: service:jmx:rmi:///jndi/rmi://localhost:16703/jmxrmi
-  mbeans_attributes: Count,OneMinuteRate@default:name=action-saved,type=default|Count,OneMinuteRate@default:name=action-created,type=default|Count,OneMinuteRate@default:name=action-processed,type=default|Count,OneMinuteRate@default:name=action-processing-failed,type=default|Value@default:name=active-user-count,type=default|Count,OneMinuteRate@default:name=story-scored,type=default|OneMinuteRate@default:name=find-recent-actions-time,type=default|Mean,StdDev@default:name=recent-actions-found,type=default|Value@default:name=interest-reducer-size,type=default
-  jmxterm_uberjar: /opt/jmxterm/jmxterm-1.0-alpha-4-uber.jar
-
 storm_worker_6700_feeds:
   mbean_server_url: service:jmx:rmi:///jndi/rmi://localhost:16700/jmxrmi
   mbeans_attributes: OneMinuteRate@default:name=expiration-time,type=default|Count,OneMinuteRate@default:name=expiration-run,type=default|OneMinuteRate@default:name=feed-load-time,type=default|OneMinuteRate@default:name=feed-write-time,type=default|Count,OneMinuteRate@default:name=feed-writes,type=default|Value@default:name=feed-set-size,type=default|Value@default:name=feed-set-feed-min-size,type=default|Value@default:name=feed-set-feed-max-size,type=default|Value@default:name=feed-set-feed-mean-size,type=default|Value@default:name=feed-set-feed-median-size,type=default|OneMinuteRate@default:name=feed-build-time,type=default|Count,OneMinuteRate@default:name=feed-builds,type=default
@@ -25,16 +15,6 @@ storm_worker_6700_feeds:
 
 storm_worker_6701_feeds:
   mbean_server_url: service:jmx:rmi:///jndi/rmi://localhost:16701/jmxrmi
-  mbeans_attributes: OneMinuteRate@default:name=expiration-time,type=default|Count,OneMinuteRate@default:name=expiration-run,type=default|OneMinuteRate@default:name=feed-load-time,type=default|OneMinuteRate@default:name=feed-write-time,type=default|Count,OneMinuteRate@default:name=feed-writes,type=default|Value@default:name=feed-set-size,type=default|Value@default:name=feed-set-feed-min-size,type=default|Value@default:name=feed-set-feed-max-size,type=default|Value@default:name=feed-set-feed-mean-size,type=default|Value@default:name=feed-set-feed-median-size,type=default|OneMinuteRate@default:name=feed-build-time,type=default|Count,OneMinuteRate@default:name=feed-builds,type=default
-  jmxterm_uberjar: /opt/jmxterm/jmxterm-1.0-alpha-4-uber.jar
-
-storm_worker_6702_feeds:
-  mbean_server_url: service:jmx:rmi:///jndi/rmi://localhost:16702/jmxrmi
-  mbeans_attributes: OneMinuteRate@default:name=expiration-time,type=default|Count,OneMinuteRate@default:name=expiration-run,type=default|OneMinuteRate@default:name=feed-load-time,type=default|OneMinuteRate@default:name=feed-write-time,type=default|Count,OneMinuteRate@default:name=feed-writes,type=default|Value@default:name=feed-set-size,type=default|Value@default:name=feed-set-feed-min-size,type=default|Value@default:name=feed-set-feed-max-size,type=default|Value@default:name=feed-set-feed-mean-size,type=default|Value@default:name=feed-set-feed-median-size,type=default|OneMinuteRate@default:name=feed-build-time,type=default|Count,OneMinuteRate@default:name=feed-builds,type=default
-  jmxterm_uberjar: /opt/jmxterm/jmxterm-1.0-alpha-4-uber.jar
-
-storm_worker_6703_feeds:
-  mbean_server_url: service:jmx:rmi:///jndi/rmi://localhost:16703/jmxrmi
   mbeans_attributes: OneMinuteRate@default:name=expiration-time,type=default|Count,OneMinuteRate@default:name=expiration-run,type=default|OneMinuteRate@default:name=feed-load-time,type=default|OneMinuteRate@default:name=feed-write-time,type=default|Count,OneMinuteRate@default:name=feed-writes,type=default|Value@default:name=feed-set-size,type=default|Value@default:name=feed-set-feed-min-size,type=default|Value@default:name=feed-set-feed-max-size,type=default|Value@default:name=feed-set-feed-mean-size,type=default|Value@default:name=feed-set-feed-median-size,type=default|OneMinuteRate@default:name=feed-build-time,type=default|Count,OneMinuteRate@default:name=feed-builds,type=default
   jmxterm_uberjar: /opt/jmxterm/jmxterm-1.0-alpha-4-uber.jar
 
@@ -48,16 +28,6 @@ storm_worker_6701_mem:
   mbeans_attributes: HeapMemoryUsage,NonHeapMemoryUsage@java.lang:type=Memory
   jmxterm_uberjar: /opt/jmxterm/jmxterm-1.0-alpha-4-uber.jar
 
-storm_worker_6702_mem:
-  mbean_server_url: service:jmx:rmi:///jndi/rmi://localhost:16702/jmxrmi
-  mbeans_attributes: HeapMemoryUsage,NonHeapMemoryUsage@java.lang:type=Memory
-  jmxterm_uberjar: /opt/jmxterm/jmxterm-1.0-alpha-4-uber.jar
-
-storm_worker_6703_mem:
-  mbean_server_url: service:jmx:rmi:///jndi/rmi://localhost:16703/jmxrmi
-  mbeans_attributes: HeapMemoryUsage,NonHeapMemoryUsage@java.lang:type=Memory
-  jmxterm_uberjar: /opt/jmxterm/jmxterm-1.0-alpha-4-uber.jar
-
 storm_worker_6700_timing:
   mbean_server_url: service:jmx:rmi:///jndi/rmi://localhost:16700/jmxrmi
   mbeans_attributes: Mean,StdDev@default:name=active-user-fetch-time,type=default|Mean,StdDev@default:name=active-user-fanout-time,type=default|Mean,StdDev@default:name=like-interest-score-time,type=default|Mean,StdDev@default:name=follow-interest-score-time,type=default|Mean,StdDev@default:name=seller-follow-interest-score-time,type=default
@@ -65,15 +35,5 @@ storm_worker_6700_timing:
 
 storm_worker_6701_timing:
   mbean_server_url: service:jmx:rmi:///jndi/rmi://localhost:16701/jmxrmi
-  mbeans_attributes: Mean,StdDev@default:name=active-user-fetch-time,type=default|Mean,StdDev@default:name=active-user-fanout-time,type=default|Mean,StdDev@default:name=like-interest-score-time,type=default|Mean,StdDev@default:name=follow-interest-score-time,type=default|Mean,StdDev@default:name=seller-follow-interest-score-time,type=default
-  jmxterm_uberjar: /opt/jmxterm/jmxterm-1.0-alpha-4-uber.jar
-
-storm_worker_6702_timing:
-  mbean_server_url: service:jmx:rmi:///jndi/rmi://localhost:16702/jmxrmi
-  mbeans_attributes: Mean,StdDev@default:name=active-user-fetch-time,type=default|Mean,StdDev@default:name=active-user-fanout-time,type=default|Mean,StdDev@default:name=like-interest-score-time,type=default|Mean,StdDev@default:name=follow-interest-score-time,type=default|Mean,StdDev@default:name=seller-follow-interest-score-time,type=default
-  jmxterm_uberjar: /opt/jmxterm/jmxterm-1.0-alpha-4-uber.jar
-
-storm_worker_6703_timing:
-  mbean_server_url: service:jmx:rmi:///jndi/rmi://localhost:16703/jmxrmi
   mbeans_attributes: Mean,StdDev@default:name=active-user-fetch-time,type=default|Mean,StdDev@default:name=active-user-fanout-time,type=default|Mean,StdDev@default:name=like-interest-score-time,type=default|Mean,StdDev@default:name=follow-interest-score-time,type=default|Mean,StdDev@default:name=seller-follow-interest-score-time,type=default
   jmxterm_uberjar: /opt/jmxterm/jmxterm-1.0-alpha-4-uber.jar

@@ -19,6 +19,20 @@
   (emit-bolt! collector [id user-id feed])
   (ack! collector tuple))
 
+(def standard-topology-config
+  {TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
+   TOPOLOGY-KRYO-REGISTER
+   [{"risingtide.model.story.TagLikedStory" "risingtide.serializers.TagLikedStory"}
+    {"risingtide.model.story.ListingLikedStory" "risingtide.serializers.ListingLikedStory"}
+    {"risingtide.model.story.ListingCommentedStory" "risingtide.serializers.ListingCommentedStory"}
+    {"risingtide.model.story.ListingActivatedStory" "risingtide.serializers.ListingActivatedStory"}
+    {"risingtide.model.story.ListingSoldStory" "risingtide.serializers.ListingSoldStory"}
+    {"risingtide.model.story.ListingSharedStory" "risingtide.serializers.ListingSharedStory"}
+    {"risingtide.model.story.MultiActorMultiActionStory" "risingtide.serializers.MultiActorMultiActionStory"}
+    {"risingtide.model.story.MultiActorStory" "risingtide.serializers.MultiActorMultiActionStory"}
+    {"risingtide.model.story.MultiActionStory" "risingtide.serializers.MultiActorMultiActionStory"}
+    {"risingtide.model.story.MultiListingStory" "risingtide.serializers.MultiActorMultiActionStory"}]})
+
 (defn feed-generation-topology
   ([] (feed-generation-topology nil))
   ([drpc]
@@ -88,8 +102,10 @@
   (let [drpc (LocalDRPC.)]
     (doto (LocalCluster.)
       (.submitTopology "story"
-                       {TOPOLOGY-DEBUG (Boolean/parseBoolean debug)
-                        TOPOLOGY-WORKERS (Integer/parseInt workers)}
+                       (merge
+                        standard-topology-config
+                        {TOPOLOGY-DEBUG (Boolean/parseBoolean debug)
+                         TOPOLOGY-WORKERS (Integer/parseInt workers)})
                       (feed-generation-topology drpc)))
     (local-drpc-server/run! drpc (config/local-drpc-port))
     (when (Boolean/parseBoolean report-local-stats)

@@ -67,10 +67,10 @@
   [conf context collector]
   (let [feed-set (atom {})
         feed-set-size-gauge (gauge "feed-set-size" (count @feed-set))
-        feed-max-gauge (gauge "feed-set-feed-min-size" (apply min (feed-set-feed-sizes @feed-set)))
-        feed-min-gauge (gauge "feed-set-feed-max-size" (apply max (feed-set-feed-sizes @feed-set)))
-        feed-mean-gauge (gauge "feed-set-feed-mean-size" (apply mean (feed-set-feed-sizes @feed-set)))
-        feed-median-gauge (gauge "feed-set-feed-median-size" (int (apply median (feed-set-feed-sizes @feed-set))))
+;;        feed-max-gauge (gauge "feed-set-feed-min-size" (apply min (feed-set-feed-sizes @feed-set)))
+;;        feed-min-gauge (gauge "feed-set-feed-max-size" (apply max (feed-set-feed-sizes @feed-set)))
+;;        feed-mean-gauge (gauge "feed-set-feed-mean-size" (apply mean (feed-set-feed-sizes @feed-set)))
+;;        feed-median-gauge (gauge "feed-set-feed-median-size" (int (apply median (feed-set-feed-sizes @feed-set))))
         redii (redis/redii)
         feed-expirer (schedule-with-delay
                        #(try

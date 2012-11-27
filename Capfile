@@ -21,11 +21,10 @@ set :deploy_via, :remote_cache
 set :scm, 'git'
 set :scm_verbose, true
 set(:branch) do
-  "storm"
-  # case stage
-  # when :production then "production"
-  # else "staging"
-  # end
+  case stage
+  when :production then "production"
+  else "staging"
+  end
 end
 set :use_sudo, false
 

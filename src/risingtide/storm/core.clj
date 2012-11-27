@@ -67,23 +67,23 @@
 
         "likes" (bolt-spec {"active-users" :shuffle}
                            like-interest-scorer
-                           :p 12)
+                           :p 6)
         "tag-likes" (bolt-spec {"active-users" :shuffle}
                                tag-like-interest-scorer
-                               :p 12)
+                               :p 6)
         "follows" (bolt-spec {"active-users" :shuffle}
                              follow-interest-scorer
-                             :p 12)
+                             :p 6)
         "seller-follows" (bolt-spec {"active-users" :shuffle}
                                     seller-follow-interest-scorer
-                                    :p 12)
+                                    :p 6)
 
         "interest-reducer" (bolt-spec {"likes" ["user-ids-hash"]
                                        "tag-likes" ["user-ids-hash"]
                                        "follows" ["user-ids-hash"]
                                        "seller-follows" ["user-ids-hash"]}
                                       interest-reducer
-                                      :p 12)
+                                      :p 6)
 
         "drpc-acker" (bolt-spec {["drpc-feed-builder" "story"] :shuffle}
                                 drpc-acker
@@ -93,7 +93,7 @@
                                   "drpc-acker" ["user-id"]
                                   }
                                  add-to-feed
-                                 :p 12)}
+                                 :p 6)}
        (feed-building/bolts)))))
 
 (defn run-local! [& {debug "debug" workers "workers"

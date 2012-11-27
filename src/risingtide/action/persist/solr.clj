@@ -6,7 +6,7 @@
     [walk :refer [keywordize-keys]]]
    [risingtide
     [config :as config]
-    [persist :refer [keywordize convert-to-kw-set convert-to-set]]]
+    [persist :refer [keywordize convert-to-kw-set convert-to-kw-seq convert-to-set]]]
    [clojure-solr :as solr])
   (:refer-clojure :exclude [find]))
 
@@ -41,6 +41,8 @@
       keywordize-keys
       (rename-keys from-solr-keys)
       (dissoc :_version_ :id)
+      (convert-to-kw-seq :feed)
+      (convert-to-set :tag_ids)
       (keywordize :type)))
 
 (defn connection []

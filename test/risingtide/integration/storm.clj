@@ -33,7 +33,7 @@
                              :mock-sources {"actions" (map vector actions)
                                             "drpc-feed-build-requests" feed-build-requests}
                              ;; turn up parallelism to force serialization
-                             ;;:storm-conf {TOPOLOGY-WORKERS 6}
+                             :storm-conf {TOPOLOGY-WORKERS 6}
                              )]
       (Thread/sleep 5000)
       results)))
@@ -113,12 +113,6 @@
                  [nil rob jim-liked-ham 1]]
                 :in-any-order)
 
-      ;; we can't know fthe order in which stories are added, but we do
-      ;; know that at least one of the tuples in the feed output should
-      ;; be the completed feed
-      (bolt-output "add-to-feed") =>
-      (contains [[nil rob (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham))]])
-
       (bolt-output "curated-feed") =>
       (contains [[nil (seq (new-digest-feed jim-activated-bacon jim-liked-ham rob-liked-toast jim-liked-toast
                                             jim-shared-toast cutter-liked-breakfast-tacos))]])
@@ -150,9 +144,6 @@
        ;;;; test loading feeds from redis ;;;;
 
       (run-topology :actions more-actions-rob-cares-about)
-
-      (bolt-output "add-to-feed") =>
-      [[nil rob (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham cutter-liked-toast))]]
 
       (feed-for rob) =>
       (contains

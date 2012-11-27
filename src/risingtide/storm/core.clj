@@ -27,7 +27,11 @@
     {"risingtide.model.story.ListingCommentedStory" "risingtide.serializers.ListingCommentedStory"}
     {"risingtide.model.story.ListingActivatedStory" "risingtide.serializers.ListingActivatedStory"}
     {"risingtide.model.story.ListingSoldStory" "risingtide.serializers.ListingSoldStory"}
-    {"risingtide.model.story.ListingSharedStory" "risingtide.serializers.ListingSharedStory"}]})
+    {"risingtide.model.story.ListingSharedStory" "risingtide.serializers.ListingSharedStory"}
+    {"risingtide.model.story.MultiActorMultiActionStory" "risingtide.serializers.MultiActorMultiActionStory"}
+    {"risingtide.model.story.MultiActorStory" "risingtide.serializers.MultiActorMultiActionStory"}
+    {"risingtide.model.story.MultiActionStory" "risingtide.serializers.MultiActorMultiActionStory"}
+    {"risingtide.model.story.MultiListingStory" "risingtide.serializers.MultiActorMultiActionStory"}]})
 
 (defn feed-generation-topology
   ([] (feed-generation-topology nil))

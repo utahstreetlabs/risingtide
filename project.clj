@@ -47,4 +47,8 @@
         risingtide.serializers.ListingActivatedStory
         risingtide.serializers.ListingSoldStory
         risingtide.serializers.ListingSharedStory
+        risingtide.serializers.MultiActorMultiActionStory
+        risingtide.serializers.MultiActorStory
+        risingtide.serializers.MultiActionStory
+        risingtide.serializers.MultiListingStory
         risingtide.storm.FeedTopology])

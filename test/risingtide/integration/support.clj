@@ -32,6 +32,13 @@
       [pool]
       (stories pool feed-key))))
 
+(defn curated-feed
+  []
+  (let [feed-key (key/everything-feed)]
+    (shard/with-connection-for-feed (redis/redii) feed-key
+      [pool]
+      (stories pool feed-key))))
+
 (defn stories-about
   [listing-id]
   (stories (:stories (redis/redii)) (key/card-listing-story listing-id)))

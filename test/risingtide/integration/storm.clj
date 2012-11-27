@@ -113,9 +113,12 @@
                  [nil rob jim-liked-ham 1]]
                 :in-any-order)
 
-      (bolt-output "curated-feed") =>
-      (contains [[nil (seq (new-digest-feed jim-activated-bacon jim-liked-ham rob-liked-toast jim-liked-toast
-                                            jim-shared-toast cutter-liked-breakfast-tacos))]])
+      (curated-feed) =>
+      (contains
+       (apply encoded-feed (seq (new-digest-feed jim-activated-bacon jim-liked-ham rob-liked-toast jim-liked-toast
+                                                 jim-shared-toast cutter-liked-breakfast-tacos)))
+       :in-any-order)
+
 
       (strip-timestamps (map second (bolt-output "save-actions"))) =>
       (strip-timestamps actions)

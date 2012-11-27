@@ -108,8 +108,7 @@
               (when (for-everything-feed? story)
                 (swap! feed-atom add (dedupe story))
                 (write-feed! redii (key/everything-feed) @feed-atom)
-                (mark! curated-feed-writes)
-                (emit-bolt! collector [id (seq @feed-atom)] :anchor tuple))
+                (mark! curated-feed-writes))
               (ack! collector tuple)))))
 
 (defn feed-to-json [feed]

@@ -92,5 +92,5 @@
                     (swap! scores-atom #(dissoc % [user-id story]))
                     (mark! story-scored)
                     (when (>= total-score 1)
-                      (emit-bolt! collector [id user-id story total-score])))))
+                      (emit-bolt! collector [id user-id story total-score] :anchor tuple)))))
               (ack! collector tuple)))))

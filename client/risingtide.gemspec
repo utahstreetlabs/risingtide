@@ -24,6 +24,6 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency('ladon')
   s.add_runtime_dependency('redis')
   s.add_runtime_dependency('yajl-ruby')
-  # 0.7.0 is the version used by storm, so let's use that for now
-  s.add_runtime_dependency('thrift', '0.7.0')
+  s.add_runtime_dependency('thrift')
+  s.add_runtime_dependency('thrift_client')
 end

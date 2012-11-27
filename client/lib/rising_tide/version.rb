@@ -1,3 +1,3 @@
 module RisingTide
-  VERSION = '0.3.1'.freeze
+  VERSION = '0.4.1'.freeze
 end

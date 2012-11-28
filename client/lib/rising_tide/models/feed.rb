@@ -55,9 +55,7 @@ module RisingTide
           end
         end
 
-        # XXX: redis-rb introduced a change to the client that's going to break this whenever we upgrade
-        # (they are doing this map inside the client, instead of returning the raw array)
-        stories = values.each_slice(2).map {|s,t| Story.decode(s,t)}
+        stories = values.map {|s,t| Story.decode(s,t)}
         Kaminari::PaginatableArray.new(stories, limit: limit, offset: offset, total_count: cnt)
       end
 

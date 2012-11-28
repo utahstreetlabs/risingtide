@@ -35,7 +35,7 @@ set :hipchat_announce, true
 # total number of workers
 set(:workers) do
   case stage
-  when :production then 10
+  when :production then 16
   else 4
   end
 end

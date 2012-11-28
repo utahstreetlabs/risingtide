@@ -15,26 +15,26 @@
 
 (defn user-likes [user-id lim]
   (select likes
-          (where {:user_id user-id})
+          (where {:user_id user-id :deleted [not= true]})
           (fields :listing_id :tag_id)
           (limit lim)))
 
 (defn likes? [user-id listing-id]
-  (> (:cnt (first (select likes (fields :user_id (raw "COUNT(*) AS cnt"))  (where {:user_id user-id :listing_id listing-id}))))
+  (> (:cnt (first (select likes (fields :user_id (raw "COUNT(*) AS cnt"))  (where {:user_id user-id :listing_id listing-id :deleted [not= true]}))))
      0))
 
 (defn like-counts [listing-id user-ids]
   (when (and listing-id user-ids)
     (select likes
             (fields :user_id (raw "COUNT(*) AS cnt"))
-            (where {:user_id [in user-ids] :listing_id listing-id})
+            (where {:user_id [in user-ids] :listing_id listing-id :deleted [not= true]})
             (group :user_id))))
 
 (defn tag-like-counts [tag-ids user-ids]
   (when (and tag-ids user-ids)
     (select likes
             (fields :user_id (raw "COUNT(*) AS cnt"))
-            (where {:user_id [in user-ids] :tag_id [in tag-ids]})
+            (where {:user_id [in user-ids] :tag_id [in tag-ids] :deleted [not= true]})
             (group :user_id))))
 
 ;;; mutating methods - should only be used in test!!!

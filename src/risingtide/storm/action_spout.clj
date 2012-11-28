@@ -30,7 +30,8 @@
          (let [id (str (java.util.UUID/randomUUID))]
            (log/info "processing action "action" with id "id)
            (mark! action-created)
-           (emit-spout! collector [action] :id id))
+           (emit-spout! collector [action] ;;:id id
+                        ))
          (log/info "action spout ignoring" string))))
     (ack [id]
          (log/info "finished processing action " id)

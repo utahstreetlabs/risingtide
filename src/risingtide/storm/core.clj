@@ -41,45 +41,39 @@
 
       (merge
        {"prepare-actions" (bolt-spec {"actions" :shuffle}
-                                     prepare-action-bolt
-                                     :p 1)
+                                     prepare-action-bolt)
 
         "save-actions" (bolt-spec {"prepare-actions" :shuffle}
-                                  save-action-bolt
-                                  :p 1)
+                                  save-action-bolt)
 
         "stories" (bolt-spec {"prepare-actions" :shuffle}
-                             create-story-bolt
-                             :p 1)
+                             create-story-bolt)
 
         ;; everything feed
         "curated-feed" (bolt-spec {"stories" :global}
-                                  add-to-curated-feed
-                                  :p 1)
+                                  add-to-curated-feed)
 
         ;; search and browse cache
         "search-and-browse" (bolt-spec {"stories" :global}
-                                       save-story-bolt
-                                       :p 1)
+                                       save-story-bolt)
 
         ;; user feeds
 
         "active-users" (bolt-spec {"stories" :shuffle}
-                                  active-user-bolt
-                                  :p 1)
+                                  active-user-bolt)
 
         "likes" (bolt-spec {"active-users" :shuffle}
                            like-interest-scorer
-                           :p 6)
+                           :p 5)
         "tag-likes" (bolt-spec {"active-users" :shuffle}
                                tag-like-interest-scorer
                                :p 6)
         "follows" (bolt-spec {"active-users" :shuffle}
                              follow-interest-scorer
-                             :p 6)
+                             :p 4)
         "seller-follows" (bolt-spec {"active-users" :shuffle}
                                     seller-follow-interest-scorer
-                                    :p 6)
+                                    :p 5)
 
         "interest-reducer" (bolt-spec {"likes" ["user-ids-hash"]
                                        "tag-likes" ["user-ids-hash"]
@@ -89,14 +83,13 @@
                                       :p 3)
 
         "drpc-acker" (bolt-spec {["drpc-feed-builder" "story"] :shuffle}
-                                drpc-acker
-                                :p 1)
+                                drpc-acker)
 
         "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]
                                   "drpc-acker" ["user-id"]
                                   }
                                  add-to-feed
-                                 :p 10)}
+                                 :p 16)}
        (feed-building/bolts)))))
 
 (defn run-local! [& {debug "debug" workers "workers"

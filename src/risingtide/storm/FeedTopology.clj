@@ -12,6 +12,6 @@
     standard-topology-config
     {TOPOLOGY-DEBUG (Boolean/parseBoolean debug)
      TOPOLOGY-WORKERS (Integer/parseInt workers)
-     TOPOLOGY-MAX-SPOUT-PENDING 1
+     TOPOLOGY-MAX-SPOUT-PENDING 3
      TOPOLOGY-MESSAGE-TIMEOUT-SECS 60})
    (feed-generation-topology)))

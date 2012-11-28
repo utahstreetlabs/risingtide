@@ -15,6 +15,4 @@ do
     scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6701_mem.rb
     scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6700_feeds.rb
     scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6701_feeds.rb
-    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6700_timing.rb
-    scp ../scout-plugins/jmx_agent/jmx_agent.rb utah@`ec2-host $HOST.copious.com`:~utah/.scout/storm_worker_6701_timing.rb
 done

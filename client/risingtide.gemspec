@@ -22,7 +22,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency('gemfury')
   s.add_runtime_dependency('kaminari', ['~> 0.13.0'])
   s.add_runtime_dependency('ladon')
-  s.add_runtime_dependency('redis')
+  s.add_runtime_dependency('redis', '~> 3.0.0')
   s.add_runtime_dependency('yajl-ruby')
   s.add_runtime_dependency('thrift')
   s.add_runtime_dependency('thrift_client')

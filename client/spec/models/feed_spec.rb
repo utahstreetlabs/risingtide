@@ -20,17 +20,17 @@ describe RisingTide::Feed do
       Time.now - (24 * 60 * 60)
     end
 
-    let(:stories) { story_hashes.each_with_index.flat_map {|h,i| [Yajl::Encoder.encode(h), days_ago(i)]} }
+    let(:stories) { story_hashes.each_with_index.map {|h,i| [Yajl::Encoder.encode(h), days_ago(i)]} }
 
     context 'with no interested user id specified' do
       let(:key) { "magt:f:c" }
 
       it 'should fetch stories from the everything feed' do
         card_redis.expects(:zcard).with(key).returns(stories.count)
-        card_redis.expects(:zrevrange).with(key, 0, 1, withscores: true).returns(stories[0..3])
+        card_redis.expects(:zrevrange).with(key, 0, 1, withscores: true).returns(stories[0..1])
         result = RisingTide::CardFeed.find_slice(offset: 0, limit: 2)
         result.should have(2).stories
-        result.first.should == RisingTide::Story.decode(*stories[0..1])
+        result.first.should == RisingTide::Story.decode(*stories[0])
       end
 
       context 'with time boundaries specified' do
@@ -42,28 +42,28 @@ describe RisingTide::Feed do
         it 'should only return stories after the :after parameter' do
           card_redis.expects(:zcount).with(key, redis_after, :inf).returns(3)
           card_redis.expects(:zrevrangebyscore).with(key, :inf, redis_after, withscores: true, limit: [0, 10]).
-            returns(stories[0..5])
+            returns(stories[0..2])
           result = RisingTide::CardFeed.find_slice(after: after, offset: 0, limit: 10)
           result.should have(3).stories
-          result.first.should == RisingTide::Story.decode(*stories[0..1])
+          result.first.should == RisingTide::Story.decode(*stories[0])
         end
 
         it 'should only return stories before the :before parameter' do
           card_redis.expects(:zcount).with(key, 0, redis_before).returns(2)
           card_redis.expects(:zrevrangebyscore).with(key, redis_before, 0, withscores: true, limit: [0, 10]).
-            returns(stories[4..7])
+            returns(stories[2..3])
           result = RisingTide::CardFeed.find_slice(before: before, offset: 0, limit: 10)
           result.should have(2).stories
-          result.first.should == RisingTide::Story.decode(*stories[4..5])
+          result.first.should == RisingTide::Story.decode(*stories[2])
         end
 
         it 'should respect both the :before and :after parameter when combined' do
           card_redis.expects(:zcount).with(key, redis_after, redis_before).returns(1)
           card_redis.expects(:zrevrangebyscore).with(key, redis_before, redis_after, withscores: true, limit: [0, 10]).
-            returns(stories[4..5])
+            returns([stories[2]])
           result = RisingTide::CardFeed.find_slice(before: before, after: after, offset: 0, limit: 10)
           result.should have(1).story
-          result.first.should == RisingTide::Story.decode(*stories[4..5])
+          result.first.should == RisingTide::Story.decode(*stories[2])
         end
       end
     end
@@ -75,10 +75,10 @@ describe RisingTide::Feed do
       it 'should fetch stories for the specified user' do
         expects_card_shard_key_lookup.twice
         card_redis.expects(:zcard).with(key).returns(stories.count)
-        card_redis.expects(:zrevrange).with(key, 0, 1, withscores: true).returns(stories[0..3])
+        card_redis.expects(:zrevrange).with(key, 0, 1, withscores: true).returns(stories[0..1])
         result = RisingTide::CardFeed.find_slice(interested_user_id: user_id, offset: 0, limit: 2)
         result.should have(2).stories
-        result.first.should == RisingTide::Story.decode(*stories[0..1])
+        result.first.should == RisingTide::Story.decode(*stories[0])
       end
     end
 

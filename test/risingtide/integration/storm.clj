@@ -91,12 +91,14 @@
       (run-topology :actions actions)
 
       (bolt-output "stories") =>
-      [[nil nil jim-activated-bacon]
-       [nil nil rob-liked-toast]
-       [nil nil jim-liked-ham]
-       [nil nil jim-liked-toast]
-       [nil nil jim-shared-toast]
-       [nil nil cutter-liked-breakfast-tacos]]
+      (contains
+       [[nil nil jim-activated-bacon]
+        [nil nil rob-liked-toast]
+        [nil nil jim-liked-ham]
+        [nil nil jim-liked-toast]
+        [nil nil jim-shared-toast]
+        [nil nil cutter-liked-breakfast-tacos]]
+       :in-any-order)
 
       (bolt-output "active-users") =>
       (contains [[nil [rob] jim-activated-bacon]
@@ -121,7 +123,9 @@
 
 
       (strip-timestamps (map second (bolt-output "save-actions"))) =>
-      (strip-timestamps actions)
+      (contains
+       (strip-timestamps actions)
+       :in-any-order)
 
       (feed-for rob) =>
       (contains

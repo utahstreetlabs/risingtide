@@ -85,7 +85,7 @@
 
 ;;; storm topology config ;;;
 
-(def active-user-bolt-batch-size 500)
+(def active-user-bolt-batch-size 2000)
 (def recent-actions-max-follows 200)
 (def recent-actions-max-likes 200)
 (def recent-actions-max-seller-listings 200)

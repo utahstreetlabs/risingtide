@@ -7,7 +7,8 @@
              [key :as key]
              [active-users :refer [active-users active?]]
              [metrics :refer [mean median]]]
-            [risingtide.model [feed :refer [add]]]
+            [risingtide.model [feed :refer [add]]
+             [timestamps :refer [timestamp]]]
             [risingtide.interests
              [brooklyn :as follows]
              [pyramid :as likes]]
@@ -112,7 +113,7 @@
               (ack! collector tuple)))))
 
 (defn feed-to-json [feed]
-  (with-out-str (print (encode-feed feed :include-ts true))))
+  (with-out-str (print (encode-feed (map #(assoc % :timestamp (timestamp %)) feed)))))
 
 (defn serialize [{id "id" feed "feed" :as tuple} collector]
   (emit-bolt! collector [id (feed-to-json feed)]))

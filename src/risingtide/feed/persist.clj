@@ -1,7 +1,8 @@
 (ns risingtide.feed.persist
   (:require
-   [clojure.data.json :as json]
+   [cheshire.core :as json]
    [clojure.set :refer [map-invert rename-keys]]
+   [clojure.core.memoize :refer [memo-lru]]
    [risingtide
     [core :refer [now]]
     [redis :as redis]
@@ -12,7 +13,8 @@
     [story :as story]
     [feed :as feed]
     [timestamps :refer [timestamp min-timestamp max-timestamp with-timestamp]]]
-   [risingtide.feed.persist.shard :as shard]))
+   [risingtide.feed.persist.shard :as shard])
+  (:import [redis.clients.jedis Jedis Transaction JedisPool]))
 
 (defn- max-feed-size
   []
@@ -44,20 +46,20 @@
     (assoc hash key val)
     hash))
 
-(defn encoded-hash [story & {include-ts :include-ts :or {include-ts false}}]
+(defn encoded-hash [story]
   (-> story
       (assoc :type (story/type-sym story))
-      (assoc-if :timestamp (timestamp story) include-ts)
       (rename-keys short-key)))
 
-(defn encode
+(defn encode-raw
   "given a story, encode it into a short-key json format suitable for memory efficient storage in redis"
   [story]
-  (json/json-str (encoded-hash story)))
+  (json/generate-string (encoded-hash story)))
+(def encode (memo-lru encode-raw 20000))
 
 (defn encode-feed
-  [feed & args]
-  (json/json-str (map #(apply encoded-hash % args) (seq feed))))
+  [feed]
+  (json/generate-string (map #(encoded-hash %) feed)))
 
 (defn decode-actions [actions]
   (if (map? actions)
@@ -67,7 +69,7 @@
 (defn decode
   "given a short-key json encoded story, decode into a long keyed hash"
   [string]
-  (let [story (rename-keys (json/read-json string) long-key)]
+  (let [story (rename-keys (json/parse-string string) long-key)]
     (-> ((story/story-factory-for (keyword (:type story))) story)
         (dissoc :type)
         (convert-to-kw-seq :feed)
@@ -77,17 +79,13 @@
 
 ;;; writing feeds to redis
 
-(defn- add-stories-to-jedis
-  [jedis feed-key stories]
-  (doseq [story stories]
-    (.zadd jedis feed-key (double (timestamp story)) (encode story))))
 
 (defn replace-feed-head!
-  [conn feed-key stories low-score high-score]
+  [^JedisPool conn feed-key stories low-score high-score]
   (redis/with-transaction* conn
-    (fn [jedis]
+    (fn [^Transaction jedis]
       (.zremrangeByScore jedis feed-key (double low-score) (double high-score))
-      (add-stories-to-jedis jedis feed-key stories)
+      (.zadd jedis feed-key (reduce (fn [h story] (assoc h (double (timestamp story)) (encode story))) {} stories))
       (.zremrangeByRank jedis feed-key 0 (max-feed-size)))))
 
 (defn write-feed!

@@ -2,7 +2,7 @@
   (:require
    [cheshire.core :as json]
    [clojure.set :refer [map-invert rename-keys]]
-   [clojure.core.memoize :refer [memo-lru]]
+   [clojure.core.memoize :refer [memo-ttl] :as memo]
    [risingtide
     [core :refer [now]]
     [redis :as redis]
@@ -13,7 +13,8 @@
     [story :as story]
     [feed :as feed]
     [timestamps :refer [timestamp min-timestamp max-timestamp with-timestamp]]]
-   [risingtide.feed.persist.shard :as shard])
+   [risingtide.feed.persist.shard :as shard]
+   [metrics [gauges :refer [gauge]]])
   (:import [redis.clients.jedis Jedis Transaction JedisPool]))
 
 (defn- max-feed-size
@@ -55,7 +56,10 @@
   "given a story, encode it into a short-key json format suitable for memory efficient storage in redis"
   [story]
   (json/generate-string (encoded-hash story)))
-(def encode (memo-lru encode-raw 20000))
+
+(def encode (memo-ttl encode-raw config/encoding-cache-ttl))
+
+(def encoding-cache-gauge (gauge "encoding-cache-size" (count (memo/snapshot encode))))
 
 (defn encode-feed
   [feed]
@@ -69,7 +73,7 @@
 (defn decode
   "given a short-key json encoded story, decode into a long keyed hash"
   [string]
-  (let [story (rename-keys (json/parse-string string) long-key)]
+  (let [story (rename-keys (json/parse-string string true) long-key)]
     (-> ((story/story-factory-for (keyword (:type story))) story)
         (dissoc :type)
         (convert-to-kw-seq :feed)
@@ -85,7 +89,7 @@
   (redis/with-transaction* conn
     (fn [^Transaction jedis]
       (.zremrangeByScore jedis feed-key (double low-score) (double high-score))
-      (.zadd jedis feed-key (reduce (fn [h story] (assoc h (double (timestamp story)) (encode story))) {} stories))
+      (.zadd jedis feed-key (into-array String (apply concat (map (fn [story] [(String/valueOf (double (timestamp story))) (encode story)]) stories))))
       (.zremrangeByRank jedis feed-key 0 (max-feed-size)))))
 
 (defn write-feed!

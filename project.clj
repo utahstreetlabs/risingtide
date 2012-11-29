@@ -6,7 +6,7 @@
                  [org.clojure/data.json "0.1.1"]
                  [org.clojure/tools.logging "0.2.3"]
 
-                 [utahstreetlabs/jedis "2.1.0"]
+                 [utahstreetlabs/jedis "2.1.1"]
                  [korma "0.3.0-beta11"]
                  [mysql/mysql-connector-java "5.1.20"]
                  [org.syslog4j/syslog4j "0.9.30"]

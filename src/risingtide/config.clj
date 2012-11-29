@@ -80,12 +80,13 @@
 (def initial-feed-size 1000)
 (def default-card-shard "1")
 (def ^:dynamic *digest-cache-ttl* (* 6 60 60))
+(def encoding-cache-ttl (* 6 60 60 1000))
 ;; number of seconds to wait between expiring stories in feed sets
 (def feed-expiration-delay 120)
 
 ;;; storm topology config ;;;
 
-(def active-user-bolt-batch-size 500)
+(def active-user-bolt-batch-size 2000)
 (def recent-actions-max-follows 200)
 (def recent-actions-max-likes 200)
 (def recent-actions-max-seller-listings 200)

@@ -6,7 +6,7 @@
                  [org.clojure/data.json "0.1.1"]
                  [org.clojure/tools.logging "0.2.3"]
 
-                 [redis.clients/jedis "2.0.0"]
+                 [utahstreetlabs/jedis "2.1.1"]
                  [korma "0.3.0-beta11"]
                  [mysql/mysql-connector-java "5.1.20"]
                  [org.syslog4j/syslog4j "0.9.30"]
@@ -22,13 +22,16 @@
 
                  [metrics-clojure "0.9.2" :exclusions [org.slf4j/slf4j-api]]
 
-                 [storm/carbonite "1.5.0"]]
+                 [storm/carbonite "1.5.0"]
+                 [cheshire "5.0.0"]
+                 [org.clojure/core.memoize "0.5.2"]]
   :java-source-paths ["java-src"]
   :profiles {:dev {:dependencies [[midje "1.4.0"]
                                   ;; storm dependency only in dev
                                   ;; cause production storm cluster
                                   ;; provide it
-                                  [storm "0.8.1"]]}}
+                                  [storm "0.8.1"]
+                                  [criterium "0.3.1"]]}}
   :aliases {"local-topology" ["run" "-m" "risingtide.storm.core/run-local!"]}
   :main risingtide
   :min-lein-version "2.0.0"

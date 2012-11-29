@@ -89,7 +89,7 @@
                                   "drpc-acker" ["user-id"]
                                   }
                                  add-to-feed
-                                 :p 24)}
+                                 :p 16)}
        (feed-building/bolts)))))
 
 (defn run-local! [& {debug "debug" workers "workers"

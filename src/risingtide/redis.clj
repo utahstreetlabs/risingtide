@@ -3,11 +3,12 @@
   (:require [risingtide
              [config :as config]
              [core :refer :all]])
-  (:import [redis.clients.jedis JedisPool JedisPoolConfig ZParams ZParams$Aggregate]
+  (:import [redis.clients.jedis JedisPool JedisPoolConfig ZParams ZParams$Aggregate Response Transaction Jedis]
            java.util.Map))
 
 (defn pool-config []
   (doto (JedisPoolConfig.)
+    (.setMinIdle 2)
     (.setMaxActive 30)))
 
 (defn redis [config]
@@ -36,17 +37,17 @@
   (return-resource [pool jedis]
     (.returnResource (:pool pool) jedis)))
 
-(defn with-jedis* [pool f]
+(defn with-jedis* [^JedisPool pool f]
   (let [jedis (get-resource pool)]
     (try
       (f jedis)
       (finally (return-resource pool jedis)))))
 
-(defn with-transaction* [pool f]
+(defn with-transaction* [^JedisPool pool f]
   (with-jedis* pool
-    (fn [jedis]
+    (fn [^Jedis jedis]
       (let [transaction (.multi jedis)]
-        (let [r (f transaction)]
+        (let [^Response r (f transaction)]
           (.exec transaction)
           (.get r))))))
 

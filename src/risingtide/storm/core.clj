@@ -41,13 +41,15 @@
 
       (merge
        {"prepare-actions" (bolt-spec {"actions" :shuffle}
-                                     prepare-action-bolt)
+                                     prepare-action-bolt
+                                     :p 2)
 
         "save-actions" (bolt-spec {"prepare-actions" :shuffle}
                                   save-action-bolt)
 
         "stories" (bolt-spec {"prepare-actions" :shuffle}
-                             create-story-bolt)
+                             create-story-bolt
+                             :p 2)
 
         ;; everything feed
         "curated-feed" (bolt-spec {"stories" :global}
@@ -60,7 +62,8 @@
         ;; user feeds
 
         "active-users" (bolt-spec {"stories" :shuffle}
-                                  active-user-bolt)
+                                  active-user-bolt
+                                  :p 2)
 
         "likes" (bolt-spec {"active-users" :shuffle}
                            like-interest-scorer

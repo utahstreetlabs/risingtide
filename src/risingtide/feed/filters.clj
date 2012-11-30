@@ -1,4 +1,5 @@
-(ns risingtide.feed.filters)
+(ns risingtide.feed.filters
+  (:require [risingtide.config :as config]))
 
 ;;;; filtering ;;;;
 
@@ -22,5 +23,5 @@
 (defn for-user-feed?
   [story]
   (and
-   (not (= (:actor-id story) 38319))
+   (not (config/actor-blacklisted-from-user-feed? (:actor-id story)))
    (for-feed-with-token? story user-feed-token user-feed-token?)))

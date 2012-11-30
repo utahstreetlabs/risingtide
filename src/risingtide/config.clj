@@ -1,7 +1,7 @@
 (ns risingtide.config
   (:require [risingtide.core :as core]))
 
-(def env (keyword (or (System/getProperty "risingtide.env") (System/getenv "RISINGTIDE_ENV") (System/getenv "RT_ENV") "development")))
+(defonce env (keyword (or (System/getProperty "risingtide.env") (System/getenv "RISINGTIDE_ENV") (System/getenv "RT_ENV") "development")))
 
 (def redis
   {:development {:resque {}
@@ -83,6 +83,17 @@
 (def encoding-cache-ttl (* 6 60 60 1000))
 ;; number of seconds to wait between expiring stories in feed sets
 (def feed-expiration-delay 120)
+
+(def ^:dynamic *user-feed-actor-blacklist*
+  {:development #{}
+   :test #{}
+   :staging #{}
+   :demo #{}
+   :production #{38319}})
+
+(defn actor-blacklisted-from-user-feed? [id]
+  ((*user-feed-actor-blacklist* env) id))
+
 
 ;;; storm topology config ;;;
 

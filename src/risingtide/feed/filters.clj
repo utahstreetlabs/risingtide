@@ -21,4 +21,6 @@
 
 (defn for-user-feed?
   [story]
-  (for-feed-with-token? story user-feed-token user-feed-token?))
+  (and
+   (not (= (:actor-id story) 38319))
+   (for-feed-with-token? story user-feed-token user-feed-token?)))

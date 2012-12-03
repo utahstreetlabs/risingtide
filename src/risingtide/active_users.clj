@@ -31,3 +31,4 @@
   (redis/with-jedis* (redii :active-users)
     (fn [redis]
       (.exists redis (active-user-key user-id)))))
+

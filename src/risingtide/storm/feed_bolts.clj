@@ -84,7 +84,7 @@
               (time! add-feed-time
                      (doseq [s (if story [story] new-feed)]
                        (update-feed-set! redii feed-set user-id (dedupe s)))
-                     (when (or story (not (empty? new-feed)))
+                     (when (and (or story (not (empty? new-feed))) (active? redii user-id))
                        (let [feed @(@feed-set user-id)]
                          (mark! feed-writes)
                          (time! feed-write-time

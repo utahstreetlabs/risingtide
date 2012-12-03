@@ -9,7 +9,7 @@
 (defn pool-config []
   (doto (JedisPoolConfig.)
     (.setMinIdle 2)
-    (.setMaxActive 30)))
+    (.setMaxActive 5)))
 
 (defn redis [config]
   (let [pool

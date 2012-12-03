@@ -1,5 +1,6 @@
 (ns risingtide.storm.build-feed
-  (:require [risingtide.model.story :refer [->ListingLikedStory]]
+  (:require [risingtide.config :as config]
+            [risingtide.model.story :refer [->ListingLikedStory]]
             [risingtide.storm
              [action-spout :refer [resque-spout]]
              [story-bolts :refer [create-story-bolt]]
@@ -25,13 +26,15 @@
   (emit-bolt! collector [(.getValue tuple 0) (Integer/parseInt (.getString tuple 1))] :anchor tuple)
   (ack! collector tuple))
 
+(def p config/parallelism)
+
 (defn bolts []
   (drpc/topology-bolts
    "drpc-feed-build-requests"
    ["drpc-request" drpc-request]
 
    {"drpc-feed-builder" [{"drpc-request" :shuffle}
-                         drpc-feed-build-bolt :p 3]}
+                         drpc-feed-build-bolt :p (p :drpc-feed-builder)]}
 
    {
     ;; "drpc-serialize-feed" [{"drpc-feed-builder" :shuffle}

@@ -5,6 +5,7 @@
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.clojure/data.json "0.1.1"]
                  [org.clojure/tools.logging "0.2.3"]
+                 [org.clojure/core.memoize "0.5.2"]
 
                  [utahstreetlabs/jedis "2.1.1"]
                  [korma "0.3.0-beta11"]
@@ -24,7 +25,11 @@
 
                  [storm/carbonite "1.5.0"]
                  [cheshire "5.0.0"]
-                 [org.clojure/core.memoize "0.5.2"]]
+
+                 ;; reports
+                 [incanter/incanter-core "1.4.0"]
+                 [incanter/incanter-charts "1.4.0"]
+                 ]
   :java-source-paths ["java-src"]
   :profiles {:dev {:dependencies [[midje "1.4.0"]
                                   ;; storm dependency only in dev

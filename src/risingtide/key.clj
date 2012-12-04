@@ -31,7 +31,7 @@
   [key]
   (let [parts (.split key ":")] [(feed-type (aget parts 4)) (aget parts 3)]))
 
-;; storys
+;; stories
 
 (defn card-story
   [& parts]

@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+rvm use --create "ruby-1.9.3-p0@risingtide"

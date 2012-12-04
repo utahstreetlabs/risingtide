@@ -1,2 +1,2 @@
-risingtide: env RISINGTIDE_ENV=test bin/lein run -m risingtide.storm.core/run-local!
+risingtide: env RISINGTIDE_ENV=test bin/lein local-topology
 solr: bin/run-test-solr

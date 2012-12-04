@@ -11,9 +11,7 @@
              [feed-bolts :refer [add-to-feed add-to-curated-feed]]
              [build-feed :as feed-building]]
             [risingtide.storm.drpc.local-server :as local-drpc-server]
-            [backtype.storm [clojure :refer [defbolt bolt emit-bolt! ack! topology spout-spec bolt-spec]] [config :refer :all]]
-            [metrics.core :refer [report-to-console]])
-  (:import [backtype.storm LocalCluster LocalDRPC]))
+            [backtype.storm [clojure :refer [defbolt bolt emit-bolt! ack! topology spout-spec bolt-spec]] [config :refer :all]]))
 
 (defbolt drpc-acker ["id" "user-id" "feed"] [{id "id" user-id "user-id" feed "feed" :as tuple} collector]
   (emit-bolt! collector [id user-id feed])
@@ -33,6 +31,8 @@
     {"risingtide.model.story.MultiActionStory" "risingtide.serializers.MultiActionStory"}
     {"risingtide.model.story.MultiListingStory" "risingtide.serializers.MultiListingStory"}]})
 
+(def p config/parallelism)
+
 (defn feed-generation-topology
   ([] (feed-generation-topology nil))
   ([drpc]
@@ -42,14 +42,14 @@
       (merge
        {"prepare-actions" (bolt-spec {"actions" :shuffle}
                                      prepare-action-bolt
-                                     :p 1)
+                                     :p (p :prepare-actions))
 
         "save-actions" (bolt-spec {"prepare-actions" :shuffle}
                                   save-action-bolt)
 
         "stories" (bolt-spec {"prepare-actions" :shuffle}
                              create-story-bolt
-                             :p 1)
+                             :p (p :stories))
 
         ;; everything feed
         "curated-feed" (bolt-spec {"stories" :global}
@@ -63,27 +63,27 @@
 
         "active-users" (bolt-spec {"stories" :shuffle}
                                   active-user-bolt
-                                  :p 1)
+                                  :p (p :active-users))
 
         "likes" (bolt-spec {"active-users" :shuffle}
                            like-interest-scorer
-                           :p 5)
+                           :p (p :likes))
         "tag-likes" (bolt-spec {"active-users" :shuffle}
                                tag-like-interest-scorer
-                               :p 6)
+                               :p (p :tag-likes))
         "follows" (bolt-spec {"active-users" :shuffle}
                              follow-interest-scorer
-                             :p 4)
+                             :p (p :follows))
         "seller-follows" (bolt-spec {"active-users" :shuffle}
                                     seller-follow-interest-scorer
-                                    :p 5)
+                                    :p (p :seller-follows))
 
         "interest-reducer" (bolt-spec {"likes" ["user-ids-hash"]
                                        "tag-likes" ["user-ids-hash"]
                                        "follows" ["user-ids-hash"]
                                        "seller-follows" ["user-ids-hash"]}
                                       interest-reducer
-                                      :p 3)
+                                      :p (p :interest-reducer))
 
         "drpc-acker" (bolt-spec {["drpc-feed-builder" "story"] :shuffle}
                                 drpc-acker)
@@ -92,38 +92,5 @@
                                   "drpc-acker" ["user-id"]
                                   }
                                  add-to-feed
-                                 :p 16)}
+                                 :p (p :add-to-feed))}
        (feed-building/bolts)))))
-
-(defn run-local! [& {debug "debug" workers "workers"
-                     report-local-stats "report-local-stats"
-                     :or {debug "false" workers "4" report-local-stats "false"}}]
-  (let [drpc (LocalDRPC.)]
-    (doto (LocalCluster.)
-      (.submitTopology "story"
-                       (merge
-                        standard-topology-config
-                        {TOPOLOGY-DEBUG (Boolean/parseBoolean debug)
-                         TOPOLOGY-WORKERS (Integer/parseInt workers)})
-                      (feed-generation-topology drpc)))
-    (local-drpc-server/run! drpc (config/local-drpc-port))
-    (when (Boolean/parseBoolean report-local-stats)
-      (report-to-console 10))))
-
-
-(comment
-  (def c (LocalCluster.))
-  (def d (LocalDRPC.))
-  (def dr (local-drpc-server/run! d 3772))
-  (.submitTopology c "build-feed" {TOPOLOGY-DEBUG true} (feed-generation-topology d))
-  (import 'backtype.storm.utils.DRPCClient)
-  (def dc (DRPCClient. "localhost" 3772))
-  (.execute dc "build-feed" "47")
-  (.shutdown c)
-  (.stop dr)
-
-  ;; lein run -m risingtide.storm.core/run-local!
-  ;; brooklyn:
-  ;; User.inject_listing_story(:listing_liked, 2, Listing.find(23))
-  )
-

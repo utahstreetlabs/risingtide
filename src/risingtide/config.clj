@@ -117,4 +117,24 @@
 (defn local-drpc-port []
   (local-drpc-port-config env))
 
+(def max-spout-pending 1)
+
+(def parallelism-config
+  {:production
+   {:add-to-feed 16
+    :interest-reducer 3
+    :seller-follows 5
+    :follows 4
+    :tag-likes 6
+    :likes 4
+    :stories max-spout-pending
+    :active-users max-spout-pending
+    :prepare-actions max-spout-pending
+    :drpc-feed-builder 3}})
+
+(defn parallelism [component]
+  (or (get-in parallelism-config [env component]) 1))
+
+
+
 (def admin-port 4055)

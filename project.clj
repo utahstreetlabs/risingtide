@@ -32,7 +32,9 @@
                                   ;; provide it
                                   [storm "0.8.1"]
                                   [criterium "0.3.1"]]}}
-  :aliases {"local-topology" ["run" "-m" "risingtide.storm.core/run-local!"]}
+
+  :jvm-opts ["-Xmx64m"]
+  :aliases {"local-topology" ["trampoline" "run" "-m" "risingtide.storm.local/run!"]}
   :main risingtide
   :min-lein-version "2.0.0"
   :plugins [[lein-midje "2.0.0-SNAPSHOT"]]

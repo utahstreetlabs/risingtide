@@ -1,2 +1,2 @@
-risingtide: bin/lein run -m risingtide.storm.core/run-local!
+risingtide: bin/lein local-topology
 solr: bin/run-dev-solr

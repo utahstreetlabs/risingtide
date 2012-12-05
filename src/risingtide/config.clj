@@ -121,7 +121,7 @@
 
 (def parallelism-config
   {:production
-   {:add-to-feed 16
+   {:add-to-feed 10
     :interest-reducer 3
     :seller-follows 5
     :follows 4

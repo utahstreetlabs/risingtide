@@ -1,7 +1,9 @@
 (ns risingtide.storm.core
   (:require [risingtide.config :as config]
             [risingtide.storm
-             [action-spout :refer [resque-spout]]
+             [action-spout :refer [action-spout]]
+             [remove-spout :refer [remove-spout]]
+             [remove-bolts :refer [prepare-removals]]
              [story-bolts :refer [create-story-bolt save-story-bolt]]
              [action-bolts :refer [prepare-action-bolt save-action-bolt]]
              [active-user-bolt :refer [active-user-bolt]]
@@ -37,10 +39,16 @@
   ([] (feed-generation-topology nil))
   ([drpc]
      (topology
-      (merge {"actions" (spout-spec resque-spout)} (feed-building/spouts drpc))
+      (merge {"actions" (spout-spec action-spout)
+              "removals" (spout-spec remove-spout)}
+             (feed-building/spouts drpc))
 
       (merge
-       {"prepare-actions" (bolt-spec {"actions" :shuffle}
+       {"prepare-removals" (bolt-spec {"removals" :shuffle}
+                                      prepare-removals
+                                     :p (p :prepare-removals))
+
+        "prepare-actions" (bolt-spec {"actions" :shuffle}
                                      prepare-action-bolt
                                      :p (p :prepare-actions))
 
@@ -90,7 +98,7 @@
 
         "add-to-feed" (bolt-spec {"interest-reducer" ["user-id"]
                                   "drpc-acker" ["user-id"]
-                                  }
+                                  "prepare-removals" ["user-id"]}
                                  add-to-feed
                                  :p (p :add-to-feed))}
        (feed-building/bolts)))))

@@ -7,7 +7,7 @@
              [key :as key]
              [active-users :refer [active-users active?]]
              [metrics :refer [mean median]]]
-            [risingtide.model [feed :refer [add]]
+            [risingtide.model [feed :refer [add remove-listing]]
              [timestamps :refer [timestamp]]]
             [risingtide.interests
              [brooklyn :as follows]
@@ -32,13 +32,19 @@
 
 (defn initialize-digest-feed [redii feed-key & stories]
   (let [initial-stories (time! feed-load-time (load-feed redii feed-key (expiration-threshold) (now)))]
-    (atom (apply new-digest-feed (map dedupe (concat initial-stories stories))))))
+    (apply new-digest-feed (map dedupe (concat initial-stories stories)))))
 
-(defn update-feed-set! [redii feed-set-atom user-id story]
+(defn add-to-feed-set! [redii feed-set-atom user-id story]
   (if-let [feed-atom (@feed-set-atom user-id)]
     (swap! feed-atom add story)
     (swap! feed-set-atom
-           #(assoc % user-id (initialize-digest-feed redii (key/user-feed user-id) story)))))
+           #(assoc % user-id (atom (initialize-digest-feed redii (key/user-feed user-id) story))))))
+
+(defn remove-from-feed-set! [redii feed-set-atom user-id listing-id]
+  (if-let [feed-atom (@feed-set-atom user-id)]
+      (swap! feed-atom remove-listing listing-id)
+      (swap! feed-set-atom
+             #(assoc % user-id (atom (remove-listing (initialize-digest-feed redii (key/user-feed user-id)) listing-id))))))
 
 (defn expire-feed! [feed-atom]
   (swap! feed-atom #(apply new-digest-feed (expire %))))
@@ -80,16 +86,20 @@
                           (catch Exception e (log-err "exception expiring cache" e *ns*)))
                        config/feed-expiration-delay)]
     (bolt
-     (execute [{id "id" user-id "user-id" story "story" new-feed "feed" :as tuple}]
-              (time! add-feed-time
-                     (doseq [s (if story [story] new-feed)]
-                       (update-feed-set! redii feed-set user-id (dedupe s)))
-                     (when (and (or story (not (empty? new-feed))) (active? redii user-id))
-                       (let [feed @(@feed-set user-id)]
-                         (mark! feed-writes)
-                         (time! feed-write-time
-                                (write-feed! redii (key/user-feed user-id) feed))))
-                     (ack! collector tuple)))
+     (execute [{id "id" message "message" user-id "user-id" story "story" new-feed "feed" listing-id "listing-id" :as tuple}]
+              (case message
+                :remove (remove-from-feed-set! redii feed-set user-id listing-id)
+
+                (doseq [s (if story [story] new-feed)]
+                  (add-to-feed-set! redii feed-set user-id (dedupe s))))
+              (when (and (or story (= :remove message) (not (empty? new-feed)))
+                         (active? redii user-id))
+                  (let [feed @(@feed-set user-id)]
+                    (mark! feed-writes)
+                    (time! feed-write-time
+                           (write-feed! redii (key/user-feed user-id) feed))))
+
+              (ack! collector tuple))
      (cleanup [] (.shutdown feed-expirer)))))
 
 (defmeter curated-feed-writes "stories written to curated feed")
@@ -97,7 +107,7 @@
 (defbolt add-to-curated-feed ["id" "feed"] {:prepare true}
   [conf context collector]
   (let [redii (redis/redii)
-        feed-atom (initialize-digest-feed redii (key/everything-feed))
+        feed-atom (atom (initialize-digest-feed redii (key/everything-feed)))
         feed-expirer (schedule-with-delay
                        #(try
                           (expire-feed! feed-atom)

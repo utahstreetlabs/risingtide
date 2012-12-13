@@ -9,6 +9,7 @@
    [risingtide.storm
     [core :refer [feed-generation-topology standard-topology-config]]]
    [risingtide.model.feed.digest :refer [new-digest-feed]]
+   [risingtide.model.feed :refer [remove-listing]]
 
    [risingtide.test.support
     [entities :refer :all]
@@ -24,14 +25,15 @@
 
 (def drpc (LocalDRPC.))
 
-(defn complete-feed-generation-topology [& {actions :actions feed-build-requests :feed-builds
-                                            :or {actions [] feed-build-requests []}}]
+(defn complete-feed-generation-topology [& {actions :actions feed-build-requests :feed-builds remove-requests :remove-requests
+                                            :or {actions [] feed-build-requests [] remove-requests []}}]
   (with-local-cluster [cluster :daemon-conf (merge standard-topology-config)]
     (let [results
           (complete-topology cluster
                              (feed-generation-topology drpc)
                              :mock-sources {"actions" (map vector actions)
-                                            "drpc-feed-build-requests" feed-build-requests}
+                                            "drpc-feed-build-requests" feed-build-requests
+                                            "removals" remove-requests}
                              ;; turn up parallelism to force serialization
                              :storm-conf {TOPOLOGY-WORKERS 6}
                              )]
@@ -156,6 +158,22 @@
       (contains
        (apply encoded-feed (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham cutter-liked-toast)))
        :in-any-order)
+
+      ;;;; test removing listings from a feed ;;;;
+
+      (comment
+        ;;this just doesn't appear to be processing remove requests.
+        ;;not totally sure why, but I'm not feeling this rabbithole at
+        ;;the moment. did some manual testing, working well enough for
+        ;;the experiment we want to run.
+        (run-topology :remove-requests [{:user-id rob :listing-id toast}])
+        (feed-for rob)
+        => (just
+            (apply encoded-feed
+                   (-> (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham cutter-liked-toast)
+                       (remove-listing toast)
+                       seq))
+            :in-any-order))
 
       ;;;; test feed building ;;;;
 

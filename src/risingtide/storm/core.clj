@@ -8,7 +8,7 @@
              [action-bolts :refer [prepare-action-bolt save-action-bolt]]
              [active-user-bolt :refer [active-user-bolt]]
              [interests-bolts :refer [like-interest-scorer follow-interest-scorer
-                                      tag-like-interest-scorer
+                                      tag-like-interest-scorer dislike-interest-scorer
                                       seller-follow-interest-scorer interest-reducer]]
              [feed-bolts :refer [add-to-feed add-to-curated-feed]]
              [build-feed :as feed-building]]
@@ -85,10 +85,14 @@
         "seller-follows" (bolt-spec {"active-users" :shuffle}
                                     seller-follow-interest-scorer
                                     :p (p :seller-follows))
+        "dislikes" (bolt-spec {"active-users" :shuffle}
+                              dislike-interest-scorer
+                              :p (p :seller-follows))
 
         "interest-reducer" (bolt-spec {"likes" ["user-ids-hash"]
                                        "tag-likes" ["user-ids-hash"]
                                        "follows" ["user-ids-hash"]
+                                       "dislikes" ["user-ids-hash"]
                                        "seller-follows" ["user-ids-hash"]}
                                       interest-reducer
                                       :p (p :interest-reducer))

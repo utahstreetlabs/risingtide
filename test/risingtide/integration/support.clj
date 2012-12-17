@@ -63,6 +63,9 @@
 (defn creates-user-follow [follower-id followee-id]
   (brooklyn/create-follow follower-id followee-id))
 
+(defn creates-listing-dislike [disliker-id listing-id]
+  (brooklyn/create-dislike disliker-id listing-id))
+
 (defn creates-listing-like [liker-id listing-id]
   (pyramid/create-like liker-id :listing listing-id))
 
@@ -159,18 +162,21 @@ usable in backgrounds yet.
 (defn strip-timestamps [stories]
   (map #(dissoc % :timestamp) stories))
 
-(defn copious-background [& {follows :follows likes :likes listings :listings
+(defn copious-background [& {follows :follows likes :likes dislikes :dislikes listings :listings
                              tag-likes :tag-likes active-users :active-users}]
   (clear-mysql-dbs!)
   (clear-action-solr!)
   (clear-redis!)
-  (let [users (distinct (concat (keys follows) (vals follows) (keys likes) (keys listings) (keys tag-likes)))]
+  (let [users (distinct (concat (keys follows) (vals follows) (keys likes) (keys dislikes) (keys listings) (keys tag-likes)))]
     (doseq [user users]
       (is-a-user user))
-    (doseq [[seller-id listing-id] listings]
-      (is-a-listing listing-id seller-id))
+    (doseq [[seller-id listing-ids] listings]
+      (doseq [listing-id listing-ids]
+        (is-a-listing listing-id seller-id)))
     (doseq [[follower followee] follows]
       (creates-user-follow follower followee))
+    (doseq [[disliker listing] dislikes]
+      (creates-listing-dislike disliker listing))
     (doseq [[liker listing] likes]
       (creates-listing-like liker listing))
     (doseq [[liker tag] tag-likes]

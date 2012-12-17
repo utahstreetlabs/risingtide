@@ -13,13 +13,16 @@
              [meters :refer [defmeter mark!]]
              [gauges :refer [gauge]]]))
 
-(defn- counts-to-scores [counts user-ids]
-  (dissoc
-   (->> (or counts {})
-        (map (fn [{cnt :cnt user-id :user_id}] [user-id cnt]))
-        (into {})
-        (merge (reduce #(assoc %1 %2 0) {} user-ids)))
-   nil))
+(defn- counts-to-scores
+  ([counts user-ids]
+     (counts-to-scores counts user-ids 1))
+  ([counts user-ids coefficient]
+     (dissoc
+      (->> (or counts {})
+           (map (fn [{cnt :cnt user-id :user_id}] [user-id (* coefficient cnt)]))
+           (into {})
+           (merge (reduce #(assoc %1 %2 0) {} user-ids)))
+      nil)))
 
 (defn like-scores [user-ids story]
   (counts-to-scores (likes/like-counts (:listing-id story) user-ids) user-ids))
@@ -32,6 +35,23 @@
    (when (not (= (count scores) (count user-ids)))
      (log/error "got "count scores" like scores for "(count user-ids)" users"))
    (emit-bolt! collector [id (.hashCode user-ids) story scores :like] :anchor tuple))
+  (ack! collector tuple))
+
+(def dislike-coefficient
+  "Set high enough to cancel out other interests"
+  -100)
+
+(defn dislike-scores [user-ids story]
+  (counts-to-scores (brooklyn/dislike-counts (:listing-id story) user-ids) user-ids dislike-coefficient))
+
+(deftimer dislike-interest-score-time)
+
+(defbolt dislike-interest-scorer ["id" "user-ids-hash" "story" "scores" "type"]
+  [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
+  (let [scores (time! dislike-interest-score-time (dislike-scores user-ids story))]
+   (when (not (= (count scores) (count user-ids)))
+     (log/error "got "count scores" dislike scores for "(count user-ids)" users"))
+   (emit-bolt! collector [id (.hashCode user-ids) story scores :dislike] :anchor tuple))
   (ack! collector tuple))
 
 (defn tag-like-scores [user-ids story]
@@ -88,7 +108,7 @@
                 (let [story-scores (get @scores-atom [user-id story])
                       total-score (sum-scores story-scores)
                       interest-reducer-size-gauge (gauge "interest-reducer-size" (count @scores-atom))]
-                  (when (= (set (keys story-scores)) #{:follow :like :tag-like :listing-seller})
+                  (when (= (set (keys story-scores)) #{:follow :like :tag-like :listing-seller :dislike})
                     (swap! scores-atom #(dissoc % [user-id story]))
                     (mark! story-scored)
                     (when (>= total-score 1)

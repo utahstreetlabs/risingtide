@@ -16,9 +16,12 @@
                       jon cutter}
             :likes {rob toast
                     jon toast}
+            :dislikes {cutter danishes
+                       jim danishes}
             :tag-likes {rob breakfast
                         jon dangerous}
-            :listings {cutter ham})
+            :listings {cutter [ham]
+                       rob [danishes]})
            :after (do
                     (clear-mysql-dbs!)
                     (clear-action-solr!)
@@ -98,4 +101,21 @@
     (seller-follow-scores [rob] {})
     => {rob 0}
     )
-)
+
+
+  (facts "about dislike-scores"
+    (dislike-scores [cutter] {:listing-id danishes})
+    => {cutter -100}
+
+    (dislike-scores [rob cutter jim] {:listing-id danishes})
+    => {rob 0 cutter -100 jim -100}
+
+    (dislike-scores [] {:listing-id danishes})
+    => {}
+
+    (dislike-scores nil {:listing-id danishes})
+    => {}
+
+    (dislike-scores [rob] {})
+    => {rob 0})
+  )

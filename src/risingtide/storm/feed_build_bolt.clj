@@ -1,9 +1,6 @@
 (ns risingtide.storm.feed-build-bolt
   (:require [risingtide.config :as config]
             [risingtide.action.persist.solr :as solr]
-            [risingtide.interests
-             [brooklyn :refer [user-follows listings-for-sale]]
-             [pyramid :refer [user-likes]]]
             [risingtide.storm
              [recent-actions-bolt :refer [find-recent-actions]]
              [story-bolts :refer [action-to-story]]

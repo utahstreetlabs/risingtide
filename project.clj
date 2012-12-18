@@ -42,7 +42,7 @@
   :aliases {"local-topology" ["trampoline" "run" "-m" "risingtide.storm.local/run!"]}
   :main risingtide
   :min-lein-version "2.0.0"
-  :plugins [[lein-midje "2.0.0-SNAPSHOT"]]
+  :plugins [[lein-midje "2.0.3"]]
 
   :repositories {"usl-snapshots"
                  {:url "http://ci.copious.com:8082/nexus/content/repositories/snapshots/"

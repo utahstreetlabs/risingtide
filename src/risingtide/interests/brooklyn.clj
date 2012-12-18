@@ -14,6 +14,10 @@
   (table :follows)
   (database brooklyn))
 
+(defentity dislikes
+  (table :dislikes)
+  (database brooklyn))
+
 (defentity people
   (table :people)
   (database brooklyn))
@@ -45,6 +49,18 @@
                    :follower_id [in follower-ids]})
            (group :follower_id))))
 
+(defn user-dislikes [user-id]
+  (select dislikes
+          (where {:user_id user-id})
+          (fields :listing_id)))
+
+(defn dislike-counts [listing-id user-ids]
+  (when (and listing-id user-ids)
+    (select dislikes (fields :user_id (raw "COUNT(*) AS cnt"))
+            (where {:listing_id listing-id
+                    :user_id [in user-ids]})
+            (group :user_id))))
+
 (defn find-listing [listing-id]
   (when listing-id
    (first (select listings
@@ -67,8 +83,13 @@
 (defn create-follow [follower-id followee-id]
   (insert follows (values {:user_id followee-id :follower_id follower-id})))
 
+(defn create-dislike [disliker-id listing-id]
+  (insert dislikes (values {:user_id disliker-id :listing_id listing-id})))
+(select dislikes)
+
 (defn clear-tables! []
   (delete follows)
+  (delete dislikes)
   (delete listings)
   (delete users)
   (delete people))

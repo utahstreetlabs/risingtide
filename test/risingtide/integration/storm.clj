@@ -45,6 +45,7 @@
 (def jim-liked-toast (listing-liked jim toast nil nil))
 (def jim-shared-toast (listing-shared jim toast nil nil nil))
 (def cutter-liked-breakfast-tacos (listing-liked cutter breakfast-tacos nil nil))
+(def cutter-liked-muffins (listing-liked cutter muffins nil nil))
 (def cutter-liked-toast (listing-liked cutter toast nil nil))
 (def rob-liked-toast (listing-liked rob toast nil nil))
 
@@ -62,7 +63,8 @@
        (jim likes ham)
        (jim likes toast)
        (jim shares toast)
-       (cutter likes breakfast-tacos))
+       (cutter likes breakfast-tacos)
+       (cutter likes muffins))
 
       actions-rob-doesnt-care-about
       (on-copious
@@ -82,12 +84,14 @@
                         jon cutter}
               :likes {rob toast
                       jon toast}
-              :listings {cutter ham}
+              :dislikes {rob muffins
+                         jon muffins}
+              :listings {cutter [ham muffins]}
               :active-users [rob])
-             :after (do
-                      (clear-mysql-dbs!)
-                      (clear-action-solr!)
-                      (clear-redis!)))]
+             :after
+             (do (clear-mysql-dbs!)
+                 (clear-action-solr!)
+                 (clear-redis!)))]
 
     (facts "about a basic topology"
       (run-topology :actions actions)
@@ -99,7 +103,8 @@
         [nil nil jim-liked-ham]
         [nil nil jim-liked-toast]
         [nil nil jim-shared-toast]
-        [nil nil cutter-liked-breakfast-tacos]]
+        [nil nil cutter-liked-breakfast-tacos]
+        [nil nil cutter-liked-muffins]]
        :in-any-order)
 
       (bolt-output "active-users") =>
@@ -107,7 +112,8 @@
                  [nil [rob] jim-liked-ham]
                  [nil [rob] jim-liked-toast]
                  [nil [rob] jim-shared-toast]
-                 [nil [rob] cutter-liked-breakfast-tacos]]
+                 [nil [rob] cutter-liked-breakfast-tacos]
+                 [nil [rob] cutter-liked-muffins]]
                 :in-any-order)
 
       (bolt-output "interest-reducer") =>
@@ -120,7 +126,8 @@
       (curated-feed) =>
       (contains
        (apply encoded-feed (seq (new-digest-feed jim-activated-bacon jim-liked-ham rob-liked-toast jim-liked-toast
-                                                 jim-shared-toast cutter-liked-breakfast-tacos)))
+                                                 jim-shared-toast cutter-liked-breakfast-tacos
+                                                 cutter-liked-muffins)))
        :in-any-order)
 
 

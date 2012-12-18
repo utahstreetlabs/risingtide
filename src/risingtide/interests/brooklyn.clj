@@ -85,7 +85,6 @@
 
 (defn create-dislike [disliker-id listing-id]
   (insert dislikes (values {:user_id disliker-id :listing_id listing-id})))
-(select dislikes)
 
 (defn clear-tables! []
   (delete follows)

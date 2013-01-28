@@ -42,6 +42,12 @@
   (table :collection_follows)
   (database brooklyn))
 
+(defentity listing-follows-via-collections
+  (table (subselect collection-follows
+          (join listing-collection-attachments (= :collection_id :listing_collection_attachments.collection_id))
+          (fields :user_id :listing_collection_attachments.listing_id))
+         :listing_follows_via_collections)
+  (database brooklyn))
 
 (defn user-follows [user-id lim]
   (select follows
@@ -57,10 +63,20 @@
 
 (defn follow-counts [followee-id follower-ids]
   (when (and followee-id follower-ids)
-   (select follows (fields [:follower_id :user_id] (raw "COUNT(*) AS cnt"))
-           (where {:user_id followee-id
-                   :follower_id [in follower-ids]})
-           (group :follower_id))))
+    (select follows
+            (fields [:follower_id :user_id] (raw "COUNT(*) AS cnt"))
+            (where {:user_id followee-id
+                    :follower_id [in follower-ids]})
+            (group :follower_id))))
+
+
+(defn collection-follow-counts [listing-id user-ids]
+  (when (and listing-id user-ids)
+    (select listing-follows-via-collections
+            (fields :user_id (raw "COUNT(*) AS cnt"))
+            (where {:listing_id listing-id
+                    :user_id [in user-ids]})
+            (group :user_id))))
 
 (defn user-dislikes [user-id]
   (select dislikes
@@ -112,8 +128,8 @@
   (delete follows)
   (delete dislikes)
   (delete listing-collection-attachments)
-  (delete listings)
   (delete collection-follows)
+  (delete listings)
   (delete collections)
   (delete users)
   (delete people))

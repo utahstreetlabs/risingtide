@@ -94,9 +94,17 @@
   (ack! collector tuple))
 
 (defn collection-follow-scores [user-ids story]
-  {}
-  )
+  (counts-to-scores (brooklyn/collection-follow-counts (:listing-id story) user-ids) user-ids))
 
+(deftimer collection-follow-interest-score-time)
+
+(defbolt collection-follow-interest-scorer ["id" "user-ids-hash" "story" "scores" "type"]
+  [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
+  (let [scores (time! collection-follow-interest-score-time (collection-follow-scores user-ids story))]
+    (when (not (= (count scores) (count user-ids)))
+      (log/error "got "count scores" collection follow scores for "(count user-ids)" users"))
+    (emit-bolt! collector [id (.hashCode user-ids) story scores :collection-follow] :anchor tuple))
+  (ack! collector tuple))
 
 (defn sum-scores [scores]
   (apply + (vals scores)))

@@ -86,7 +86,13 @@
                       jon toast}
               :dislikes {rob muffins
                          jon muffins}
-              :listings {cutter [ham muffins]}
+              :listings {cutter [ham muffins]
+                         jim [shark-board rocket-board veal kitten]}
+              :collections {meats-i-like [veal kitten]
+                            cutterz-hot-surfboards [shark-board rocket-board]}
+              :collection-follows {cutter [meats-i-like]
+                                   rob [cutterz-hot-surfboards]
+                                   jim [cutterz-hot-surfboards]}
               :active-users [rob])
              :after
              (do (clear-mysql-dbs!)

@@ -9,7 +9,8 @@
              [active-user-bolt :refer [active-user-bolt]]
              [interests-bolts :refer [like-interest-scorer follow-interest-scorer
                                       tag-like-interest-scorer dislike-interest-scorer
-                                      seller-follow-interest-scorer interest-reducer]]
+                                      seller-follow-interest-scorer interest-reducer
+                                      collection-follow-interest-scorer]]
              [feed-bolts :refer [add-to-feed add-to-curated-feed]]
              [build-feed :as feed-building]]
             [risingtide.storm.drpc.local-server :as local-drpc-server]
@@ -85,6 +86,9 @@
         "seller-follows" (bolt-spec {"active-users" :shuffle}
                                     seller-follow-interest-scorer
                                     :p (p :seller-follows))
+        "collection-follows" (bolt-spec {"active-users" :shuffle}
+                                        collection-follow-interest-scorer
+                                        :p (p :collection-follows))
         "dislikes" (bolt-spec {"active-users" :shuffle}
                               dislike-interest-scorer
                               :p (p :seller-follows))
@@ -93,7 +97,8 @@
                                        "tag-likes" ["user-ids-hash"]
                                        "follows" ["user-ids-hash"]
                                        "dislikes" ["user-ids-hash"]
-                                       "seller-follows" ["user-ids-hash"]}
+                                       "seller-follows" ["user-ids-hash"]
+                                       "collection-follows" ["user-ids-hash"]}
                                       interest-reducer
                                       :p (p :interest-reducer))
 

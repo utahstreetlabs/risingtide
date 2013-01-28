@@ -1,4 +1,4 @@
-(ns risingtide.integration.storm.interests_bolts
+(ns risingtide.integration.storm.interests-bolts
   (:require
    [risingtide.test]
    [risingtide.test.support
@@ -21,11 +21,18 @@
             :tag-likes {rob breakfast
                         jon dangerous}
             :listings {cutter [ham]
-                       rob [danishes]})
+                       rob [danishes]
+                       jim [shark-board rocket-board veal kitten]}
+            :collections {meats-i-like [veal kitten]
+                          cutterz-hot-surfboards [shark-board rocket-board]}
+            :collection-follows {cutter [meats-i-like]
+                                 rob [cutterz-hot-surfboards]
+                                 jim [cutterz-hot-surfboards]})
            :after (do
                     (clear-mysql-dbs!)
                     (clear-action-solr!)
                     (clear-redis!)))]
+
   (facts "about tag-like-scores"
     (tag-like-scores [rob] {:tag-ids [breakfast lunch]})
     => {rob 1}
@@ -117,5 +124,21 @@
     => {}
 
     (dislike-scores [rob] {})
+    => {rob 0})
+
+  (facts "about collection-follow-scores"
+    (collection-follow-scores [cutter jim] {:listing-id veal})
+    => {cutter 1 jim 0}
+
+    (collection-follow-scores [rob cutter jim] {:listing-id shark-board})
+    => {rob 1 cutter 0 jim 1}
+
+    (collection-follow-scores [] {:listing-id danishes})
+    => {}
+
+    (collection-follow-scores nil {:listing-id danishes})
+    => {}
+
+    (collection-follow-scores [rob] {})
     => {rob 0})
   )

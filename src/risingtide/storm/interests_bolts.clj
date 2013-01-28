@@ -93,6 +93,11 @@
     (emit-bolt! collector [id (.hashCode user-ids) story scores :listing-seller] :anchor tuple))
   (ack! collector tuple))
 
+(defn collection-follow-scores [user-ids story]
+  {}
+  )
+
+
 (defn sum-scores [scores]
   (apply + (vals scores)))
 

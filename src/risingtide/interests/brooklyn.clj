@@ -30,6 +30,19 @@
   (table :listings)
   (database brooklyn))
 
+(defentity collections
+  (table :collections)
+  (database brooklyn))
+
+(defentity listing-collection-attachments
+  (table :listing_collection_attachments)
+  (database brooklyn))
+
+(defentity collection-follows
+  (table :collection_follows)
+  (database brooklyn))
+
+
 (defn user-follows [user-id lim]
   (select follows
           (where {:follower_id user-id})
@@ -86,10 +99,22 @@
 (defn create-dislike [disliker-id listing-id]
   (insert dislikes (values {:user_id disliker-id :listing_id listing-id})))
 
+(defn create-collection [collection-id owner-id]
+  (insert collections (values {:id collection-id :user_id owner-id :name collection-id :slug collection-id})))
+
+(defn create-listing-collection-attachment [collection-id listing-id]
+  (insert listing-collection-attachments (values {:collection_id collection-id :listing_id listing-id})))
+
+(defn create-collection-follow [follower-id collection-id]
+  (insert collection-follows (values {:user_id follower-id :collection_id collection-id})))
+
 (defn clear-tables! []
   (delete follows)
   (delete dislikes)
+  (delete listing-collection-attachments)
   (delete listings)
+  (delete collection-follows)
+  (delete collections)
   (delete users)
   (delete people))
 

@@ -124,6 +124,7 @@
    {:add-to-feed 10
     :interest-reducer 3
     :seller-follows 5
+    :collection-follows 6
     :follows 4
     :tag-likes 6
     :likes 4

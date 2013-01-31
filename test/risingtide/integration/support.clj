@@ -72,6 +72,15 @@
 (defn creates-tag-like [liker-id tag-id]
   (pyramid/create-like liker-id :tag tag-id))
 
+(defn creates-collection [collection-id owner-id]
+  (brooklyn/create-collection collection-id owner-id))
+
+(defn creates-collection-follow [follower-id collection-id]
+  (brooklyn/create-collection-follow follower-id collection-id))
+
+(defn adds-listing-to-collection [collection-id listing-id]
+  (brooklyn/create-listing-collection-attachment collection-id listing-id))
+
 (defn is-a-user [user-id]
   (brooklyn/create-user user-id))
 
@@ -163,11 +172,12 @@ usable in backgrounds yet.
   (map #(dissoc % :timestamp) stories))
 
 (defn copious-background [& {follows :follows likes :likes dislikes :dislikes listings :listings
-                             tag-likes :tag-likes active-users :active-users}]
+                             tag-likes :tag-likes active-users :active-users
+                             collections :collections collection-follows :collection-follows}]
   (clear-mysql-dbs!)
   (clear-action-solr!)
   (clear-redis!)
-  (let [users (distinct (concat (keys follows) (vals follows) (keys likes) (keys dislikes) (keys listings) (keys tag-likes)))]
+  (let [users (distinct (concat (keys follows) (vals follows) (keys likes) (keys dislikes) (keys listings) (keys tag-likes) (keys collection-follows) (map second (keys collections))))]
     (doseq [user users]
       (is-a-user user))
     (doseq [[seller-id listing-ids] listings]
@@ -181,4 +191,11 @@ usable in backgrounds yet.
       (creates-listing-like liker listing))
     (doseq [[liker tag] tag-likes]
       (creates-tag-like liker tag))
+    (doseq [[[collection owner] listings] collections]
+      (creates-collection collection owner)
+      (doseq [listing listings]
+        (adds-listing-to-collection collection listing)))
+    (doseq [[follower collections] collection-follows]
+      (doseq [[collection-id owner] collections]
+        (creates-collection-follow follower collection-id)))
     (apply add-active-users (redis/redii) (* 60 10) active-users)))

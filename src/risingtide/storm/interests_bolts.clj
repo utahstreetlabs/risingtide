@@ -33,7 +33,7 @@
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
   (let [scores (time! like-interest-score-time (like-scores user-ids story))]
    (when (not (= (count scores) (count user-ids)))
-     (log/error "got "count scores" like scores for "(count user-ids)" users"))
+     (log/error "got "(count scores)" like scores for "(count user-ids)" users"))
    (emit-bolt! collector [id (.hashCode user-ids) story scores :like] :anchor tuple))
   (ack! collector tuple))
 
@@ -50,7 +50,7 @@
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
   (let [scores (time! dislike-interest-score-time (dislike-scores user-ids story))]
    (when (not (= (count scores) (count user-ids)))
-     (log/error "got "count scores" dislike scores for "(count user-ids)" users"))
+     (log/error "got "(count scores)" dislike scores for "(count user-ids)" users"))
    (emit-bolt! collector [id (.hashCode user-ids) story scores :dislike] :anchor tuple))
   (ack! collector tuple))
 
@@ -63,7 +63,7 @@
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
   (let [scores (time! tag-like-interest-score-time (tag-like-scores user-ids story))]
    (when (not (= (count scores) (count user-ids)))
-     (log/error "got "count scores" tag like scores for "(count user-ids)" users"))
+     (log/error "got "(count scores)" tag like scores for "(count user-ids)" users"))
    (emit-bolt! collector [id (.hashCode user-ids) story scores :tag-like] :anchor tuple))
   (ack! collector tuple))
 
@@ -76,7 +76,7 @@
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
   (let [scores (time! follow-interest-score-time (follow-scores user-ids story))]
    (when (not (= (count scores) (count user-ids)))
-     (log/error "got "count scores" follow scores for "(count user-ids)" users"))
+     (log/error "got "(count scores)" follow scores for "(count user-ids)" users"))
    (emit-bolt! collector [id (.hashCode user-ids) story scores :follow] :anchor tuple))
   (ack! collector tuple))
 
@@ -89,8 +89,21 @@
   [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
   (let [scores (time! seller-follow-interest-score-time (seller-follow-scores user-ids story))]
     (when (not (= (count scores) (count user-ids)))
-      (log/error "got "count scores" seller follow scores for "(count user-ids)" users"))
+      (log/error "got "(count scores)" seller follow scores for "(count user-ids)" users"))
     (emit-bolt! collector [id (.hashCode user-ids) story scores :listing-seller] :anchor tuple))
+  (ack! collector tuple))
+
+(defn collection-follow-scores [user-ids story]
+  (counts-to-scores (brooklyn/collection-follow-counts (:listing-id story) user-ids) user-ids))
+
+(deftimer collection-follow-interest-score-time)
+
+(defbolt collection-follow-interest-scorer ["id" "user-ids-hash" "story" "scores" "type"]
+  [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
+  (let [scores (time! collection-follow-interest-score-time (collection-follow-scores user-ids story))]
+    (when (not (= (count scores) (count user-ids)))
+      (log/error "got "(count scores)" collection follow scores for "(count user-ids)" users"))
+    (emit-bolt! collector [id (.hashCode user-ids) story scores :collection-follow] :anchor tuple))
   (ack! collector tuple))
 
 (defn sum-scores [scores]
@@ -108,7 +121,8 @@
                 (let [story-scores (get @scores-atom [user-id story])
                       total-score (sum-scores story-scores)
                       interest-reducer-size-gauge (gauge "interest-reducer-size" (count @scores-atom))]
-                  (when (= (set (keys story-scores)) #{:follow :like :tag-like :listing-seller :dislike})
+                  (when (= (set (keys story-scores)) #{:follow :like :tag-like
+                                                       :listing-seller :collection-follow :dislike})
                     (swap! scores-atom #(dissoc % [user-id story]))
                     (mark! story-scored)
                     (when (>= total-score 1)

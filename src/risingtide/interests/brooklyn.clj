@@ -30,6 +30,25 @@
   (table :listings)
   (database brooklyn))
 
+(defentity collections
+  (table :collections)
+  (database brooklyn))
+
+(defentity listing-collection-attachments
+  (table :listing_collection_attachments)
+  (database brooklyn))
+
+(defentity collection-follows
+  (table :collection_follows)
+  (database brooklyn))
+
+(defentity listing-follows-via-collections
+  (table (subselect collection-follows
+          (join listing-collection-attachments (= :collection_id :listing_collection_attachments.collection_id))
+          (fields :user_id :listing_collection_attachments.listing_id))
+         :listing_follows_via_collections)
+  (database brooklyn))
+
 (defn user-follows [user-id lim]
   (select follows
           (where {:follower_id user-id})
@@ -44,10 +63,20 @@
 
 (defn follow-counts [followee-id follower-ids]
   (when (and followee-id follower-ids)
-   (select follows (fields [:follower_id :user_id] (raw "COUNT(*) AS cnt"))
-           (where {:user_id followee-id
-                   :follower_id [in follower-ids]})
-           (group :follower_id))))
+    (select follows
+            (fields [:follower_id :user_id] (raw "COUNT(*) AS cnt"))
+            (where {:user_id followee-id
+                    :follower_id [in follower-ids]})
+            (group :follower_id))))
+
+
+(defn collection-follow-counts [listing-id user-ids]
+  (when (and listing-id user-ids)
+    (select listing-follows-via-collections
+            (fields :user_id (raw "COUNT(*) AS cnt"))
+            (where {:listing_id listing-id
+                    :user_id [in user-ids]})
+            (group :user_id))))
 
 (defn user-dislikes [user-id]
   (select dislikes
@@ -86,10 +115,22 @@
 (defn create-dislike [disliker-id listing-id]
   (insert dislikes (values {:user_id disliker-id :listing_id listing-id})))
 
+(defn create-collection [collection-id owner-id]
+  (insert collections (values {:id collection-id :user_id owner-id :name collection-id :slug collection-id})))
+
+(defn create-listing-collection-attachment [collection-id listing-id]
+  (insert listing-collection-attachments (values {:collection_id collection-id :listing_id listing-id})))
+
+(defn create-collection-follow [follower-id collection-id]
+  (insert collection-follows (values {:user_id follower-id :collection_id collection-id})))
+
 (defn clear-tables! []
   (delete follows)
   (delete dislikes)
+  (delete listing-collection-attachments)
+  (delete collection-follows)
   (delete listings)
+  (delete collections)
   (delete users)
   (delete people))
 

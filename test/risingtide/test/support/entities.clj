@@ -33,6 +33,10 @@
 (def danishes 108)
 (def omelettes 109)
 (def nail-polish 110)
+(def veal 111)
+(def kitten 112)
+(def shark-board 113)
+(def rocket-board 114)
 
 ;; tags
 
@@ -40,3 +44,8 @@
 (def lunch 201)
 (def dinner 202)
 (def dangerous 203)
+
+;; collections
+
+(def meats-i-like [300 bcm])
+(def cutterz-hot-surfboards [301 cutter])

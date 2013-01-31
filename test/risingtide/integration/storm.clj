@@ -44,6 +44,7 @@
 (def jim-liked-ham (listing-liked jim ham nil nil))
 (def jim-liked-toast (listing-liked jim toast nil nil))
 (def jim-shared-toast (listing-shared jim toast nil nil nil))
+(def jim-saved-toast (listing-saved jim toast nil nil nil))
 (def jim-liked-shark-board (listing-liked jim shark-board nil nil))
 (def cutter-liked-breakfast-tacos (listing-liked cutter breakfast-tacos nil nil))
 (def cutter-liked-muffins (listing-liked cutter muffins nil nil))
@@ -64,6 +65,7 @@
        (jim likes ham)
        (jim likes toast)
        (jim shares toast)
+       (jim saves toast)
        (cutter likes breakfast-tacos)
        (cutter likes muffins)
        (jim likes shark-board))
@@ -103,7 +105,6 @@
 
     (facts "about a basic topology"
       (run-topology :actions actions)
-
       (bolt-output "stories") =>
       (contains
        [[nil nil jim-activated-bacon]
@@ -111,6 +112,7 @@
         [nil nil jim-liked-ham]
         [nil nil jim-liked-toast]
         [nil nil jim-shared-toast]
+        [nil nil jim-saved-toast]
         [nil nil cutter-liked-breakfast-tacos]
         [nil nil cutter-liked-muffins]
         [nil nil jim-liked-shark-board]]
@@ -121,6 +123,7 @@
                  [nil [rob] jim-liked-ham]
                  [nil [rob] jim-liked-toast]
                  [nil [rob] jim-shared-toast]
+                 [nil [rob] jim-saved-toast]
                  [nil [rob] cutter-liked-breakfast-tacos]
                  [nil [rob] cutter-liked-muffins]
                  [nil [rob] jim-liked-shark-board]]
@@ -129,6 +132,7 @@
       (bolt-output "interest-reducer") =>
       (contains [[nil rob jim-liked-toast 1]
                  [nil rob jim-shared-toast 1]
+                 [nil rob jim-saved-toast 1]
                  [nil rob cutter-liked-breakfast-tacos 1]
                  [nil rob jim-liked-ham 1]
                  [nil rob jim-liked-shark-board 1]]
@@ -137,7 +141,7 @@
       (curated-feed) =>
       (contains
        (apply encoded-feed (seq (new-digest-feed jim-activated-bacon jim-liked-ham rob-liked-toast jim-liked-toast
-                                                 jim-shared-toast cutter-liked-breakfast-tacos
+                                                 jim-shared-toast jim-saved-toast cutter-liked-breakfast-tacos
                                                  cutter-liked-muffins jim-liked-shark-board)))
        :in-any-order)
 
@@ -149,7 +153,8 @@
 
       (feed-for rob) =>
       (contains
-       (apply encoded-feed (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham jim-liked-shark-board)))
+       (apply encoded-feed (seq (new-digest-feed jim-liked-toast jim-shared-toast jim-saved-toast
+                                                 cutter-liked-breakfast-tacos jim-liked-ham jim-liked-shark-board)))
        :in-any-order)
 
       (stories-about breakfast-tacos)
@@ -165,6 +170,7 @@
       ;; of these
       (stories-about toast)
       => (some-checker (just (encoded-feed jim-shared-toast))
+                       (just (encoded-feed jim-saved-toast))
                        (just (encoded-feed rob-liked-toast))
                        (just (encoded-feed jim-liked-toast)))
 
@@ -174,7 +180,9 @@
 
       (feed-for rob) =>
       (contains
-       (apply encoded-feed (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham cutter-liked-toast jim-liked-shark-board)))
+       (apply encoded-feed (seq (new-digest-feed jim-liked-toast jim-shared-toast jim-saved-toast
+                                                 cutter-liked-breakfast-tacos jim-liked-ham cutter-liked-toast
+                                                 jim-liked-shark-board)))
        :in-any-order)
 
       ;;;; test removing listings from a feed ;;;;
@@ -188,7 +196,7 @@
         (feed-for rob)
         => (just
             (apply encoded-feed
-                   (-> (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos jim-liked-ham cutter-liked-toast)
+                   (-> (new-digest-feed jim-liked-toast jim-shared-toast jim-saved-toast cutter-liked-breakfast-tacos jim-liked-ham cutter-liked-toast)
                        (remove-listing toast)
                        seq))
             :in-any-order))
@@ -198,5 +206,5 @@
       (run-topology :feed-builds [[(str jon) (json/json-str {:id "12345" :host (.getServiceId drpc) :port 0})]])
 
       (seq (last (last (bolt-output "drpc-feed-builder" "story")))) =>
-      (seq (new-digest-feed jim-liked-toast jim-shared-toast cutter-liked-breakfast-tacos
+      (seq (new-digest-feed jim-liked-toast jim-shared-toast jim-saved-toast cutter-liked-breakfast-tacos
                             cutter-liked-toast jim-liked-ham rob-liked-toast)))))

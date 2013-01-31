@@ -19,7 +19,7 @@
                  [enlive "1.0.0"]
 
                  [utahstreetlabs/clojure-solr "0.3.0" :exclusions [org.slf4j/slf4j-jcl org.slf4j/slf4j-api]]
-                 [risingtide-model "2.0.5"]
+                 [risingtide-model "2.1.0"]
 
                  [metrics-clojure "0.9.2" :exclusions [org.slf4j/slf4j-api]]
 
@@ -57,6 +57,7 @@
         risingtide.serializers.ListingActivatedStory
         risingtide.serializers.ListingSoldStory
         risingtide.serializers.ListingSharedStory
+        risingtide.serializers.ListingSavedStory
         risingtide.serializers.MultiActorMultiActionStory
         risingtide.serializers.MultiActorStory
         risingtide.serializers.MultiActionStory

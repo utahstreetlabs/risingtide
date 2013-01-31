@@ -18,6 +18,7 @@
 (listing-action-helper activates :listing_activated)
 (listing-action-helper likes :listing_liked)
 (listing-action-helper shares :listing_shared)
+(listing-action-helper saves :listing_saved)
 (listing-action-helper sells :listing_sold)
 (listing-action-helper comments-on :listing_commented)
 

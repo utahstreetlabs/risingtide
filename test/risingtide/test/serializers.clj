@@ -2,6 +2,7 @@
   (:require
    [risingtide.model.story :refer [->TagLikedStory ->ListingLikedStory ->ListingCommentedStory
                                    ->ListingActivatedStory ->ListingSoldStory ->ListingSharedStory
+                                   ->ListingSavedStory
                                    ->MultiActorMultiActionStory ->MultiActionStory
                                    ->MultiActorStory ->MultiListingStory]]
    [carbonite
@@ -16,6 +17,7 @@
                (with-meta (->ListingActivatedStory 1 2 [3 4] [:ev :ylf]) {:timestamp 4})
                (with-meta (->ListingSoldStory 1 2 [3 4] 5 [:ev :ylf]) {:timestamp 4})
                (with-meta (->ListingSharedStory 1 2 [3 4] :facebook [:ev :ylf]) {:timestamp 4})
+               (with-meta (->ListingSavedStory 1 2 [3 4] 5 [:ev :ylf]) {:timestamp 4})
 
                (with-meta (->MultiActorMultiActionStory 1 {:listing_liked #{1} :listing_shared #{1}}) {:timestamp 4})
                (with-meta (->MultiActorStory 1 :listing_liked [2 3 4]) {:timestamp 4})
@@ -31,6 +33,3 @@
   (fact (str (class story)" serializes and deserializes metadata")
     (meta (serialize-deserialize story))
     => (meta story)))
-
-
-

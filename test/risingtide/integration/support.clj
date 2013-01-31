@@ -12,9 +12,8 @@
    [risingtide.feed.persist.shard :as shard]
    [risingtide.feed.persist.shard.config :as shard-config]
    [risingtide.action.persist.solr :as solr]
-   [risingtide.interests
-    [brooklyn :as brooklyn]
-    [pyramid :as pyramid]]))
+   [risingtide.interests [brooklyn :as brooklyn] [pyramid :as pyramid]]
+   [risingtide.test.support.entities :refer [collection-owners]]))
 
 (def conn (redis/redii))
 
@@ -177,7 +176,7 @@ usable in backgrounds yet.
   (clear-mysql-dbs!)
   (clear-action-solr!)
   (clear-redis!)
-  (let [users (distinct (concat (keys follows) (vals follows) (keys likes) (keys dislikes) (keys listings) (keys tag-likes) (keys collection-follows) (map second (keys collections))))]
+  (let [users (distinct (concat (keys follows) (vals follows) (keys likes) (keys dislikes) (keys listings) (keys tag-likes) (keys collection-follows) (vals collection-owners)))]
     (doseq [user users]
       (is-a-user user))
     (doseq [[seller-id listing-ids] listings]
@@ -191,11 +190,11 @@ usable in backgrounds yet.
       (creates-listing-like liker listing))
     (doseq [[liker tag] tag-likes]
       (creates-tag-like liker tag))
-    (doseq [[[collection owner] listings] collections]
-      (creates-collection collection owner)
+    (doseq [[collection listings] collections]
+      (creates-collection collection (collection-owners collection))
       (doseq [listing listings]
         (adds-listing-to-collection collection listing)))
     (doseq [[follower collections] collection-follows]
-      (doseq [[collection-id owner] collections]
+      (doseq [collection-id collections]
         (creates-collection-follow follower collection-id)))
     (apply add-active-users (redis/redii) (* 60 10) active-users)))

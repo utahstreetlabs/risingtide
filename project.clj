@@ -28,8 +28,7 @@
 
                  ;; reports
                  [incanter/incanter-core "1.4.0"]
-                 [incanter/incanter-charts "1.4.0"]
-                 ]
+                 [incanter/incanter-charts "1.4.0"]]
   :java-source-paths ["java-src"]
   :profiles {:dev {:dependencies [[midje "1.4.0"]
                                   ;; storm dependency only in dev

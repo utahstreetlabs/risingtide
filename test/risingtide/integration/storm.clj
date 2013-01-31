@@ -16,29 +16,24 @@
     [stories :refer :all]
     [actions :refer :all]]
    [risingtide.integration.support :refer :all]
+   [risingtide.integration.support.storm :refer [with-quiet-logs complete-topology]]
    [backtype.storm
     [config :refer :all]
     [testing :refer
-     [with-local-cluster with-simulated-time-local-cluster ms= complete-topology read-tuples]]]
+     [ms= read-tuples]]]
    [midje.sweet :refer :all])
   (:import [backtype.storm LocalDRPC]))
+
 
 (def drpc (LocalDRPC.))
 
 (defn complete-feed-generation-topology [& {actions :actions feed-build-requests :feed-builds remove-requests :remove-requests
                                             :or {actions [] feed-build-requests [] remove-requests []}}]
-  (with-local-cluster [cluster :daemon-conf (merge standard-topology-config)]
-    (let [results
-          (complete-topology cluster
-                             (feed-generation-topology drpc)
-                             :mock-sources {"actions" (map vector actions)
-                                            "drpc-feed-build-requests" feed-build-requests
-                                            "removals" remove-requests}
-                             ;; turn up parallelism to force serialization
-                             :storm-conf {TOPOLOGY-WORKERS 6}
-                             )]
-      (Thread/sleep 5000)
-      results)))
+  (complete-topology
+   (feed-generation-topology drpc)
+   {"actions" (map vector actions)
+    "drpc-feed-build-requests" feed-build-requests
+    "removals" remove-requests}))
 
 (def jim-activated-bacon (listing-activated jim bacon nil nil))
 (def jim-liked-ham (listing-liked jim ham nil nil))

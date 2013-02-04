@@ -28,8 +28,3 @@
   ([actor-id tag-id timestamp]
      {:type :tag_liked :actor_id actor-id :tag_id tag-id :timestamp timestamp :feed nil})
   ([actor-id tag-id] (likes-tag actor-id tag-id (now))))
-
-(defn hi [& {:as args}]
-  (prn args))
-
-(apply hi [])

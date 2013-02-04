@@ -13,6 +13,7 @@ module RisingTide
       bid: :buyer_id,
       fid: :followee_id,
       iid: :invitee_profile_id,
+      cid: :collection_id,
       tx: :text,
       time: :timestamp,
       c: :count

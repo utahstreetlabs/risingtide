@@ -11,7 +11,7 @@
    risingtide.model.story
    [midje.sweet :refer :all])
   (:import [risingtide.serializers TagLikedStory ListingLikedStory ListingCommentedStory
-            ListingActivatedStory ListingSoldStory ListingSharedStory]))
+            ListingActivatedStory ListingSoldStory ListingSharedStory ListingSavedStory]))
 
 (alter-var-root #'risingtide.config/env (constantly :test))
 
@@ -32,6 +32,7 @@
                            risingtide.model.story.ListingActivatedStory (risingtide.serializers.ListingActivatedStory.)
                            risingtide.model.story.ListingSoldStory (risingtide.serializers.ListingSoldStory.)
                            risingtide.model.story.ListingSharedStory (risingtide.serializers.ListingSharedStory.)
+                           risingtide.model.story.ListingSavedStory (risingtide.serializers.ListingSavedStory.)
                            risingtide.model.story.MultiActorMultiActionStory (risingtide.serializers.MultiActorMultiActionStory.)
                            risingtide.model.story.MultiActionStory (risingtide.serializers.MultiActionStory.)
                            risingtide.model.story.MultiActorStory (risingtide.serializers.MultiActorStory.)

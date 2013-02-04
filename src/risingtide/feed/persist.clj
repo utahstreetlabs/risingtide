@@ -29,6 +29,7 @@
    :actor-id :aid
    :actor-ids :aids
    :listing-id :lid
+   :collection-id :cid
    :listing-ids :lids
    :tag-id :tid
    :tag-ids :tids

@@ -47,5 +47,11 @@
 
 ;; collections
 
-(def meats-i-like [300 bcm])
-(def cutterz-hot-surfboards [301 cutter])
+(def meats-i-like 300)
+(def cutterz-hot-surfboards 301)
+(def stuff-that-tastes-like-toast 302)
+
+(def collection-owners
+  {meats-i-like bcm
+   cutterz-hot-surfboards cutter
+   stuff-that-tastes-like-toast jim})

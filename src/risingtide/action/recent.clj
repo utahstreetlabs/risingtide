@@ -1,4 +1,4 @@
-(ns risingtide.storm.recent-actions-bolt
+(ns risingtide.action.recent
   (:require [clojure.set :as set]
             [risingtide.config :as config]
             [risingtide.action.persist.solr :as solr]

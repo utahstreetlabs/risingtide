@@ -1,8 +1,8 @@
 (ns risingtide.storm.feed-build-bolt
   (:require [risingtide.config :as config]
             [risingtide.action.persist.solr :as solr]
+            [risingtide.action.recent :refer [find-recent-actions]]
             [risingtide.storm
-             [recent-actions-bolt :refer [find-recent-actions]]
              [story-bolts :refer [action-to-story]]
              [feed-bolts :refer [feed-to-json]]]
             [risingtide.model.feed.digest :refer [new-digest-feed]]

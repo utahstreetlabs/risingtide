@@ -17,23 +17,30 @@
   (map :id (listings-for-sale followee-ids config/recent-actions-max-seller-listings)))
 
 (defn- disliked-listing-ids [user-id]
-  (filter identity (map :listing_id (user-dislikes user-id))))
+  (set (filter identity (map :listing_id (user-dislikes user-id)))))
+
+(defn- followee-ids [user-id]
+  (filter #(not (config/drpc-blacklist %))
+          (map :user_id (user-follows user-id config/recent-actions-max-follows))))
+
+(defn interesting-listing-ids [user-id & {followees :followees}]
+  (lazy-cat
+   (liked-listing-ids user-id)
+   (followee-listing-for-sale-ids (or followees (followee-ids user-id)))))
 
 (defn find-actions [solr-conn user-id & {rows :rows sort :sort
                                          :or {rows config/recent-actions-max-recent-stories
                                               sort "timestamp_i desc"}}]
-  (let [followee-ids (filter (comp not config/drpc-blacklist) (map :user_id (user-follows user-id config/recent-actions-max-follows)))
-        disliked (set (disliked-listing-ids user-id))]
-    (filter #(not (disliked (:listing_id %)))
-            (solr/search-interests
-             solr-conn
-             :rows rows
-             :sort sort
-             :actors followee-ids
-             :listings (-> (liked-listing-ids user-id)
-                           (concat (followee-listing-for-sale-ids followee-ids))
-                           set
-                           (set/difference disliked))))))
+  (let [followees (followee-ids user-id)
+        disliked? (disliked-listing-ids user-id)
+        filter-disliked (fn [listing-ids] (filter #(not (disliked? (:listing_id %))) listing-ids))]
+    (filter-disliked
+     (solr/search-interests
+      solr-conn
+      :rows rows :sort sort
+      :actors followees
+      :listings (filter-disliked
+                 (interesting-listing-ids user-id :followees followees))))))
 
 (deftimer find-recent-actions-time)
 (defhistogram recent-actions-found)

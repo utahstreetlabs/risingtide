@@ -98,60 +98,66 @@
                  (clear-action-solr!)
                  (clear-redis!)))]
 
-    (facts "about a basic topology"
-      (run-topology :actions actions)
-      (bolt-output "stories") =>
-      (contains
-       [[nil nil jim-activated-bacon]
-        [nil nil rob-liked-toast]
-        [nil nil jim-liked-ham]
-        [nil nil jim-liked-toast]
-        [nil nil jim-shared-toast]
-        [nil nil jim-saved-toast]
-        [nil nil cutter-liked-breakfast-tacos]
-        [nil nil cutter-liked-muffins]
-        [nil nil jim-liked-shark-board]]
-       :in-any-order)
+    (println "running the feed generation topology")
+    (run-topology :actions actions)
 
-      (bolt-output "active-users") =>
-      (contains [[nil [rob] jim-activated-bacon]
-                 [nil [rob] jim-liked-ham]
-                 [nil [rob] jim-liked-toast]
-                 [nil [rob] jim-shared-toast]
-                 [nil [rob] jim-saved-toast]
-                 [nil [rob] cutter-liked-breakfast-tacos]
-                 [nil [rob] cutter-liked-muffins]
-                 [nil [rob] jim-liked-shark-board]]
-                :in-any-order)
+    (fact "the stories bolt outputs a story for each action"
+      (bolt-output "stories")
+      => (contains
+          [[nil nil jim-activated-bacon]
+           [nil nil rob-liked-toast]
+           [nil nil jim-liked-ham]
+           [nil nil jim-liked-toast]
+           [nil nil jim-shared-toast]
+           [nil nil jim-saved-toast]
+           [nil nil cutter-liked-breakfast-tacos]
+           [nil nil cutter-liked-muffins]
+           [nil nil jim-liked-shark-board]]
+          :in-any-order))
 
-      (bolt-output "interest-reducer") =>
-      (contains [[nil rob jim-liked-toast 1]
-                 [nil rob jim-shared-toast 1]
-                 [nil rob jim-saved-toast 1]
-                 [nil rob cutter-liked-breakfast-tacos 1]
-                 [nil rob jim-liked-ham 1]
-                 [nil rob jim-liked-shark-board 1]]
-                :in-any-order)
+    (fact "the active users bolt outputs an active users/story pair for each action"
+      (bolt-output "active-users")
+      => (contains [[nil [rob] jim-activated-bacon]
+                    [nil [rob] jim-liked-ham]
+                    [nil [rob] jim-liked-toast]
+                    [nil [rob] jim-shared-toast]
+                    [nil [rob] jim-saved-toast]
+                    [nil [rob] cutter-liked-breakfast-tacos]
+                    [nil [rob] cutter-liked-muffins]
+                    [nil [rob] jim-liked-shark-board]]
+                   :in-any-order))
 
-      (curated-feed) =>
-      (contains
-       (apply encoded-feed (seq (new-digest-feed jim-activated-bacon jim-liked-ham rob-liked-toast jim-liked-toast
-                                                 jim-shared-toast jim-saved-toast cutter-liked-breakfast-tacos
-                                                 cutter-liked-muffins jim-liked-shark-board)))
-       :in-any-order)
+    (fact "the interest reducer outputs a user/story/score tuple for each story that should be added to a feed"
+      (bolt-output "interest-reducer")
+      => (contains [[nil rob jim-liked-toast 1]
+                    [nil rob jim-shared-toast 1]
+                    [nil rob jim-saved-toast 1]
+                    [nil rob cutter-liked-breakfast-tacos 1]
+                    [nil rob jim-liked-ham 1]
+                    [nil rob jim-liked-shark-board 1]]
+                   :in-any-order))
 
+    (fact "the save-actions bolt should output a tuple for each action"
+      (strip-timestamps (map second (bolt-output "save-actions")))
+      => (contains (strip-timestamps actions) :in-any-order))
 
-      (strip-timestamps (map second (bolt-output "save-actions"))) =>
-      (contains
-       (strip-timestamps actions)
-       :in-any-order)
+    (fact "the curated feed should contain all approved stories"
+      (curated-feed)
+      => (contains
+          (apply encoded-feed (seq (new-digest-feed jim-activated-bacon jim-liked-ham rob-liked-toast jim-liked-toast
+                                                    jim-shared-toast jim-saved-toast cutter-liked-breakfast-tacos
+                                                    cutter-liked-muffins jim-liked-shark-board)))
+          :in-any-order))
 
-      (feed-for rob) =>
-      (contains
-       (apply encoded-feed (seq (new-digest-feed jim-liked-toast jim-shared-toast jim-saved-toast
-                                                 cutter-liked-breakfast-tacos jim-liked-ham jim-liked-shark-board)))
-       :in-any-order)
+    (fact "rob's feed should contain things rob is interested in"
+      (feed-for rob)
+      => (contains
+          (apply encoded-feed (seq (new-digest-feed jim-liked-toast jim-shared-toast jim-saved-toast
+                                                    cutter-liked-breakfast-tacos jim-liked-ham
+                                                    jim-liked-shark-board)))
+          :in-any-order))
 
+    (facts "we should be able to retrieve stories about listings"
       (stories-about breakfast-tacos)
       => (encoded-feed cutter-liked-breakfast-tacos)
 
@@ -167,39 +173,29 @@
       => (some-checker (just (encoded-feed jim-shared-toast))
                        (just (encoded-feed jim-saved-toast))
                        (just (encoded-feed rob-liked-toast))
-                       (just (encoded-feed jim-liked-toast)))
+                       (just (encoded-feed jim-liked-toast))))
 
-       ;;;; test loading feeds from redis ;;;;
 
-      (run-topology :actions more-actions-rob-cares-about)
+    ;;;; test loading feeds from redis ;;;;
+    ;; this resets the bolts, which zeros out in memory caches and
+    ;; activates the redis-loading code
+    (println "rerunning the feed generation topology with new actions")
+    (run-topology :actions more-actions-rob-cares-about)
 
-      (feed-for rob) =>
-      (contains
-       (apply encoded-feed (seq (new-digest-feed jim-liked-toast jim-shared-toast jim-saved-toast
-                                                 cutter-liked-breakfast-tacos jim-liked-ham cutter-liked-toast
-                                                 jim-liked-shark-board)))
-       :in-any-order)
+    (fact "rob's feed should have everything from the previous run, plus the new actions"
+      (feed-for rob)
+      => (contains
+          (apply encoded-feed (seq (new-digest-feed jim-liked-toast jim-shared-toast jim-saved-toast
+                                                    cutter-liked-breakfast-tacos jim-liked-ham cutter-liked-toast
+                                                    jim-liked-shark-board)))
+          :in-any-order))
 
-      ;;;; test removing listings from a feed ;;;;
 
-      (comment
-        ;;this just doesn't appear to be processing remove requests.
-        ;;not totally sure why, but I'm not feeling this rabbithole at
-        ;;the moment. did some manual testing, working well enough for
-        ;;the experiment we want to run.
-        (run-topology :remove-requests [{:user-id rob :listing-id toast}])
-        (feed-for rob)
-        => (just
-            (apply encoded-feed
-                   (-> (new-digest-feed jim-liked-toast jim-shared-toast jim-saved-toast cutter-liked-breakfast-tacos jim-liked-ham cutter-liked-toast)
-                       (remove-listing toast)
-                       seq))
-            :in-any-order))
+      ;;;; test DRPC feed building ;;;;
+    (println "running the feed build topology")
+    (run-topology :feed-builds [[(str jon) (json/json-str {:id "12345" :host (.getServiceId drpc) :port 0})]])
 
-      ;;;; test feed building ;;;;
-
-      (run-topology :feed-builds [[(str jon) (json/json-str {:id "12345" :host (.getServiceId drpc) :port 0})]])
-
-      (seq (last (last (bolt-output "drpc-feed-builder" "story")))) =>
-      (seq (new-digest-feed jim-liked-toast jim-shared-toast jim-saved-toast cutter-liked-breakfast-tacos
-                            cutter-liked-toast jim-liked-ham rob-liked-toast)))))
+    (fact "the drpc feed builder should output a feed"
+      (seq (last (last (bolt-output "drpc-feed-builder" "story"))))
+      => (seq (new-digest-feed jim-liked-toast jim-shared-toast jim-saved-toast cutter-liked-breakfast-tacos
+                               cutter-liked-toast jim-liked-ham rob-liked-toast)))))

@@ -2,10 +2,11 @@
   (:require [risingtide
              [core :refer [bench]]
              [dedupe :refer [dedupe]]]
-
-            [risingtide.interests
-             [brooklyn :as brooklyn]
-             [pyramid :as likes]]
+            [copious.domain
+             [user :as user]
+             [collection :as collection]
+             [listing :as listing]
+             [tag :as tag]]
             [backtype.storm [clojure :refer [emit-bolt! defbolt ack! bolt]]]
             [clojure.tools.logging :as log]
             [metrics
@@ -25,7 +26,7 @@
       nil)))
 
 (defn like-scores [user-ids story]
-  (counts-to-scores (likes/like-counts (:listing-id story) user-ids) user-ids))
+  (counts-to-scores (listing/like-counts (:listing-id story) user-ids) user-ids))
 
 (deftimer like-interest-score-time)
 
@@ -42,7 +43,7 @@
   -100)
 
 (defn dislike-scores [user-ids story]
-  (counts-to-scores (brooklyn/dislike-counts (:listing-id story) user-ids) user-ids dislike-coefficient))
+  (counts-to-scores (listing/dislike-counts (:listing-id story) user-ids) user-ids dislike-coefficient))
 
 (deftimer dislike-interest-score-time)
 
@@ -55,7 +56,7 @@
   (ack! collector tuple))
 
 (defn tag-like-scores [user-ids story]
-  (counts-to-scores (likes/tag-like-counts (:tag-ids story) user-ids) user-ids))
+  (counts-to-scores (tag/like-counts (:tag-ids story) user-ids) user-ids))
 
 (deftimer tag-like-interest-score-time)
 
@@ -68,7 +69,7 @@
   (ack! collector tuple))
 
 (defn follow-scores [user-ids story]
-  (counts-to-scores (brooklyn/follow-counts (:actor-id story) user-ids) user-ids))
+  (counts-to-scores (user/follow-counts (:actor-id story) user-ids) user-ids))
 
 (deftimer follow-interest-score-time)
 
@@ -81,7 +82,7 @@
   (ack! collector tuple))
 
 (defn seller-follow-scores [user-ids story]
-  (counts-to-scores (brooklyn/follow-counts (:seller_id (brooklyn/find-listing (:listing-id story))) user-ids) user-ids))
+  (counts-to-scores (user/follow-counts (:seller_id (listing/find (:listing-id story))) user-ids) user-ids))
 
 (deftimer seller-follow-interest-score-time)
 
@@ -94,7 +95,7 @@
   (ack! collector tuple))
 
 (defn collection-follow-scores [user-ids story]
-  (counts-to-scores (brooklyn/collection-follow-counts (:listing-id story) user-ids) user-ids))
+  (counts-to-scores (collection/follow-counts (:listing-id story) user-ids) user-ids))
 
 (deftimer collection-follow-interest-score-time)
 

@@ -1,9 +1,16 @@
 (ns risingtide.integration.support
   (:require
    [clojure.data.json :as json]
+
+   ;; these two must stay here due to some awkward load-time logic
+   [risingtide.test :refer :all]
+   [risingtide.initializers.db]
+
+   [copious.domain
+    [user :as user] [follow :as follow] [collection :as collection]
+    [listing :as listing] [like :as like] [dislike :as dislike] [util :as domain-util]]
    [risingtide
     [core :refer :all]
-    [test :refer :all]
     [redis :as redis]
     [config :as config]
     [key :as key]
@@ -12,7 +19,7 @@
    [risingtide.feed.persist.shard :as shard]
    [risingtide.feed.persist.shard.config :as shard-config]
    [risingtide.action.persist.solr :as solr]
-   [risingtide.interests [brooklyn :as brooklyn] [pyramid :as pyramid]]
+
    [risingtide.test.support.entities :refer [collection-owners]]))
 
 (def conn (redis/redii))
@@ -60,31 +67,31 @@
 ;; actions
 
 (defn creates-user-follow [follower-id followee-id]
-  (brooklyn/create-follow follower-id followee-id))
+  (follow/create follower-id followee-id))
 
 (defn creates-listing-dislike [disliker-id listing-id]
-  (brooklyn/create-dislike disliker-id listing-id))
+  (dislike/create disliker-id listing-id))
 
 (defn creates-listing-like [liker-id listing-id]
-  (pyramid/create-like liker-id :listing listing-id))
+  (like/create liker-id :listing listing-id))
 
 (defn creates-tag-like [liker-id tag-id]
-  (pyramid/create-like liker-id :tag tag-id))
+  (like/create liker-id :tag tag-id))
 
 (defn creates-collection [collection-id owner-id]
-  (brooklyn/create-collection collection-id owner-id))
+  (collection/create collection-id owner-id))
 
 (defn creates-collection-follow [follower-id collection-id]
-  (brooklyn/create-collection-follow follower-id collection-id))
+  (collection/create-follow follower-id collection-id))
 
 (defn adds-listing-to-collection [collection-id listing-id]
-  (brooklyn/create-listing-collection-attachment collection-id listing-id))
+  (collection/create-listing-attachment collection-id listing-id))
 
 (defn is-a-user [user-id]
-  (brooklyn/create-user user-id))
+  (user/create user-id))
 
 (defn is-a-listing [listing-id seller-id]
-  (brooklyn/create-listing listing-id seller-id))
+  (listing/create listing-id seller-id))
 
 (defn truncates-feed
   [actor-id]
@@ -98,9 +105,7 @@
 
 (defn clear-mysql-dbs! []
   (if (= config/env :test)
-    (do
-      (brooklyn/clear-tables!)
-      (pyramid/clear-tables!))
+    (domain-util/clear-tables!)
     (prn "let's not clear sql dbs in " config/env)))
 
 (defn clear-action-solr! []

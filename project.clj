@@ -8,7 +8,8 @@
                  [org.clojure/core.memoize "0.5.2"]
 
                  [utahstreetlabs/jedis "2.1.1"]
-                 [korma "0.3.0-beta11"]
+                 [copious/domain "0.0.1-SNAPSHOT"]
+                 [korma "0.3.0-RC2"]
                  [mysql/mysql-connector-java "5.1.20"]
                  [org.syslog4j/syslog4j "0.9.30"]
                  [net.java.dev.jna/jna "3.4.0"]

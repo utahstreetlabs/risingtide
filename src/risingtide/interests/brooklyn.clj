@@ -43,9 +43,9 @@
   (database brooklyn))
 
 (defentity listing-follows-via-collections
-  (table (subselect collection-follows
-          (join listing-collection-attachments (= :collection_id :listing_collection_attachments.collection_id))
-          (fields :user_id :listing_collection_attachments.listing_id))
+  (table (subselect listing-collection-attachments
+                    (join :inner collection-follows (= :collection_follows.collection_id :collection_id))
+                    (fields :created_at :collection_follows.user_id :listing_id))
          :listing_follows_via_collections)
   (database brooklyn))
 
@@ -99,6 +99,14 @@
   (select listings
           (where {:seller_id [in seller-ids]})
           (limit lim)))
+
+(defn listing-ids-via-collection-follows [user-id &{:keys [max order-by] :or {order-by :created_at}}]
+  (let [query (-> (select* listing-follows-via-collections)
+                  (modifier "distinct")
+                  (fields :listing_id)
+                  (where {:user_id user-id})
+                  (order order-by :DESC))]
+    (map :listing_id (select (if max (limit query max) query)))))
 
 ;;; mutating methods - should only be used in test!!!
 

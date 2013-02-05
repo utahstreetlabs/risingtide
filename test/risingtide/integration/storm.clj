@@ -91,7 +91,8 @@
                             cutterz-hot-surfboards [shark-board rocket-board]}
               :collection-follows {cutter [meats-i-like]
                                    rob [cutterz-hot-surfboards]
-                                   jim [cutterz-hot-surfboards]}
+                                   jim [cutterz-hot-surfboards]
+                                   jon [cutterz-hot-surfboards]}
               :active-users [rob])
              :after
              (do (clear-mysql-dbs!)
@@ -198,4 +199,4 @@
     (fact "the drpc feed builder should output a feed"
       (seq (last (last (bolt-output "drpc-feed-builder" "story"))))
       => (seq (new-digest-feed jim-liked-toast jim-shared-toast jim-saved-toast cutter-liked-breakfast-tacos
-                               cutter-liked-toast jim-liked-ham rob-liked-toast)))))
+                               cutter-liked-toast jim-liked-ham rob-liked-toast jim-liked-shark-board)))))

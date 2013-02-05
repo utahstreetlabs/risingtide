@@ -3,7 +3,8 @@
             [risingtide.config :as config]
             [risingtide.action.persist.solr :as solr]
             [risingtide.interests
-             [brooklyn :refer [user-follows listings-for-sale user-dislikes]]
+             [brooklyn :refer [user-follows listings-for-sale user-dislikes
+                               listing-ids-via-collection-follows]]
              [pyramid :refer [user-likes]]]
             [backtype.storm [clojure :refer [defbolt bolt emit-bolt! ack!]]]
             [metrics
@@ -23,8 +24,12 @@
   (filter #(not (config/drpc-blacklist %))
           (map :user_id (user-follows user-id config/recent-actions-max-follows))))
 
+(defn- listing-ids-from-followed-collections [user-id]
+  (listing-ids-via-collection-follows user-id :max config/recent-actions-max-collection-follow-listings))
+
 (defn interesting-listing-ids [user-id & {followees :followees}]
   (lazy-cat
+   (listing-ids-from-followed-collections user-id)
    (liked-listing-ids user-id)
    (followee-listing-for-sale-ids (or followees (followee-ids user-id)))))
 

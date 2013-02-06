@@ -7,7 +7,8 @@
    [risingtide.initializers.db]
 
    [copious.domain
-    [user :as user] [follow :as follow] [collection :as collection] [collection-follow :as collection-follow]
+    [user :as user] [block :as block] [follow :as follow]
+    [collection :as collection] [collection-follow :as collection-follow]
     [listing :as listing] [like :as like] [dislike :as dislike] [util :as domain-util]]
    [risingtide
     [core :refer :all]
@@ -68,6 +69,9 @@
 
 (defn creates-user-follow [follower-id followee-id]
   (follow/create follower-id followee-id))
+
+(defn creates-user-block [blocker-id blockee-id]
+  (block/create blocker-id blockee-id))
 
 (defn creates-listing-dislike [disliker-id listing-id]
   (dislike/create disliker-id listing-id))
@@ -176,12 +180,13 @@ usable in backgrounds yet.
   (map #(dissoc % :timestamp) stories))
 
 (defn copious-background [& {follows :follows likes :likes dislikes :dislikes listings :listings
-                             tag-likes :tag-likes active-users :active-users
+                             blocks :blocks tag-likes :tag-likes active-users :active-users
                              collections :collections collection-follows :collection-follows}]
   (clear-mysql-dbs!)
   (clear-action-solr!)
   (clear-redis!)
-  (let [users (distinct (concat (keys follows) (vals follows) (keys likes) (keys dislikes) (keys listings) (keys tag-likes) (keys collection-follows) (vals collection-owners)))]
+  (let [users (distinct (concat (keys blocks) (vals blocks) (keys follows) (vals follows) (keys likes) (keys dislikes)
+                                (keys listings) (keys tag-likes) (keys collection-follows) (vals collection-owners)))]
     (doseq [user users]
       (is-a-user user))
     (doseq [[seller-id listing-ids] listings]
@@ -189,6 +194,8 @@ usable in backgrounds yet.
         (is-a-listing listing-id seller-id)))
     (doseq [[follower followee] follows]
       (creates-user-follow follower followee))
+    (doseq [[blocker blockee] blocks]
+      (creates-user-block blocker blockee))
     (doseq [[disliker listing] dislikes]
       (creates-listing-dislike disliker listing))
     (doseq [[liker listing] likes]

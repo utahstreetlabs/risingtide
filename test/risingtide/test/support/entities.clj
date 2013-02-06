@@ -14,6 +14,7 @@
 (defuser cutter 6)
 (defuser kaitlyn 7)
 (defuser courtney 8)
+(defuser travis 9)
 
 
 ;; profiles

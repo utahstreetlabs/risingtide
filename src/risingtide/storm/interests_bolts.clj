@@ -81,6 +81,24 @@
    (emit-bolt! collector [id (.hashCode user-ids) story scores :follow] :anchor tuple))
   (ack! collector tuple))
 
+(def block-coefficient
+  "Set high enough to cancel out other interests"
+  -100)
+
+(defn block-scores [user-ids story]
+  (counts-to-scores (user/block-counts (:actor-id story) user-ids) user-ids block-coefficient))
+
+(deftimer block-interest-score-time)
+
+(defbolt block-interest-scorer ["id" "user-ids-hash" "story" "scores" "type"]
+  [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
+  (let [scores (time! block-interest-score-time (block-scores user-ids story))]
+   (when (not (= (count scores) (count user-ids)))
+     (log/error "got "(count scores)" block scores for "(count user-ids)" users"))
+   (emit-bolt! collector [id (.hashCode user-ids) story scores :block] :anchor tuple))
+  (ack! collector tuple))
+
+
 (defn seller-follow-scores [user-ids story]
   (counts-to-scores (user/follow-counts (:seller_id (listing/find (:listing-id story))) user-ids) user-ids))
 

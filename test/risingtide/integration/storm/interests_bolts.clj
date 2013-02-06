@@ -18,6 +18,8 @@
                     jon toast}
             :dislikes {cutter danishes
                        jim danishes}
+            :blocks {cutter travis
+                     jim travis}
             :tag-likes {rob breakfast
                         jon dangerous}
             :listings {cutter [ham]
@@ -124,6 +126,22 @@
     => {}
 
     (dislike-scores [rob] {})
+    => {rob 0})
+
+  (facts "about block-scores"
+    (block-scores [cutter] {:actor-id travis})
+    => {cutter -100}
+
+    (block-scores [rob cutter jim] {:actor-id travis})
+    => {rob 0 cutter -100 jim -100}
+
+    (block-scores [] {:actor-id travis})
+    => {}
+
+    (block-scores nil {:actor-id travis})
+    => {}
+
+    (block-scores [rob] {})
     => {rob 0})
 
   (facts "about collection-follow-scores"

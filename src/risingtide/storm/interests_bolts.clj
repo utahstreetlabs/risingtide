@@ -140,7 +140,7 @@
                 (let [story-scores (get @scores-atom [user-id story])
                       total-score (sum-scores story-scores)
                       interest-reducer-size-gauge (gauge "interest-reducer-size" (count @scores-atom))]
-                  (when (= (set (keys story-scores)) #{:follow :like :tag-like
+                  (when (= (set (keys story-scores)) #{:follow :like :tag-like :block
                                                        :listing-seller :collection-follow :dislike})
                     (swap! scores-atom #(dissoc % [user-id story]))
                     (mark! story-scored)

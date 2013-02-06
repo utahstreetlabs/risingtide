@@ -126,6 +126,7 @@
     :interest-reducer 3
     :seller-follows 5
     :collection-follows 6
+    :blocks 4
     :follows 4
     :tag-likes 6
     :likes 4

@@ -63,6 +63,8 @@ count key.
 
 (defcountscorer seller-follow user/follow-counts #(:seller_id (listing/find (:listing-id %))))
 
+(defcountscorer seller-block user/block-counts #(:seller_id (listing/find (:listing-id %))))
+
 (defcountscorer collection-follow collection/follow-counts :listing-id)
 
 
@@ -80,7 +82,8 @@ count key.
                       total-score (scores/sum story-scores)
                       interest-reducer-size-gauge (gauge "interest-reducer-size" (count @scores-atom))]
                   (when (= (set (keys story-scores)) #{:follow :like :tag-like :block
-                                                       :seller-follow :collection-follow :dislike})
+                                                       :seller-follow :collection-follow :dislike
+                                                       :seller-block})
                     (swap! scores-atom #(dissoc % [user-id story]))
                     (mark! story-scored)
                     (when (>= total-score 1)

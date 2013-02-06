@@ -125,6 +125,7 @@
    {:add-to-feed 10
     :interest-reducer 3
     :seller-follows 5
+    :seller-blocks 5
     :collection-follows 6
     :blocks 4
     :follows 4
@@ -141,7 +142,8 @@
 (def scorer-coefficients
   {:default
    {:dislike -100
-    :block -100}})
+    :block -100
+    :seller-block -100}})
 
 (defn scorer-coefficient [name]
   (or

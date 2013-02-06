@@ -46,6 +46,7 @@
 (def cutter-liked-toast (listing-liked cutter toast nil nil))
 (def rob-liked-toast (listing-liked rob toast nil nil))
 (def travis-liked-toast (listing-liked travis toast nil nil))
+(def cutter-liked-omelettes (listing-liked cutter omelettes nil nil))
 
 (def topology-results (atom nil))
 
@@ -70,7 +71,8 @@
        (cutter likes muffins)
        (travis likes toast)
        (jim activates bacon)
-       (rob likes toast))
+       (rob likes toast)
+       (cutter likes omelettes))
 
       more-actions-rob-cares-about
       (on-copious
@@ -86,6 +88,7 @@
               :likes {rob toast}
               :dislikes {rob muffins}
               :listings {cutter [ham muffins]
+                         travis [omelettes]
                          jim [shark-board rocket-board veal kitten]}
               :collections {meats-i-like [veal kitten]
                             cutterz-hot-surfboards [shark-board rocket-board]}
@@ -113,7 +116,8 @@
            [nil nil cutter-liked-breakfast-tacos]
            [nil nil cutter-liked-muffins]
            [nil nil jim-liked-shark-board]
-           [nil nil travis-liked-toast]]
+           [nil nil travis-liked-toast]
+           [nil nil cutter-liked-omelettes]]
           :in-any-order))
 
     (fact "the active users bolt outputs an active users/story pair for each action"
@@ -126,7 +130,8 @@
                     [nil [rob] cutter-liked-breakfast-tacos]
                     [nil [rob] cutter-liked-muffins]
                     [nil [rob] jim-liked-shark-board]
-                    [nil [rob] travis-liked-toast]]
+                    [nil [rob] travis-liked-toast]
+                    [nil [rob] cutter-liked-omelettes]]
                    :in-any-order))
 
     (fact "the interest reducer outputs a user/story/score tuple for each story that should be added to a feed"
@@ -148,7 +153,8 @@
       => (contains
           (apply encoded-feed (seq (new-digest-feed jim-activated-bacon jim-liked-ham rob-liked-toast jim-liked-toast
                                                     jim-shared-toast jim-saved-toast cutter-liked-breakfast-tacos
-                                                    cutter-liked-muffins jim-liked-shark-board travis-liked-toast)))
+                                                    cutter-liked-muffins jim-liked-shark-board travis-liked-toast
+                                                    cutter-liked-omelettes)))
           :in-any-order))
 
     (fact "rob's feed should contain things rob is interested in"
@@ -201,4 +207,8 @@
     (fact "the drpc feed builder should output a feed"
       (seq (last (last (bolt-output "drpc-feed-builder" "story"))))
       => (seq (new-digest-feed jim-liked-toast jim-shared-toast jim-saved-toast cutter-liked-breakfast-tacos
-                               cutter-liked-toast jim-liked-ham rob-liked-toast jim-liked-shark-board)))))
+                               cutter-liked-toast jim-liked-ham rob-liked-toast jim-liked-shark-board
+                               ;; this next one shouldn't be in here, but we have no efficient way to get
+                               ;; the sellers of listings in the drpc flow. I think we need to add
+                               ;; seller_id to actions...
+                               cutter-liked-omelettes)))))

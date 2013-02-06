@@ -7,7 +7,7 @@
    [risingtide.initializers.db]
 
    [copious.domain
-    [user :as user] [follow :as follow] [collection :as collection]
+    [user :as user] [follow :as follow] [collection :as collection] [collection-follow :as collection-follow]
     [listing :as listing] [like :as like] [dislike :as dislike] [util :as domain-util]]
    [risingtide
     [core :refer :all]
@@ -82,7 +82,7 @@
   (collection/create collection-id owner-id))
 
 (defn creates-collection-follow [follower-id collection-id]
-  (collection/create-follow follower-id collection-id))
+  (collection-follow/create follower-id collection-id))
 
 (defn adds-listing-to-collection [collection-id listing-id]
   (collection/create-listing-attachment collection-id listing-id))

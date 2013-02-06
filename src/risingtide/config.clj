@@ -136,8 +136,17 @@
     :drpc-feed-builder 3}})
 
 (defn parallelism [component]
-  (or (get-in parallelism-config [env component]) 1))
+  (get-in parallelism-config [env component] 1))
 
+(def scorer-coefficients
+  {:default
+   {:dislike -100
+    :block -100}})
+
+(defn scorer-coefficient [name]
+  (or
+   (get-in scorer-coefficients [env name])
+   (get-in scorer-coefficients [:default name] 1)))
 
 
 (def admin-port 4055)

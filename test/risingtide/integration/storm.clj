@@ -35,18 +35,18 @@
     "drpc-feed-build-requests" feed-build-requests
     "removals" remove-requests}))
 
-(def jim-activated-bacon (listing-activated jim bacon nil nil))
-(def jim-liked-ham (listing-liked jim ham nil nil))
-(def jim-liked-toast (listing-liked jim toast nil nil))
-(def jim-shared-toast (listing-shared jim toast nil nil nil))
-(def jim-saved-toast (listing-saved jim toast nil stuff-that-tastes-like-toast nil))
-(def jim-liked-shark-board (listing-liked jim shark-board nil nil))
-(def cutter-liked-breakfast-tacos (listing-liked cutter breakfast-tacos nil nil))
-(def cutter-liked-muffins (listing-liked cutter muffins nil nil))
-(def cutter-liked-toast (listing-liked cutter toast nil nil))
-(def rob-liked-toast (listing-liked rob toast nil nil))
-(def travis-liked-toast (listing-liked travis toast nil nil))
-(def cutter-liked-omelettes (listing-liked cutter omelettes nil nil))
+(def jim-activated-bacon (listing-activated jim bacon rob nil nil))
+(def jim-liked-ham (listing-liked jim ham cutter nil nil))
+(def jim-liked-toast (listing-liked jim toast rob nil nil))
+(def jim-shared-toast (listing-shared jim toast rob nil nil nil))
+(def jim-saved-toast (listing-saved jim toast rob nil stuff-that-tastes-like-toast nil))
+(def jim-liked-shark-board (listing-liked jim shark-board jim nil nil))
+(def cutter-liked-breakfast-tacos (listing-liked cutter breakfast-tacos rob nil nil))
+(def cutter-liked-muffins (listing-liked cutter muffins cutter nil nil))
+(def cutter-liked-toast (listing-liked cutter toast rob nil nil))
+(def rob-liked-toast (listing-liked rob toast rob nil nil))
+(def travis-liked-toast (listing-liked travis toast rob nil nil))
+(def cutter-liked-omelettes (listing-liked cutter omelettes travis nil nil))
 
 (def topology-results (atom nil))
 
@@ -59,24 +59,24 @@
 
 (let [actions-rob-cares-about
       (on-copious
-       (jim likes ham)
-       (jim likes toast)
-       (jim shares toast)
-       (jim saves toast :to stuff-that-tastes-like-toast)
-       (cutter likes breakfast-tacos)
-       (jim likes shark-board))
+       (jim likes ham :sold-by cutter)
+       (jim likes toast :sold-by rob)
+       (jim shares toast :sold-by rob)
+       (jim saves toast :to stuff-that-tastes-like-toast :sold-by rob)
+       (cutter likes breakfast-tacos :sold-by rob)
+       (jim likes shark-board :sold-by jim))
 
       actions-rob-doesnt-care-about
       (on-copious
-       (cutter likes muffins)
-       (travis likes toast)
-       (jim activates bacon)
-       (rob likes toast)
-       (cutter likes omelettes))
+       (cutter likes muffins :sold-by cutter)
+       (travis likes toast :sold-by rob)
+       (jim activates bacon :sold-by rob)
+       (rob likes toast :sold-by rob)
+       (cutter likes omelettes :sold-by travis))
 
       more-actions-rob-cares-about
       (on-copious
-       (cutter likes toast))
+       (cutter likes toast :sold-by rob))
 
       actions (concat actions-rob-doesnt-care-about actions-rob-cares-about)]
 
@@ -89,7 +89,8 @@
               :dislikes {rob muffins}
               :listings {cutter [ham muffins]
                          travis [omelettes]
-                         jim [shark-board rocket-board veal kitten]}
+                         jim [shark-board rocket-board veal kitten]
+                         rob [toast breakfast-tacos bacon]}
               :collections {meats-i-like [veal kitten]
                             cutterz-hot-surfboards [shark-board rocket-board]}
               :collection-follows {cutter [meats-i-like]

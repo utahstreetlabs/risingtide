@@ -1,6 +1,5 @@
 (ns risingtide.storm.build-feed
   (:require [risingtide.config :as config]
-            [risingtide.model.story :refer [->ListingLikedStory]]
             [risingtide.storm
              [story-bolts :refer [create-story-bolt]]
              [active-user-bolt :refer [active-user-bolt]]

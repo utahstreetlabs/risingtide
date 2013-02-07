@@ -22,23 +22,23 @@
 (defn tag-liked [actor-id tag-id]
   (->TagLikedStory actor-id tag-id))
 
-(defn listing-liked [actor-id listing-id tag-ids feed]
-  (->ListingLikedStory actor-id listing-id tag-ids feed))
+(defn listing-liked [actor-id listing-id seller-id tag-ids feed]
+  (->ListingLikedStory actor-id listing-id seller-id tag-ids feed))
 
-(defn listing-commented [actor-id listing-id tag-ids text feed]
-  (->ListingCommentedStory actor-id listing-id tag-ids text feed))
+(defn listing-commented [actor-id listing-id seller-id tag-ids text feed]
+  (->ListingCommentedStory actor-id listing-id seller-id tag-ids text feed))
 
-(defn listing-activated [actor-id listing-id tag-ids feed]
-  (->ListingActivatedStory actor-id listing-id tag-ids feed))
+(defn listing-activated [actor-id listing-id seller-id tag-ids feed]
+  (->ListingActivatedStory actor-id listing-id seller-id tag-ids feed))
 
-(defn listing-sold [actor-id listing-id tag-ids buyer-id feed]
-  (->ListingSoldStory actor-id listing-id tag-ids buyer-id feed))
+(defn listing-sold [actor-id listing-id seller-id tag-ids buyer-id feed]
+  (->ListingSoldStory actor-id listing-id seller-id tag-ids buyer-id feed))
 
-(defn listing-shared [actor-id listing-id tag-ids network feed]
-  (->ListingSharedStory actor-id listing-id tag-ids network feed))
+(defn listing-shared [actor-id listing-id seller-id tag-ids network feed]
+  (->ListingSharedStory actor-id listing-id seller-id tag-ids network feed))
 
-(defn listing-saved [actor-id listing-id tag-ids collection-id feed]
-  (->ListingSavedStory actor-id listing-id tag-ids collection-id feed))
+(defn listing-saved [actor-id listing-id seller-id tag-ids collection-id feed]
+  (->ListingSavedStory actor-id listing-id seller-id xtag-ids collection-id feed))
 
 (defn multi-actor-multi-action-story [listing-id actions]
   (->MultiActorMultiActionStory listing-id actions))

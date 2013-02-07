@@ -17,11 +17,11 @@
 
 (facts:dont-change-during-serialization
  (tag-liked 1 2)
- (listing-liked 1 2 [3 4] [:ev])
- (listing-commented 1 2 [3 4] "foo" [:ev])
- (listing-activated 1 2 [3 4] [:ev])
- (listing-sold 1 2 [3 4] 1 [:ev])
- (listing-shared 1 2 [3 4] :facebook [:ev])
+ (listing-liked 1 2 6 [3 4] [:ev])
+ (listing-commented 1 2 6 [3 4] "foo" [:ev])
+ (listing-activated 1 2 6 [3 4] [:ev])
+ (listing-sold 1 2 6 [3 4] 1 [:ev])
+ (listing-shared 1 2 6 [3 4] :facebook [:ev])
 
  (multi-listing-story 1 :listing_liked #{2} 1)
  (multi-actor-story 1 :listing_liked #{2 3})

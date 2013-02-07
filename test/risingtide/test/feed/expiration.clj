@@ -12,15 +12,15 @@
    [risingtide.model.feed [digest :refer [new-digest-feed]]]))
 
 (def now-in-seconds 100)
-(def feed (new-digest-feed (with-timestamp (stories/listing-liked 1 2 nil nil) 1)
-                           (with-timestamp (stories/listing-liked 3 4 nil nil) 50)
-                           (with-timestamp (stories/listing-liked 5 6 nil nil) 90)
+(def feed (new-digest-feed (with-timestamp (stories/listing-liked 1 2 3 nil nil) 1)
+                           (with-timestamp (stories/listing-liked 3 4 5 nil nil) 50)
+                           (with-timestamp (stories/listing-liked 5 6 7 nil nil) 90)
                            ;; in the future, somehow
-                           (with-timestamp (stories/listing-liked 7 8 nil nil) 110)))
+                           (with-timestamp (stories/listing-liked 7 8 9 nil nil) 110)))
 
 (with-redefs [config/*digest-cache-ttl* 50
               now (constantly now-in-seconds)]
   (fact
     (expire feed)
-    => [(stories/listing-liked 7 8 nil nil) (stories/listing-liked 5 6 nil nil)]))
+    => [(stories/listing-liked 7 8 9 nil nil) (stories/listing-liked 5 6 7 nil nil)]))
 

@@ -1,7 +1,7 @@
 (ns risingtide.storm.interests-bolts
   (:require [risingtide
-             [core :refer [bench]]
-             [dedupe :refer [dedupe]]]
+             [config :refer [scorer-coefficient]]]
+            [risingtide.story.scores :as scores]
             [copious.domain
              [user :as user]
              [collection :as collection]
@@ -14,101 +14,60 @@
              [meters :refer [defmeter mark!]]
              [gauges :refer [gauge]]]))
 
-(defn- counts-to-scores
-  ([counts user-ids]
-     (counts-to-scores counts user-ids 1))
-  ([counts user-ids coefficient]
-     (dissoc
-      (->> (or counts {})
-           (map (fn [{cnt :cnt user-id :user_id}] [user-id (* coefficient cnt)]))
-           (into {})
-           (merge (reduce #(assoc %1 %2 0) {} user-ids)))
-      nil)))
+(defn emit-scores!
+  [collector {id "id" user-ids "user-ids" story "story" :as tuple} scores name]
+  {:pre [(= (count scores) (count user-ids))]}
+  (emit-bolt! collector [id (.hashCode user-ids) story scores name] :anchor tuple))
 
-(defn like-scores [user-ids story]
-  (counts-to-scores (listing/like-counts (:listing-id story) user-ids) user-ids))
+(defmacro defcountscorer
+  "Create a bolt that can be used as a story scorer.
 
-(deftimer like-interest-score-time)
+Scorers have a very uniform structure, which lends itself well to abtraction using this
+macro. To define a new scorer, first write a 'counter' function that takes a thing to be counted
+and a list of user ids and returns a count of the relationships each user has with that thing, like:
 
-(defbolt like-interest-scorer ["id" "user-ids-hash" "story" "scores" "type"]
-  [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
-  (let [scores (time! like-interest-score-time (like-scores user-ids story))]
-   (when (not (= (count scores) (count user-ids)))
-     (log/error "got "(count scores)" like scores for "(count user-ids)" users"))
-   (emit-bolt! collector [id (.hashCode user-ids) story scores :like] :anchor tuple))
-  (ack! collector tuple))
+    (defn follow-counts [followee-id follower-ids]
+      ;; returns [{:user_id 1 :cnt 1} {:user_id 4 :cnt 1}, ...., {:user_id N :cnt 1}]
+      )
 
-(def dislike-coefficient
-  "Set high enough to cancel out other interests"
-  -100)
+The counter function may omit users with no relationships in its return value, which should be
+an array of hashes. The hashes MUST contain either a user-id or user_id key AND either a cnt or
+count key.
+"
+  [scorer-name counter get-countee]
+  (let [timer-name (symbol (str (name scorer-name)"-interest-score-time"))
+        scorer-fn-name (symbol (str (name scorer-name)"-scores"))
+        bolt-name (symbol (str (name scorer-name)"-interest-scorer"))]
+    `(do
+       (deftimer ~timer-name)
+       (defn ~scorer-fn-name [user-ids# story#]
+         (scores/from-counts (~counter (~get-countee story#) user-ids#) user-ids#
+                             (scorer-coefficient ~(keyword scorer-name))))
+       (defbolt ~bolt-name ["id" "user-ids-hash" "story" "scores" "type"]
+         [{user-ids# "user-ids" story# "story" :as tuple#} collector#]
+         (time! ~timer-name
+                (emit-scores! collector# tuple#
+                              (~scorer-fn-name user-ids# story#)
+                              ~(keyword scorer-name)))
+         (ack! collector# tuple#)))))
 
-(defn dislike-scores [user-ids story]
-  (counts-to-scores (listing/dislike-counts (:listing-id story) user-ids) user-ids dislike-coefficient))
+(defcountscorer like listing/like-counts :listing-id)
 
-(deftimer dislike-interest-score-time)
+(defcountscorer dislike listing/dislike-counts :listing-id)
 
-(defbolt dislike-interest-scorer ["id" "user-ids-hash" "story" "scores" "type"]
-  [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
-  (let [scores (time! dislike-interest-score-time (dislike-scores user-ids story))]
-   (when (not (= (count scores) (count user-ids)))
-     (log/error "got "(count scores)" dislike scores for "(count user-ids)" users"))
-   (emit-bolt! collector [id (.hashCode user-ids) story scores :dislike] :anchor tuple))
-  (ack! collector tuple))
+(defcountscorer tag-like tag/like-counts :tag-ids)
 
-(defn tag-like-scores [user-ids story]
-  (counts-to-scores (tag/like-counts (:tag-ids story) user-ids) user-ids))
+(defcountscorer follow user/follow-counts :actor-id)
 
-(deftimer tag-like-interest-score-time)
+(defcountscorer block user/block-counts :actor-id)
 
-(defbolt tag-like-interest-scorer ["id" "user-ids-hash" "story" "scores" "type"]
-  [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
-  (let [scores (time! tag-like-interest-score-time (tag-like-scores user-ids story))]
-   (when (not (= (count scores) (count user-ids)))
-     (log/error "got "(count scores)" tag like scores for "(count user-ids)" users"))
-   (emit-bolt! collector [id (.hashCode user-ids) story scores :tag-like] :anchor tuple))
-  (ack! collector tuple))
+(defcountscorer seller-follow user/follow-counts #(:seller_id (listing/find (:listing-id %))))
 
-(defn follow-scores [user-ids story]
-  (counts-to-scores (user/follow-counts (:actor-id story) user-ids) user-ids))
+(defcountscorer seller-block user/block-counts #(:seller_id (listing/find (:listing-id %))))
 
-(deftimer follow-interest-score-time)
+(defcountscorer collection-follow collection/follow-counts :listing-id)
 
-(defbolt follow-interest-scorer ["id" "user-ids-hash" "story" "scores" "type"]
-  [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
-  (let [scores (time! follow-interest-score-time (follow-scores user-ids story))]
-   (when (not (= (count scores) (count user-ids)))
-     (log/error "got "(count scores)" follow scores for "(count user-ids)" users"))
-   (emit-bolt! collector [id (.hashCode user-ids) story scores :follow] :anchor tuple))
-  (ack! collector tuple))
 
-(defn seller-follow-scores [user-ids story]
-  (counts-to-scores (user/follow-counts (:seller_id (listing/find (:listing-id story))) user-ids) user-ids))
-
-(deftimer seller-follow-interest-score-time)
-
-(defbolt seller-follow-interest-scorer ["id" "user-ids-hash" "story" "scores" "type"]
-  [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
-  (let [scores (time! seller-follow-interest-score-time (seller-follow-scores user-ids story))]
-    (when (not (= (count scores) (count user-ids)))
-      (log/error "got "(count scores)" seller follow scores for "(count user-ids)" users"))
-    (emit-bolt! collector [id (.hashCode user-ids) story scores :listing-seller] :anchor tuple))
-  (ack! collector tuple))
-
-(defn collection-follow-scores [user-ids story]
-  (counts-to-scores (collection/follow-counts (:listing-id story) user-ids) user-ids))
-
-(deftimer collection-follow-interest-score-time)
-
-(defbolt collection-follow-interest-scorer ["id" "user-ids-hash" "story" "scores" "type"]
-  [{id "id" user-ids "user-ids" story "story" :as tuple} collector]
-  (let [scores (time! collection-follow-interest-score-time (collection-follow-scores user-ids story))]
-    (when (not (= (count scores) (count user-ids)))
-      (log/error "got "(count scores)" collection follow scores for "(count user-ids)" users"))
-    (emit-bolt! collector [id (.hashCode user-ids) story scores :collection-follow] :anchor tuple))
-  (ack! collector tuple))
-
-(defn sum-scores [scores]
-  (apply + (vals scores)))
 
 (defmeter story-scored "stories scored")
 
@@ -120,10 +79,11 @@
               (swap! scores-atom #(reduce (fn [h [user-id score]] (assoc-in h [[user-id story] type] score)) % scores))
               (doseq [user-id (keys scores)]
                 (let [story-scores (get @scores-atom [user-id story])
-                      total-score (sum-scores story-scores)
+                      total-score (scores/sum story-scores)
                       interest-reducer-size-gauge (gauge "interest-reducer-size" (count @scores-atom))]
-                  (when (= (set (keys story-scores)) #{:follow :like :tag-like
-                                                       :listing-seller :collection-follow :dislike})
+                  (when (= (set (keys story-scores)) #{:follow :like :tag-like :block
+                                                       :seller-follow :collection-follow :dislike
+                                                       :seller-block})
                     (swap! scores-atom #(dissoc % [user-id story]))
                     (mark! story-scored)
                     (when (>= total-score 1)

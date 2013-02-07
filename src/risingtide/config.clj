@@ -125,7 +125,9 @@
    {:add-to-feed 10
     :interest-reducer 3
     :seller-follows 5
+    :seller-blocks 5
     :collection-follows 6
+    :blocks 4
     :follows 4
     :tag-likes 6
     :likes 4
@@ -135,8 +137,18 @@
     :drpc-feed-builder 3}})
 
 (defn parallelism [component]
-  (or (get-in parallelism-config [env component]) 1))
+  (get-in parallelism-config [env component] 1))
 
+(def scorer-coefficients
+  {:default
+   {:dislike -100
+    :block -100
+    :seller-block -100}})
+
+(defn scorer-coefficient [name]
+  (or
+   (get-in scorer-coefficients [env name])
+   (get-in scorer-coefficients [:default name] 1)))
 
 
 (def admin-port 4055)

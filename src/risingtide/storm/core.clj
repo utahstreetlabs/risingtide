@@ -11,7 +11,8 @@
              [interests-bolts :refer [like-interest-scorer follow-interest-scorer
                                       tag-like-interest-scorer dislike-interest-scorer
                                       seller-follow-interest-scorer interest-reducer
-                                      collection-follow-interest-scorer]]
+                                      collection-follow-interest-scorer
+                                      block-interest-scorer seller-block-interest-scorer]]
              [feed-bolts :refer [add-to-feed add-to-curated-feed]]
              [build-feed :as feed-building]]
             [risingtide.storm.drpc.local-server :as local-drpc-server]
@@ -85,9 +86,15 @@
         "follows" (bolt-spec {"active-users" :shuffle}
                              follow-interest-scorer
                              :p (p :follows))
+        "blocks" (bolt-spec {"active-users" :shuffle}
+                            block-interest-scorer
+                            :p (p :blocks))
         "seller-follows" (bolt-spec {"active-users" :shuffle}
                                     seller-follow-interest-scorer
                                     :p (p :seller-follows))
+        "seller-blocks" (bolt-spec {"active-users" :shuffle}
+                                   seller-block-interest-scorer
+                                   :p (p :seller-blocks))
         "collection-follows" (bolt-spec {"active-users" :shuffle}
                                         collection-follow-interest-scorer
                                         :p (p :collection-follows))
@@ -97,9 +104,11 @@
 
         "interest-reducer" (bolt-spec {"likes" ["user-ids-hash"]
                                        "tag-likes" ["user-ids-hash"]
+                                       "blocks" ["user-ids-hash"]
                                        "follows" ["user-ids-hash"]
                                        "dislikes" ["user-ids-hash"]
                                        "seller-follows" ["user-ids-hash"]
+                                       "seller-blocks" ["user-ids-hash"]
                                        "collection-follows" ["user-ids-hash"]}
                                       interest-reducer
                                       :p (p :interest-reducer))

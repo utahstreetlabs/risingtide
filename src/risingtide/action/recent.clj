@@ -10,16 +10,19 @@
              [histograms :refer [defhistogram update!]]]))
 
 (defn- liked-listing-ids [user-id]
-  (filter identity (map :listing_id (user/likes user-id config/recent-actions-max-likes))))
+  (remove nil? (map :listing_id (user/likes user-id config/recent-actions-max-likes))))
 
 (defn- followee-listing-for-sale-ids [followee-ids]
   (map :id (user/listings-for-sale followee-ids config/recent-actions-max-seller-listings)))
 
 (defn- disliked-listing-ids [user-id]
-  (set (filter identity (map :listing_id (user/dislikes user-id)))))
+  (remove nil? (map :listing_id (user/dislikes user-id))))
+
+(defn- blocked-actor-ids [user-id]
+  (remove nil? (map :user_id (user/blocks user-id))))
 
 (defn- followee-ids [user-id]
-  (filter #(not (config/drpc-blacklist %))
+  (remove config/drpc-blacklist
           (map :user_id (user/follows user-id config/recent-actions-max-follows))))
 
 (defn- listing-ids-from-followed-collections [user-id]
@@ -35,15 +38,21 @@
                                          :or {rows config/recent-actions-max-recent-stories
                                               sort "timestamp_i desc"}}]
   (let [followees (followee-ids user-id)
-        disliked? (disliked-listing-ids user-id)
-        filter-disliked (fn [listing-ids] (filter #(not (disliked? (:listing_id %))) listing-ids))]
-    (filter-disliked
-     (solr/search-interests
-      solr-conn
-      :rows rows :sort sort
-      :actors followees
-      :listings (filter-disliked
-                 (interesting-listing-ids user-id :followees followees))))))
+        disliked? (set (disliked-listing-ids user-id))
+        blocked? (set (blocked-actor-ids user-id))]
+    ;; remove blocked users and disliked listings both before the solr
+    ;; query (to get as many "good" actions as possible under the row
+    ;; limit) and after the query (to weed out dislikes that came back
+    ;; from the actor query and blocks that came back from the listing
+    ;; query)
+    (->> (solr/search-interests
+          solr-conn
+          :rows rows :sort sort
+          :actors (remove blocked? followees)
+          :listings (remove disliked?
+                            (interesting-listing-ids user-id :followees followees)))
+         (remove #(disliked? (:listing_id %)))
+         (remove #(blocked? (:actor_id %))))))
 
 (deftimer find-recent-actions-time)
 (defhistogram recent-actions-found)

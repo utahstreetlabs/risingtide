@@ -45,6 +45,8 @@
 (def cutter-liked-muffins (listing-liked cutter muffins nil nil))
 (def cutter-liked-toast (listing-liked cutter toast nil nil))
 (def rob-liked-toast (listing-liked rob toast nil nil))
+(def travis-liked-toast (listing-liked travis toast nil nil))
+(def cutter-liked-omelettes (listing-liked cutter omelettes nil nil))
 
 (def topology-results (atom nil))
 
@@ -62,13 +64,15 @@
        (jim shares toast)
        (jim saves toast :to stuff-that-tastes-like-toast)
        (cutter likes breakfast-tacos)
-       (cutter likes muffins)
        (jim likes shark-board))
 
       actions-rob-doesnt-care-about
       (on-copious
+       (cutter likes muffins)
+       (travis likes toast)
        (jim activates bacon)
-       (rob likes toast))
+       (rob likes toast)
+       (cutter likes omelettes))
 
       more-actions-rob-cares-about
       (on-copious
@@ -79,20 +83,18 @@
   (against-background
     [(before :contents
              (copious-background
-              :follows {rob cutter
-                        jon cutter}
-              :likes {rob toast
-                      jon toast}
-              :dislikes {rob muffins
-                         jon muffins}
+              :blocks {rob travis}
+              :follows {rob cutter}
+              :likes {rob toast}
+              :dislikes {rob muffins}
               :listings {cutter [ham muffins]
+                         travis [omelettes]
                          jim [shark-board rocket-board veal kitten]}
               :collections {meats-i-like [veal kitten]
                             cutterz-hot-surfboards [shark-board rocket-board]}
               :collection-follows {cutter [meats-i-like]
                                    rob [cutterz-hot-surfboards]
-                                   jim [cutterz-hot-surfboards]
-                                   jon [cutterz-hot-surfboards]}
+                                   jim [cutterz-hot-surfboards]}
               :active-users [rob])
              :after
              (do (clear-mysql-dbs!)
@@ -113,7 +115,9 @@
            [nil nil jim-saved-toast]
            [nil nil cutter-liked-breakfast-tacos]
            [nil nil cutter-liked-muffins]
-           [nil nil jim-liked-shark-board]]
+           [nil nil jim-liked-shark-board]
+           [nil nil travis-liked-toast]
+           [nil nil cutter-liked-omelettes]]
           :in-any-order))
 
     (fact "the active users bolt outputs an active users/story pair for each action"
@@ -125,7 +129,9 @@
                     [nil [rob] jim-saved-toast]
                     [nil [rob] cutter-liked-breakfast-tacos]
                     [nil [rob] cutter-liked-muffins]
-                    [nil [rob] jim-liked-shark-board]]
+                    [nil [rob] jim-liked-shark-board]
+                    [nil [rob] travis-liked-toast]
+                    [nil [rob] cutter-liked-omelettes]]
                    :in-any-order))
 
     (fact "the interest reducer outputs a user/story/score tuple for each story that should be added to a feed"
@@ -147,7 +153,8 @@
       => (contains
           (apply encoded-feed (seq (new-digest-feed jim-activated-bacon jim-liked-ham rob-liked-toast jim-liked-toast
                                                     jim-shared-toast jim-saved-toast cutter-liked-breakfast-tacos
-                                                    cutter-liked-muffins jim-liked-shark-board)))
+                                                    cutter-liked-muffins jim-liked-shark-board travis-liked-toast
+                                                    cutter-liked-omelettes)))
           :in-any-order))
 
     (fact "rob's feed should contain things rob is interested in"
@@ -174,7 +181,8 @@
       => (some-checker (just (encoded-feed jim-shared-toast))
                        (just (encoded-feed jim-saved-toast))
                        (just (encoded-feed rob-liked-toast))
-                       (just (encoded-feed jim-liked-toast))))
+                       (just (encoded-feed jim-liked-toast))
+                       (just (encoded-feed travis-liked-toast))))
 
 
     ;;;; test loading feeds from redis ;;;;
@@ -194,9 +202,13 @@
 
       ;;;; test DRPC feed building ;;;;
     (println "running the feed build topology")
-    (run-topology :feed-builds [[(str jon) (json/json-str {:id "12345" :host (.getServiceId drpc) :port 0})]])
+    (run-topology :feed-builds [[(str rob) (json/json-str {:id "12345" :host (.getServiceId drpc) :port 0})]])
 
     (fact "the drpc feed builder should output a feed"
       (seq (last (last (bolt-output "drpc-feed-builder" "story"))))
       => (seq (new-digest-feed jim-liked-toast jim-shared-toast jim-saved-toast cutter-liked-breakfast-tacos
-                               cutter-liked-toast jim-liked-ham rob-liked-toast jim-liked-shark-board)))))
+                               cutter-liked-toast jim-liked-ham rob-liked-toast jim-liked-shark-board
+                               ;; this next one shouldn't be in here, but we have no efficient way to get
+                               ;; the sellers of listings in the drpc flow. I think we need to add
+                               ;; seller_id to actions...
+                               cutter-liked-omelettes)))))

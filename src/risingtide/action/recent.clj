@@ -52,7 +52,8 @@
           :listings (remove disliked?
                             (interesting-listing-ids user-id :followees followees)))
          (remove #(disliked? (:listing_id %)))
-         (remove #(blocked? (:actor_id %))))))
+         (remove #(blocked? (:actor_id %)))
+         (remove #(blocked? (:seller_id %))))))
 
 (deftimer find-recent-actions-time)
 (defhistogram recent-actions-found)

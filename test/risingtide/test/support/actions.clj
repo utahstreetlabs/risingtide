@@ -4,7 +4,8 @@
    [risingtide
     [core :refer [now]]]))
 
-(def property-aliases {:to :collection_id})
+(def property-aliases {:to :collection_id
+                       :sold-by :seller_id})
 
 (defn listing-action
   [type actor-id listing-id & {:as props}]

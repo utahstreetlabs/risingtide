@@ -34,6 +34,7 @@
    :tag-id :tid
    :tag-ids :tids
    :buyer-id :bid
+   :seller-id :sid
    :text :tx
    :network :n
    :timestamp :time

@@ -15,6 +15,7 @@
    :text :comment
    :feed :feed_ss
    :buyer_id :buyer_id_i
+   :seller_id :seller_id_i
    :collection_id :collection_id_i
    :network :network_s
    :type :type_s

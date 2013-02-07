@@ -11,6 +11,7 @@ module RisingTide
       lids: :listing_ids,
       tid: :tag_id,
       bid: :buyer_id,
+      sid: :seller_id,
       fid: :followee_id,
       iid: :invitee_profile_id,
       cid: :collection_id,

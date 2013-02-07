@@ -9,9 +9,6 @@
              [metrics :refer [mean median]]]
             [risingtide.model [feed :refer [add remove-listing]]
              [timestamps :refer [timestamp]]]
-            [risingtide.interests
-             [brooklyn :as follows]
-             [pyramid :as likes]]
             [risingtide.feed
              [expiration :refer [expire expiration-threshold]]
              [filters :refer [for-everything-feed?]]

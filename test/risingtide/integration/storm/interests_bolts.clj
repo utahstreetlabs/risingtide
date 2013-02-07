@@ -95,16 +95,16 @@
     )
 
   (facts "about seller-follow-scores"
-    (seller-follow-scores [rob] {:listing-id ham})
+    (seller-follow-scores [rob] {:seller-id cutter})
     => {rob 1}
 
-    (seller-follow-scores [rob jon jim] {:listing-id ham})
+    (seller-follow-scores [rob jon jim] {:seller-id cutter})
     => {rob 1 jim 0 jon 1}
 
-    (seller-follow-scores [] {:listing-id ham})
+    (seller-follow-scores [] {:seller-id cutter})
     => {}
 
-    (seller-follow-scores nil {:listing-id ham})
+    (seller-follow-scores nil {:seller-id cutter})
     => {}
 
     (seller-follow-scores [rob] {})
@@ -142,6 +142,22 @@
     => {}
 
     (block-scores [rob] {})
+    => {rob 0})
+
+  (facts "about seller-block-scores"
+    (seller-block-scores [cutter] {:seller-id travis})
+    => {cutter -100}
+
+    (seller-block-scores [rob cutter jim] {:seller-id travis})
+    => {rob 0 cutter -100 jim -100}
+
+    (seller-block-scores [] {:seller-id travis})
+    => {}
+
+    (seller-block-scores nil {:seller-id travis})
+    => {}
+
+    (seller-block-scores [rob] {})
     => {rob 0})
 
   (facts "about collection-follow-scores"

@@ -38,7 +38,7 @@
   (->ListingSharedStory actor-id listing-id seller-id tag-ids network feed))
 
 (defn listing-saved [actor-id listing-id seller-id tag-ids collection-id feed]
-  (->ListingSavedStory actor-id listing-id seller-id xtag-ids collection-id feed))
+  (->ListingSavedStory actor-id listing-id seller-id tag-ids collection-id feed))
 
 (defn multi-actor-multi-action-story [listing-id actions]
   (->MultiActorMultiActionStory listing-id actions))

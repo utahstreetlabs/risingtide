@@ -208,8 +208,4 @@
     (fact "the drpc feed builder should output a feed"
       (seq (last (last (bolt-output "drpc-feed-builder" "story"))))
       => (seq (new-digest-feed jim-liked-toast jim-shared-toast jim-saved-toast cutter-liked-breakfast-tacos
-                               cutter-liked-toast jim-liked-ham rob-liked-toast jim-liked-shark-board
-                               ;; this next one shouldn't be in here, but we have no efficient way to get
-                               ;; the sellers of listings in the drpc flow. I think we need to add
-                               ;; seller_id to actions...
-                               cutter-liked-omelettes)))))
+                               cutter-liked-toast jim-liked-ham rob-liked-toast jim-liked-shark-board)))))

@@ -61,9 +61,9 @@ count key.
 
 (defcountscorer block user/block-counts :actor-id)
 
-(defcountscorer seller-follow user/follow-counts #(:seller_id (listing/find (:listing-id %))))
+(defcountscorer seller-follow user/follow-counts :seller-id)
 
-(defcountscorer seller-block user/block-counts #(:seller_id (listing/find (:listing-id %))))
+(defcountscorer seller-block user/block-counts :seller-id)
 
 (defcountscorer collection-follow collection/follow-counts :listing-id)
 

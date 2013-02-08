@@ -3,9 +3,6 @@
             [copious.domain.like :as like]
             [risingtide.config :as config]))
 
-;; unmap dbs so they reload properly
-(ns-unmap *ns* 'pyramid)
-
 (defn alter-db [entity-var db]
   (alter-var-root entity-var #(database % db)))
 

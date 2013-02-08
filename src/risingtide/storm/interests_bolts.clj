@@ -1,6 +1,6 @@
 (ns risingtide.storm.interests-bolts
-  (:require [risingtide
-             [config :refer [scorer-coefficient]]]
+  (:require [risingtide.config :refer [scorer-coefficient]]
+            risingtide.initializers.db
             [risingtide.story.scores :as scores]
             [copious.domain
              [user :as user]

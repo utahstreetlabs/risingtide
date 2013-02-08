@@ -1,6 +1,7 @@
 (ns risingtide.action.recent
   (:require [clojure.set :as set]
             [risingtide.config :as config]
+            risingtide.initializers.db
             [risingtide.action.persist.solr :as solr]
             [copious.domain
              [user :as user]]

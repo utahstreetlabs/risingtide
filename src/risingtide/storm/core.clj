@@ -1,6 +1,5 @@
 (ns risingtide.storm.core
   (:require [risingtide.config :as config]
-            risingtide.initializers.db
             [risingtide.storm
              [action-spout :refer [action-spout]]
              [remove-spout :refer [remove-spout]]

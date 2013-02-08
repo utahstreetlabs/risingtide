@@ -41,7 +41,7 @@ count key.
     `(do
        (deftimer ~timer-name)
        (defn ~scorer-fn-name [user-ids# story#]
-         (scores/from-counts (~counter (~get-countee story#) user-ids#) user-ids#
+         (scores/from-counts (~counter (~get-countee story#) user-ids#)
                              (scorer-coefficient ~(keyword scorer-name))))
        (defbolt ~bolt-name ["id" "user-ids-hash" "story" "scores" "type"]
          [{user-ids# "user-ids" story# "story" :as tuple#} collector#]

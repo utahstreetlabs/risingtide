@@ -44,7 +44,7 @@
    :password "Utah5tr33t"})
 
 (defn db [& {:as params}]
-  (merge mysql-creds params))
+  (merge mysql-creds {:delimiters "`"} params))
 
 (def brooklyn-db
   {:development (db :db "utah_development")

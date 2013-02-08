@@ -2,6 +2,7 @@
   (:require
    [risingtide.test]
    [clojure.data.json :as json]
+   [copious.domain.testing.entities :refer :all]
    [risingtide
     [config :as config]
     [redis :as redis]
@@ -10,9 +11,7 @@
     [core :refer [feed-generation-topology standard-topology-config]]]
    [risingtide.model.feed.digest :refer [new-digest-feed]]
    [risingtide.model.feed :refer [remove-listing]]
-
    [risingtide.test.support
-    [entities :refer :all]
     [stories :refer :all]
     [actions :refer :all]]
    [risingtide.integration.support :refer :all]

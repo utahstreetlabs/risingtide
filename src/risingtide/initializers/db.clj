@@ -1,18 +1,11 @@
 (ns risingtide.initializers.db
-  (:require [korma [db :refer :all] [core :refer [database]] [config :refer [set-delimiters]]]
-            [copious.domain.like :as like]
+  (:require [copious.domain.util.db :refer [init-dbs assign-entities]]
             [risingtide.config :as config]))
 
-(defn alter-db [entity-var db]
-  (alter-var-root entity-var #(database % db)))
+(init-dbs
+ pyramid mysql (config/pyramid)
+ brooklyn mysql (config/brooklyn))
 
-(defdb pyramid
-  (mysql (merge (config/pyramid) {:delimiters "`"})))
-
-(alter-db #'like/likes pyramid)
-
-;; primary db _must_ be defined last!
-
-(defdb brooklyn
-  (mysql (merge (config/brooklyn) {:delimiters "`"})))
+(assign-entities
+ copious.domain.like/likes pyramid)
 

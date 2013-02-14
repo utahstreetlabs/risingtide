@@ -9,7 +9,8 @@
    [copious.domain
     [user :as user] [block :as block] [follow :as follow]
     [collection :as collection] [collection-follow :as collection-follow]
-    [listing :as listing] [like :as like] [dislike :as dislike] [util :as domain-util]]
+    [listing :as listing] [like :as like] [dislike :as dislike] [util :as domain-util]
+    [testing :as domain]]
    [risingtide
     [core :refer :all]
     [redis :as redis]
@@ -19,9 +20,7 @@
    [risingtide.feed.persist :refer [encode]]
    [risingtide.feed.persist.shard :as shard]
    [risingtide.feed.persist.shard.config :as shard-config]
-   [risingtide.action.persist.solr :as solr]
-
-   [risingtide.test.support.entities :refer [collection-owners]]))
+   [risingtide.action.persist.solr :as solr]))
 
 (def conn (redis/redii))
 
@@ -179,34 +178,9 @@ usable in backgrounds yet.
 (defn strip-timestamps [stories]
   (map #(dissoc % :timestamp) stories))
 
-(defn copious-background [& {follows :follows likes :likes dislikes :dislikes listings :listings
-                             blocks :blocks tag-likes :tag-likes active-users :active-users
-                             collections :collections collection-follows :collection-follows}]
-  (clear-mysql-dbs!)
+(defn copious-background [& {:keys [active-users]
+                             :as entities}]
   (clear-action-solr!)
   (clear-redis!)
-  (let [users (distinct (concat (keys blocks) (vals blocks) (keys follows) (vals follows) (keys likes) (keys dislikes)
-                                (keys listings) (keys tag-likes) (keys collection-follows) (vals collection-owners)))]
-    (doseq [user users]
-      (is-a-user user))
-    (doseq [[seller-id listing-ids] listings]
-      (doseq [listing-id listing-ids]
-        (is-a-listing listing-id seller-id)))
-    (doseq [[follower followee] follows]
-      (creates-user-follow follower followee))
-    (doseq [[blocker blockee] blocks]
-      (creates-user-block blocker blockee))
-    (doseq [[disliker listing] dislikes]
-      (creates-listing-dislike disliker listing))
-    (doseq [[liker listing] likes]
-      (creates-listing-like liker listing))
-    (doseq [[liker tag] tag-likes]
-      (creates-tag-like liker tag))
-    (doseq [[collection listings] collections]
-      (creates-collection collection (collection-owners collection))
-      (doseq [listing listings]
-        (adds-listing-to-collection collection listing)))
-    (doseq [[follower collections] collection-follows]
-      (doseq [collection-id collections]
-        (creates-collection-follow follower collection-id)))
-    (apply add-active-users (redis/redii) (* 60 10) active-users)))
+  (apply domain/create-entities (flatten (vec entities)))
+  (apply add-active-users (redis/redii) (* 60 10) active-users))

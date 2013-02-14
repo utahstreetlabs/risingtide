@@ -1,11 +1,9 @@
 (ns risingtide.initializers.db
-  (:require [copious.domain.util.db :refer [init-dbs assign-entities]]
+  (:require [copious.domain.util.db :refer [defdb]]
             [risingtide.config :as config]))
 
-(init-dbs
- pyramid mysql (config/pyramid)
- brooklyn mysql (config/brooklyn))
 
-(assign-entities
- copious.domain.like/likes pyramid)
+(defdb pyramid :mysql (config/pyramid)
+  copious.domain.like/likes)
 
+(defdb brooklyn :mysql (config/brooklyn))

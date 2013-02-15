@@ -107,6 +107,12 @@
 ;; linda and ajm - blacklist them because they list too much and break
 ;; drpc builds
 (def drpc-blacklist #{38319 11089})
+
+;; When performing an initial feed build we first attempt to find
+;; as many actions relevant to the user's interest as possible.
+;; If we find less than `minimum-drpc-actions` relevant actions,
+;; we backfill with recent curated activity in order to present
+;; a feed of minimally acceptable length.
 (def minimum-drpc-actions 100)
 
 

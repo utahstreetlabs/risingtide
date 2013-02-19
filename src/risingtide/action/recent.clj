@@ -49,9 +49,9 @@
     (->> (solr/search-interests
           solr-conn
           :rows rows :sort sort
-          :actors (remove blocked? followees)
-          :listings (remove disliked?
-                            (interesting-listing-ids user-id :followees followees)))
+          :actors (take 500 (remove blocked? followees))
+          :listings (take 500 (remove disliked?
+                                      (interesting-listing-ids user-id :followees followees))))
          (remove #(disliked? (:listing_id %)))
          (remove #(blocked? (:actor_id %)))
          (remove #(blocked? (:seller_id %))))))

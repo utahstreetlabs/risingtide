@@ -102,6 +102,21 @@
 (def recent-actions-max-likes 200)
 (def recent-actions-max-seller-listings 200)
 (def recent-actions-max-collection-follow-listings 1000)
+
+;; these next two shouldn't sum to more than 1k, or lucene will complain
+;; about having too many boolean arguments. note that when using GET
+;; for solr queries we also need to limit the size of our requests or
+;; jetty will explode. the max query sizes for lucene and jetty seem
+;; to be in the same ballpark right now, though the jetty one will
+;; also be reached by having large user ids since it is related to the
+;; number of characters in the query. we can update our solr library
+;; to use POST for queries (the query method takes an extra argument
+;; that is not exposed by our library) but that seems a little
+;; pointless at the moment and I bumped into some strange bugs trying
+;; this out.
+(def recent-actions-max-actors 250)
+(def recent-actions-max-listings 500)
+
 (def drpc-max-stories 60)
 (def recent-actions-max-recent-stories 2000)
 ;; linda and ajm - blacklist them because they list too much and break

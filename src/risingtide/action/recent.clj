@@ -49,9 +49,13 @@
     (->> (solr/search-interests
           solr-conn
           :rows rows :sort sort
-          :actors (take 500 (remove blocked? followees))
-          :listings (take 500 (remove disliked?
-                                      (interesting-listing-ids user-id :followees followees))))
+          ;; limit both of these to avoid blowing up lucene - too many
+          ;; boolean queries makes it explode. ~1k is a rough maximum
+          :actors (take config/recent-actions-max-actors
+                        (remove blocked? followees))
+          :listings (take config/recent-actions-max-listings
+                          (remove disliked?
+                                  (interesting-listing-ids user-id :followees followees))))
          (remove #(disliked? (:listing_id %)))
          (remove #(blocked? (:actor_id %)))
          (remove #(blocked? (:seller_id %))))))

@@ -82,6 +82,6 @@
 (comment
   (save! (connection) {:id 1 :actor_id 6 :listing_id 2 :tag_ids [1 2] :type :listing_activated :timestamp 4})
   (delete-actions! (connection))
+  (search-interests (connection) :actors (range 0 250) :listings (range 0 500))
   (search-interests (connection) :actors [1])
-
   )

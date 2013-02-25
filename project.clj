@@ -8,7 +8,7 @@
                  [org.clojure/core.memoize "0.5.2"]
 
                  [utahstreetlabs/jedis "2.1.1"]
-                 [copious/domain "1.0.1"]
+                 [copious/domain "1.0.2"]
                  [mysql/mysql-connector-java "5.1.20"]
                  [org.syslog4j/syslog4j "0.9.30"]
                  [net.java.dev.jna/jna "3.4.0"]

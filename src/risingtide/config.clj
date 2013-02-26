@@ -114,8 +114,8 @@
 ;; that is not exposed by our library) but that seems a little
 ;; pointless at the moment and I bumped into some strange bugs trying
 ;; this out.
-(def recent-actions-max-actors 250)
-(def recent-actions-max-listings 500)
+(def recent-actions-max-actors 125)
+(def recent-actions-max-listings 250)
 
 (def drpc-max-stories 60)
 (def recent-actions-max-recent-stories 2000)

@@ -7,7 +7,9 @@
              [config :as config]
              [redis :as redis]]
             [clj-time.format :refer [parse formatter]]
-            [risingtide.action.persist.solr :as solr]))
+            [risingtide.action.persist.solr :as solr]
+            [risingtide.reports :refer [report]]
+            [risingtide.feed.persist :refer [delete-feeds!]]))
 
 ;; migrate staging keys to development.
 
@@ -75,3 +77,9 @@ Should never actually be needed ever again, since we log timestamps now, but com
 
 (defrun convert-redis-keys-from-staging-to-dev!
   (convert-redis-keys-from-staging-to-dev!))
+
+(defn clean-dangling-feeds
+  "sometimes feeds are left in redis after the corresponding active user has been removed
+from the active users list. this finds and deletes such feeds."
+  []
+  (delete-feeds! (redis/redii) (:dangling-feeds (report))))

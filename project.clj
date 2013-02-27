@@ -30,7 +30,7 @@
                  [incanter/incanter-core "1.4.0"]
                  [incanter/incanter-charts "1.4.0"]]
   :java-source-paths ["java-src"]
-  :profiles {:dev {:dependencies [[midje "1.4.0"]
+  :profiles {:dev {:dependencies [ [midje "1.5-beta2"]
                                   ;; storm dependency only in dev
                                   ;; cause production storm cluster
                                   ;; provide it

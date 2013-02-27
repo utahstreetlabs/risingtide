@@ -8,7 +8,7 @@
              [active-users :refer [active-users active?]]]
             [risingtide.feed
              [filters :refer [for-everything-feed?]]
-             [persist :refer [encode-feed write-feed!]]
+             [persist :refer [encode-feed write-feed! initialize-digest-feed]]
              [set :as feed-set]]
             [risingtide.model
              [feed :refer [add]]
@@ -64,7 +64,7 @@
 (defbolt add-to-curated-feed ["id" "feed"] {:prepare true}
   [conf context collector]
   (let [redii (redis/redii)
-        feed-atom (atom (feed-set/initialize-digest-feed redii (key/everything-feed)))
+        feed-atom (atom (initialize-digest-feed redii (key/everything-feed)))
         feed-expirer (schedule-with-delay
                        #(try
                           (feed-set/expire-feed! feed-atom)

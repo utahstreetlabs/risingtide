@@ -1,31 +1,23 @@
 (ns risingtide.feed.set
   (:require [risingtide
-             [core :refer [now]]
              [dedupe :refer [dedupe]]
              [key :as key]
-             [active-users :refer [active-users active?]]]
+             [active-users :refer [active-users]]]
             [risingtide.feed
-             [expiration :refer [expire expiration-threshold]]
+             [expiration :refer [expire]]
              [filters :refer [for-everything-feed?]]
-             [persist :refer [encode-feed write-feed! load-feed delete-feeds!]]]
+             [persist :refer [encode-feed write-feed! load-feed delete-feeds! initialize-digest-feed]]]
             [risingtide.model
              [feed :refer [add remove-listing]]
              [timestamps :refer [timestamp]]]
-            [risingtide.model.feed.digest :refer [new-digest-feed]]
-            [metrics
-             [timers :refer [deftimer time!]]]))
-
-(deftimer feed-load-time)
-
-(defn initialize-digest-feed [redii feed-key & stories]
-  (let [initial-stories (time! feed-load-time (load-feed redii feed-key (expiration-threshold) (now)))]
-    (apply new-digest-feed (map dedupe (concat initial-stories stories)))))
+            [risingtide.model.feed.digest :refer [new-digest-feed]]))
 
 (defn add! [redii feed-set-atom user-id story]
   (if-let [feed-atom (@feed-set-atom user-id)]
     (swap! feed-atom add story)
     (swap! feed-set-atom
-           #(assoc % user-id (atom (initialize-digest-feed redii (key/user-feed user-id) story))))))
+           #(assoc % user-id (atom
+                              (initialize-digest-feed redii (key/user-feed user-id) story))))))
 
 (defn remove! [redii feed-set-atom user-id listing-id]
   (if-let [feed-atom (@feed-set-atom user-id)]
@@ -36,8 +28,12 @@
 (defn expire-feed! [feed-atom]
   (swap! feed-atom #(apply new-digest-feed (expire %))))
 
-(defn expire! [redii feed-set]
-  (let [actives (active-users redii)]
+(defn expire-inactive! [redii feed-set]
+  (let [actives (active-users redii)
+        active-feed-users (keys @feed-set)]
     (swap! feed-set #(select-keys % actives))
-    (delete-feeds! redii (clojure.set/difference (set (keys @feed-set)) (set actives))))
+    (delete-feeds! redii (clojure.set/difference (set active-feed-users) (set actives)))))
+
+(defn expire! [redii feed-set]
+  (expire-inactive! redii feed-set)
   (doall (map expire-feed! (vals @feed-set))))

@@ -1,11 +1,10 @@
 (ns risingtide.test.feed.persist
-  (:require [risingtide
-             [config :refer [env]]]
-            [risingtide.feed [persist :refer :all]]
-
-            risingtide.test
-            [risingtide.test.support.stories :refer :all]
-            [midje.sweet :refer :all]))
+  (:require risingtide.test [midje.sweet :refer :all])
+  (:require
+   [risingtide.test.support
+    [stories :refer :all]
+    [fixtures :refer :all]]
+   [risingtide.feed.persist :refer :all]))
 
 (defmacro facts:dont-change-during-serialization [& stories]
   (concat
@@ -27,3 +26,9 @@
  (multi-actor-story 1 :listing_liked #{2 3})
  (multi-action-story 1 2 #{:listing_liked :listing_shared})
  (multi-actor-multi-action-story 1 {:listing_liked #{1} :listing_shared #{3 4}}))
+
+(facts "about initialize-digest-feed"
+  (fact "the feed loads and includes given stories"
+    (seq (initialize-digest-feed {} "foo" jim-liked-ham))
+    => [jim-liked-ham cutter-liked-toast]
+    (provided (load-feed {} "foo") => [cutter-liked-toast])))

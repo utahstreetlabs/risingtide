@@ -3,18 +3,23 @@
    [cheshire.core :as json]
    [clojure.set :refer [map-invert rename-keys]]
    [clojure.core.memoize :refer [memo-ttl] :as memo]
-   [risingtide
-    [core :refer [now]]
-    [redis :as redis]
-    [config :as config]
-    [key :as key]
-    [persist :refer [keywordize convert-to-kw-set convert-to-set convert-to-kw-seq convert]]]
    [risingtide.model
     [story :as story]
     [feed :as feed]
     [timestamps :refer [timestamp min-timestamp max-timestamp with-timestamp]]]
+   [risingtide.model.feed.digest :refer [new-digest-feed]]
+   [risingtide
+    [core :refer [now]]
+    [dedupe :refer [dedupe]]
+    [redis :as redis]
+    [config :as config]
+    [key :as key]
+    [persist :refer [keywordize convert-to-kw-set convert-to-set convert-to-kw-seq convert]]]
+   [risingtide.feed.expiration :refer [expiration-threshold]]
    [risingtide.feed.persist.shard :as shard]
-   [metrics [gauges :refer [gauge]]])
+   [metrics
+    [gauges :refer [gauge]]
+    [timers :refer [deftimer time!]]])
   (:import [redis.clients.jedis Jedis Transaction JedisPool]))
 
 (defn- max-feed-size
@@ -118,12 +123,13 @@
   ([conn key] (stories conn key 0 (now))))
 
 (defn load-feed
-  [conn-spec feed-key since until]
-  (try
-    (shard/with-connection-for-feed conn-spec feed-key
-      [connection] (stories connection feed-key since until))
-    (catch Throwable e
-      (throw (Throwable. (str "exception loading "feed-key) e)))))
+  ([conn-spec feed-key] (load-feed conn-spec feed-key  (expiration-threshold) (now)))
+  ([conn-spec feed-key since until]
+     (try
+       (shard/with-connection-for-feed conn-spec feed-key
+         [connection] (stories connection feed-key since until))
+       (catch Throwable e
+         (throw (Throwable. (str "exception loading "feed-key) e))))))
 
 (defn delete-feeds! [redii user-ids]
   (when (not (empty? user-ids))
@@ -133,5 +139,8 @@
        (fn [redis]
          (.del redis (into-array String feed-keys)))))))
 
+(deftimer feed-load-time)
 
-
+(defn initialize-digest-feed [redii feed-key & stories]
+  (let [initial-stories (time! feed-load-time (load-feed redii feed-key))]
+    (apply new-digest-feed (map dedupe (concat initial-stories stories)))))

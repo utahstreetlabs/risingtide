@@ -64,7 +64,7 @@
 
 (defn search-interests [conn & {actors :actors listings :listings rows :rows sort :sort}]
   (solr/with-connection conn
-    (doall (map decode (solr/search (interests-string :actors actors :listings listings) :df "interests" :rows rows :sort sort)))))
+    (doall (map decode (solr/search (interests-string :actors actors :listings listings) :df "interests" :rows rows :sort sort :method :post)))))
 
 (defn recent-curated-actions [conn rows]
   (solr/with-connection conn

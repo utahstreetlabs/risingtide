@@ -18,7 +18,7 @@
                  [ring/ring-jetty-adapter "1.1.6"]
                  [enlive "1.0.0"]
 
-                 [utahstreetlabs/clojure-solr "0.3.0" :exclusions [org.slf4j/slf4j-jcl org.slf4j/slf4j-api]]
+                 [utahstreetlabs/clojure-solr "0.4.0" :exclusions [org.slf4j/slf4j-jcl org.slf4j/slf4j-api]]
                  [risingtide-model "2.3.0"]
 
                  [metrics-clojure "0.9.2" :exclusions [org.slf4j/slf4j-api]]

@@ -10,12 +10,9 @@
              [timers :refer [deftimer time!]]
              [histograms :refer [defhistogram update!]]]))
 
-(deftimer recent-followee-ids-time)
-
 (defn- followee-ids [user-id]
-  (time! recent-followee-ids-time
-         (remove config/drpc-blacklist
-                 (map :user_id (user/follows user-id config/recent-actions-max-follows)))))
+  (remove config/drpc-blacklist
+          (map :user_id (user/follows user-id config/recent-actions-max-follows))))
 
 (defn- disliked-listing-ids [user-id]
   (remove nil? (map :listing_id (user/dislikes user-id))))
@@ -32,23 +29,25 @@
 (defn- followee-listing-for-sale-ids [followee-ids]
   (map :id (user/listings-for-sale followee-ids config/recent-actions-max-seller-listings)))
 
-(deftimer recent-interesting-listing-ids-time)
-
 (defn interesting-listing-ids [user-id & {followees :followees}]
-  (time! recent-interesting-listing-ids-time
-        (lazy-cat
-         (listing-ids-from-followed-collections user-id)
-         (liked-listing-ids user-id)
-         (followee-listing-for-sale-ids (or followees (followee-ids user-id))))))
+  ;; speculatively perform these requests, but only wait for their
+  ;; result if it is needed
+  (let [collection (future (listing-ids-from-followed-collections user-id))
+        liked (future (liked-listing-ids user-id))
+        followee (future (followee-listing-for-sale-ids (if followees @followees (followee-ids user-id))))]
+    (lazy-cat @collection @liked @followee)))
 
+(deftimer recent-actor-ids-time)
+(deftimer recent-listing-ids-time)
 (deftimer recent-search-interests-time)
 
 (defn find-actions [solr-conn user-id & {rows :rows sort :sort
                                          :or {rows config/recent-actions-max-recent-stories
                                               sort "timestamp_i desc"}}]
-  (let [followees (followee-ids user-id)
-        disliked? (set (disliked-listing-ids user-id))
-        blocked? (set (blocked-actor-ids user-id))]
+  (let [followees (future (followee-ids user-id))
+        disliked? (future (set (disliked-listing-ids user-id)))
+        blocked? (future (set (blocked-actor-ids user-id)))
+        listing-ids (future (interesting-listing-ids user-id :followees followees))]
     ;; remove blocked users and disliked listings both before the solr
     ;; query (to get as many "good" actions as possible under the row
     ;; limit) and after the query (to weed out dislikes that came back
@@ -60,14 +59,17 @@
                  :rows rows :sort sort
                  ;; limit both of these to avoid blowing up lucene - too many
                  ;; boolean queries makes it explode. ~1k is a rough maximum
-                 :actors (take config/recent-actions-max-actors
-                               (remove blocked? followees))
-                 :listings (take config/recent-actions-max-listings
-                                 (remove disliked?
-                                         (interesting-listing-ids user-id :followees followees)))))
-         (remove #(disliked? (:listing_id %)))
-         (remove #(blocked? (:actor_id %)))
-         (remove #(blocked? (:seller_id %))))))
+                 :actors (time! recent-actor-ids-time
+                                (doall
+                                 (take config/recent-actions-max-actors
+                                       (remove @blocked? @followees))))
+                 :listings (time! recent-listing-ids-time
+                                  (doall
+                                   (take config/recent-actions-max-listings
+                                         (remove @disliked? @listing-ids))))))
+         (remove #(@disliked? (:listing_id %)))
+         (remove #(@blocked? (:actor_id %)))
+         (remove #(@blocked? (:seller_id %))))))
 
 (deftimer find-recent-actions-time)
 (defhistogram recent-actions-found)

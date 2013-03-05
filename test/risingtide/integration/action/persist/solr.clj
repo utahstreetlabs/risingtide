@@ -7,7 +7,8 @@
    [midje.sweet :refer :all]
    [risingtide.test]
    [risingtide.integration.support :refer :all]
-   [risingtide.test :refer [serialize-deserialize]]))
+   [risingtide.test :refer [serialize-deserialize]]
+   [clj-time.core :refer [months ago]]))
 
 (def actions
   ["{\"listing_id\":464169,\"tag_ids\":[20,198,2476,2591,5229,14067,14070,14326,14357,210122],\"feed\":[\"ev\",\"ylf\"],\"type\":\"listing_activated\",\"actor_id\":38319,\"seller_id\":353707}"
@@ -19,6 +20,9 @@
    "{\"tag_id\":156689,\"type\":\"tag_liked\",\"actor_id\":354834}"])
 
 (def solr-conn (solr/connection))
+
+
+(clear-action-solr!)
 
 (doseq [json actions]
   (let [id (str (java.util.UUID/randomUUID))
@@ -33,3 +37,30 @@
       (serialize-deserialize (action-to-story (solr/find solr-conn id))) => (action-to-story result-action))))
 
 (clear-action-solr!)
+
+
+(defn get-all-timestamps []
+  (map #(get % "timestamp_i")
+       (clojure-solr/with-connection solr-conn
+         (clojure-solr/search (str "timestamp_i:[0 TO "(-> 0 months ago solr/timestamp)"]")))))
+
+(let [one-minute-ago-action {:timestamp_i (-> 1 months ago solr/timestamp) :listing_id 1 :tag_ids [] :type "listing_liked"}
+      ten-minutes-ago-action {:timestamp_i (-> 10 months ago solr/timestamp) :listing_id 1 :tag_ids [] :type "listing_liked"}
+      thirty-minutes-ago-action {:timestamp_i (-> 30 months ago solr/timestamp) :listing_id 1 :tag_ids [] :type "listing_liked"}]
+  (against-background
+   [(before :facts
+            (do (clear-action-solr!)
+                (solr/save! solr-conn one-minute-ago-action)
+                (solr/save! solr-conn ten-minutes-ago-action)
+                (solr/save! solr-conn thirty-minutes-ago-action)))
+    (after :facts (clear-action-solr!))]
+
+   (fact
+     (get-all-timestamps)
+     => (map :timestamp_i [one-minute-ago-action ten-minutes-ago-action thirty-minutes-ago-action]))
+
+   (fact
+     (do (solr/delete-actions-older-than! solr-conn (-> 5 months))
+         (get-all-timestamps))
+     => (map :timestamp_i [one-minute-ago-action]))))
+

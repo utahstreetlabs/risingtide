@@ -6,7 +6,9 @@
              [core :refer [log-err]]
              [config :as config]
              [redis :as redis]]
-            [clj-time.format :refer [parse formatter]]
+            [clj-time
+             [core :refer [months]]
+             [format :refer [parse formatter]]]
             [risingtide.action.persist.solr :as solr]
             [risingtide.reports :refer [report]]
             [risingtide.feed.persist :refer [delete-feeds!]]))
@@ -83,3 +85,9 @@ Should never actually be needed ever again, since we log timestamps now, but com
 from the active users list. this finds and deletes such feeds."
   []
   (delete-feeds! (redis/redii) (:dangling-feeds (report))))
+
+(defn flush-old-actions-from-solr
+  "delete all actions more than 2 months old from the solr instance
+we use to build new feeds"
+  []
+  (solr/delete-actions-older-than! (solr/connection) (-> 2 months)))

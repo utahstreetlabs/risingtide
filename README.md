@@ -19,6 +19,43 @@ Rising Tide is the Copious service for processing feed stories.
 # `lein midje`
 
 
+### Common maintenance tasks
+
+### Get a production REPL
+
+```bash
+ec2-ssh $USERNAME@rt-storm1.copious.com
+sudo su utah
+cd ~/risingtide/current
+RT_ENV=production bin/lein repl
+```
+
+### Run a report
+
+```bash
+ec2-ssh $USERNAME@rt-storm1.copious.com
+sudo su utah
+cd ~/risingtide/current
+RT_ENV=production bin/lein run -m risingtide.reports/report
+```
+
+### Get a JMX term to examine metrics
+
+```bash
+RT_WORKER=2 #
+ec2-ssh $USERNAME@rt-storm$RT_WORKER.copious.com
+RT_EXECUTOR=0 # currently 0 or 1
+java -jar /opt/jmxterm/jmxterm-1.0-alpha-4-uber.jar -l service:jmx:rmi:///jndi/rmi://localhost:1670$RT_EXECUTOR/jmxrmi -n
+get -b default:name=seller-follow-interest-score-time,type=default OneMinuteRate
+```
+
+### Clear out old actions from solr
+
+ec2-ssh $USERNAME@rt-storm1.copious.com
+sudo su utah
+cd ~/risingtide/current
+RT_ENV=production bin/lein run -m risingtide.utils/flush-old-actions-from-solr
+
 ### Metrics
 
 A raw list of metrics that we should compile into a more useful format:

@@ -7,7 +7,8 @@
    [risingtide
     [config :as config]
     [persist :refer [keywordize convert-to-kw-set convert-to-kw-seq convert-to-set]]]
-   [clojure-solr :as solr])
+   [clojure-solr :as solr]
+   [clj-time.core :refer [ago]])
   (:refer-clojure :exclude [find]))
 
 (def to-solr-keys
@@ -73,6 +74,14 @@
 (defn find [connection id]
   (solr/with-connection connection
     (decode (first (solr/search (str "id:"id))))))
+
+(defn timestamp [datetime]
+  (int (/ (.getMillis datetime) 1000)))
+
+(defn delete-actions-older-than! [connection period]
+  (solr/with-connection connection
+    (solr/delete-query! (str "timestamp_i:[0 TO "(-> period ago timestamp)"]"))
+    (solr/commit!)))
 
 (defn delete-actions! [connection]
  (solr/with-connection connection

@@ -94,4 +94,3 @@
   (let [actions (time! find-recent-actions-time (find-actions solr-conn user-id))]
     (update! recent-actions-found (count actions))
     (concat actions (backfill-actions solr-conn actions))))
-

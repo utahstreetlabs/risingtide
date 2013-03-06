@@ -19,7 +19,7 @@
                  [enlive "1.0.0"]
 
                  [utahstreetlabs/clojure-solr "0.4.1" :exclusions [org.slf4j/slf4j-jcl org.slf4j/slf4j-api]]
-                 [risingtide-model "2.3.0"]
+                 [risingtide-model "2.4.0"]
 
                  [metrics-clojure "0.9.2" :exclusions [org.slf4j/slf4j-api]]
 

@@ -5,7 +5,8 @@
             [risingtide
              [core :refer [log-err]]
              [config :as config]
-             [redis :as redis]]
+             [redis :as redis]
+             [active-users :refer [active-user-key]]]
             [clj-time
              [core :refer [months]]
              [format :refer [parse formatter]]]
@@ -85,6 +86,15 @@ Should never actually be needed ever again, since we log timestamps now, but com
 from the active users list. this finds and deletes such feeds."
   []
   (delete-feeds! (redis/redii) (:dangling-feeds (report))))
+
+(defn expire-actives-with-no-expiry
+  "we appear to get active users with no expiry. find users for whom this is the
+case and set their expiry to 1 day from now"
+  []
+  (redis/with-jedis* ((redis/redii) :active-users)
+    (fn [jedis]
+      (doseq [id (:no-expiry-active-users (report))]
+        (.expire jedis (active-user-key id) (* 60 60 24))))))
 
 (defn flush-old-actions-from-solr
   "delete all actions more than 2 months old from the solr instance

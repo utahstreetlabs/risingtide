@@ -29,6 +29,12 @@
   [type id]
   (swap! migrations #(update-in % [type] dissoc id)))
 
+(defn get-shard-key
+  [conn-spec type user-id]
+  (redis/with-jedis* (:shard-config conn-spec)
+    (fn [jedis]
+      (.hget jedis (active-user-key user-id) shard-hash-key))))
+
 (defn get-or-create-shard-key
   [conn-spec type user-id]
   (let [key (active-user-key user-id)]

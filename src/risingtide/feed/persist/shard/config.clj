@@ -29,20 +29,16 @@
   [type id]
   (swap! migrations #(update-in % [type] dissoc id)))
 
-(defn get-shard-key
-  [conn-spec type user-id]
-  (redis/with-jedis* (:shard-config conn-spec)
-    (fn [jedis]
-      (.hget jedis (active-user-key user-id) shard-hash-key))))
-
 (defn get-or-create-shard-key
   [conn-spec type user-id]
-  (let [bucket (active-user-key user-id)]
-    (redis/with-jedis* (:shard-config conn-spec)
-      (fn [jedis]
-        (or (.hget jedis bucket shard-hash-key)
-            (do (.hset jedis bucket shard-hash-key default-shard)
-                default-shard))))))
+  (let [key (active-user-key user-id)]
+   (redis/with-jedis* (:shard-config conn-spec)
+     (fn [jedis]
+       (or (.hget jedis key shard-hash-key)
+           (do
+             (when (.exists jedis key)
+               (.hset jedis key shard-hash-key default-shard))
+             default-shard))))))
 
 (defn update-shard-key
   [conn-spec type user-id new-key]
@@ -61,8 +57,3 @@
         new-shard-key (get (:card @migrations) user-id)]
     (if new-shard-key [stored-key new-shard-key] [stored-key])))
 
-(comment
-  (card-feed-key nil "50")
-  (get-or-create-shard-key (:shard-config (redis/redii :development)) "card-feed-shard-config" "47")
-  (update-shard-key (:shard-config (redis/redii :development)) "card-feed-shard-config" "47" "1")
-  )

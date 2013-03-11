@@ -55,7 +55,7 @@
         :active-feeds (count feeds)
         :active-ttl-quantiles (quantile ttls)
         :feed-size-quantiles (quantile feed-sizes)
-        :small-feeds (map first (filter (fn [[id size]] (< size 100)) feeds-and-sizes))
+        :small-feeds (map first (filter (fn [[id size]] (< size 36)) feeds-and-sizes))
         :no-expiry-active-users (map first (filter (fn [[id ttl]] (= -1 ttl)) actives-and-ttls))
         :dangling-feeds (difference (set feeds) (set actives))}))
   ([] (report (redis/redii))))

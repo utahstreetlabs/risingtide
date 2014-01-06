@@ -9,19 +9,23 @@ analytic purposes.
 
 ## Project Setup
 
-# `git clone git@github.com:utahstreetlabs/risingtide.git`
-# `cd risingtide`
-# `git submodule init`
-# `git submodule update`
-# `cd actions-solr && make`
-# `gem install bundler`
-# `bundle install`
-# `foreman start`
+```bash
+git clone git@github.com:utahstreetlabs/risingtide.git
+cd risingtide
+git submodule init
+git submodule update
+cd actions-solr && make
+gem install bundler
+bundle install
+foreman start
+```
 
 ### Tests
 
-# `bin/run-test-solr`
-# `lein midje`
+```bash
+bin/run-test-solr
+lein midje
+```
 
 
 ### Common maintenance tasks

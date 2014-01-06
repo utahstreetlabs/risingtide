@@ -1,6 +1,11 @@
 # Rising Tide
 
-Rising Tide is the Copious service for processing feed stories.
+Rising Tide created customized feeds for users of Copious.com, an
+online social marketplace active from 2011 to 2013.
+
+Note that project setup instructions are unlikely to work as-is: the
+source is being made available to the community for archaeological and
+analytic purposes.
 
 ## Project Setup
 
@@ -109,5 +114,5 @@ HeapMemoryUsage,NonHeapMemoryUsage@java.lang:type=Memory
 
 ## License
 
-Copyright © 2012 Utah Street Labs
+Copyright © 2014 Utah Street Labs
 All Rights Reserved

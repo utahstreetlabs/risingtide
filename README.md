@@ -121,4 +121,3 @@ HeapMemoryUsage,NonHeapMemoryUsage@java.lang:type=Memory
 ## License
 
 Copyright © 2014 Utah Street Labs
-All Rights Reserved

@@ -69,6 +69,7 @@ RT_ENV=production bin/lein run -m risingtide.utils/flush-old-actions-from-solr
 
 A raw list of metrics that we should compile into a more useful format:
 
+```clj
 (deftimer active-user-fetch-time)
 (deftimer active-user-fanout-time)
 (deftimer feed-load-time)
@@ -100,6 +101,7 @@ A raw list of metrics that we should compile into a more useful format:
 (gauge "curated-feed-size" (count (seq @feed-atom)))
 
 (defhistogram recent-actions-found)
+```
 
 #### Scout monitoring
 
